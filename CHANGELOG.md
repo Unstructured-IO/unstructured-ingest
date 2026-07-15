@@ -3,6 +3,17 @@
 ### Enhancements
 
 - **feat(sftp): verify SFTP server host key.** `SftpConnectionConfig` gains an optional `host_public_key` field. It accepts a base64 blob, an OpenSSH `.pub` line, or an ssh-keyscan/known_hosts line; the key algorithm (`ssh-ed25519` / `ssh-rsa`) is auto-detected from the key itself, so no key-type input is required. When set, the connector pins the expected host key and uses paramiko `RejectPolicy` to verify the server identity, rejecting a mismatched/unknown key instead of fsspec's default `AutoAddPolicy` (which silently trusts any key). An unparsable or unsupported key fails fast at config validation; a well-formed but wrong key surfaces as a host-key mismatch on the first connect (precheck). When `host_public_key` is omitted, connections behave as before but now log a warning that the server identity is unverified. Username/password remains the client authentication method in both cases.
+## [1.6.30]
+
+### Fixes
+
+- **fix(ENG-1322): escape SQL metacharacters in databricks_volume_delta_tables statements.** Filenames or record identifiers containing a single quote or backslash no longer break (or inject into) the single-quoted `PUT`/`DELETE` string literals, and filenames containing a backtick no longer break the backtick-quoted volume path in the `INSERT ... FROM json.` clause (all surfaced as SQLSTATE 42601). A shared `quote_literal` helper escapes both backslashes and single quotes (Databricks processes backslash escapes in string literals by default) for the volume/staging paths and the delete record identifier, and the `INSERT` source path now goes through the existing `quote_identifier` helper.
+
+## [1.6.29]
+
+### Fixes
+
+- **fix(sharepoint): surface the real upstream HTTP status instead of masking every error as "Site not found".** SharePoint upstream errors now map to typed exceptions carrying the real status code and response body (instead of a generic `400`), and genuine throttles are retried, honoring the server's `Retry-After` backoff.
 
 ## [1.6.28]
 

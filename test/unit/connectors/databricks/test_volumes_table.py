@@ -226,6 +226,85 @@ def _insert_sql(mock_cursor: MagicMock) -> str:
     return next(sql for sql in _executed_sql(mock_cursor) if sql.startswith("INSERT"))
 
 
+def _put_sql(mock_cursor: MagicMock) -> str:
+    return next(sql for sql in _executed_sql(mock_cursor) if sql.startswith("PUT"))
+
+
+def _sql_wellformed_problems(sql: str) -> list[str]:
+    """Scan for premature literal/identifier termination, mirroring Databricks parsing:
+    inside a literal a backslash escapes the next char; a bare ' always closes the literal
+    ('' is NOT a doubled-quote escape below Spark master), while backticks are doubled."""
+    i, n = 0, len(sql)
+    in_str = in_ident = False
+    while i < n:
+        c = sql[i]
+        if in_str:
+            if c == "\\":  # backslash escapes the next char; skip both
+                i += 2
+                continue
+            if c == "'":  # a bare quote closes the literal -- no '' escape in Databricks
+                in_str = False
+        elif in_ident:
+            if c == "`":
+                if i + 1 < n and sql[i + 1] == "`":  # doubled backtick stays in the identifier
+                    i += 2
+                    continue
+                in_ident = False
+        elif c == "'":
+            in_str = True
+        elif c == "`":
+            in_ident = True
+        i += 1
+    problems = []
+    if in_str:
+        problems.append("unterminated single-quoted literal")
+    if in_ident:
+        problems.append("unterminated backtick identifier")
+    return problems
+
+
+def _decode_sql_tokens(sql: str) -> tuple[list[str], list[str]]:
+    """Return (literals, identifiers): un-escaped contents of each single-quoted literal and
+    backtick identifier, so the real path PUT and INSERT reference can be compared."""
+    literals: list[str] = []
+    identifiers: list[str] = []
+    i, n = 0, len(sql)
+    buf: list[str] = []
+    in_str = in_ident = False
+    while i < n:
+        c = sql[i]
+        if in_str:
+            if c == "\\" and i + 1 < n:
+                buf.append(sql[i + 1])
+                i += 2
+                continue
+            if c == "'":  # a bare quote closes the literal (no '' escape in Databricks)
+                literals.append("".join(buf))
+                buf = []
+                in_str = False
+                i += 1
+                continue
+            buf.append(c)
+        elif in_ident:
+            if c == "`":
+                if i + 1 < n and sql[i + 1] == "`":
+                    buf.append("`")
+                    i += 2
+                    continue
+                identifiers.append("".join(buf))
+                buf = []
+                in_ident = False
+                i += 1
+                continue
+            buf.append(c)
+        elif c == "'":
+            in_str = True
+        elif c == "`":
+            in_ident = True
+        i += 1
+    return literals, identifiers
+
+
 def test_create_destination_flatten_true_is_noop(
     mock_cursor: MagicMock, mock_get_cursor: MagicMock
 ):
@@ -405,6 +484,170 @@ def test_run_flatten_true_drops_unknown_columns_and_logs(
     assert len(drop_lines) == 1
     assert "unknown_col" in drop_lines[0].message
     assert "another_extra" in drop_lines[0].message
+
+
+@pytest.mark.parametrize(
+    "filename",
+    ["owner's report.pdf", "quarter's summary.xlsm", "o'brien's file.pdf"],
+)
+def test_run_put_escapes_single_quotes_in_filename(
+    tmp_path: Path, mock_cursor: MagicMock, mock_get_cursor: MagicMock, filename: str
+):
+    """Apostrophes in the filename must not break the single-quoted PUT literals
+    (SQLSTATE 42601); Databricks escapes quotes with a backslash (\\'), NOT by doubling."""
+    uploader = _make_uploader(flatten_metadata=True)
+    uploader._columns = {"element_id": "string", "text": "string"}
+    path = _staged_elements(tmp_path, {"element_id": "el-1", "text": "hello"})
+    file_data = FileData(
+        identifier="doc",
+        connector_type="databricks_volume_delta_tables",
+        source_identifiers=SourceIdentifiers(filename=filename, fullpath=filename),
+    )
+
+    uploader.run(path=path, file_data=file_data)
+
+    put_sql = _put_sql(mock_cursor)
+    # Backslash-escaped form present; the raw name is never a lone literal; and the
+    # statement stays structurally valid (no literal terminated early).
+    assert filename.replace("'", "\\'") in put_sql
+    assert f"'{filename}'" not in put_sql
+    assert _sql_wellformed_problems(put_sql) == []
+    # The PUT target literal decodes back to the intended output path.
+    expected = uploader.get_output_path(file_data=file_data)
+    put_literals, _ = _decode_sql_tokens(put_sql)
+    assert put_literals[1] == expected
+
+
+def test_delete_previous_content_escapes_single_quotes_in_identifier(
+    tmp_path: Path, mock_cursor: MagicMock, mock_get_cursor: MagicMock
+):
+    """The DELETE runs before the PUT and quotes file_data.identifier; a path-derived
+    identifier with an apostrophe must be escaped or the re-sync delete fails first."""
+    uploader = _make_uploader(flatten_metadata=True)
+    # record_id column present → can_delete() is True, so run() issues the DELETE first.
+    uploader._columns = {"element_id": "string", "text": "string", "record_id": "string"}
+    identifier = "folderA/owner's report.pdf"
+    file_data = FileData(
+        identifier=identifier,
+        connector_type="databricks_volume_delta_tables",
+        source_identifiers=SourceIdentifiers(filename="report.pdf", fullpath=identifier),
+    )
+    path = _staged_elements(tmp_path, {"element_id": "el-1", "text": "hello", "record_id": "x"})
+
+    uploader.run(path=path, file_data=file_data)
+
+    delete_sql = next(
+        s for s in _executed_sql(mock_cursor) if s.strip().upper().startswith("DELETE")
+    )
+    escaped_identifier = identifier.replace("'", "\\'")
+    assert f"record_id = '{escaped_identifier}'" in delete_sql
+    # Raw apostrophe never sits as a lone literal boundary; the literal stays terminated
+    # and decodes back to the exact identifier the row was stored under.
+    assert f"'{identifier}'" not in delete_sql
+    assert _sql_wellformed_problems(delete_sql) == []
+    literals, _ = _decode_sql_tokens(delete_sql)
+    assert literals == [identifier]
+
+
+# Filenames exercising SQL metacharacters: apostrophe hits the single-quoted PUT/DELETE
+# literals, backtick hits the backtick-quoted INSERT identifier; the rest guard regressions.
+_SPECIAL_CHAR_FILENAMES = [
+    "owner's report.pdf",  # single quote -> PUT/DELETE literals
+    "o'brien's file.pdf",  # multiple single quotes
+    "weird`name.pdf",  # backtick -> INSERT identifier
+    'O\'Brien`s "weird" file;.pdf',  # quote + backtick + dquote + semicolon together
+    'say "hi".pdf',  # double quotes
+    "a;drop table x.pdf",  # semicolon (injection-shaped)
+    "50%done_v_1.pdf",  # LIKE wildcards % and _
+    "file[1](2){x}.pdf",  # brackets/braces
+    "résumé_café.pdf",  # unicode
+    "path\\to\\file.pdf",  # backslash
+    "a\\'b.pdf",  # backslash immediately before a quote -> must not escape the quote
+    "x\\' OR 1=1 --.pdf",  # injection-shaped: \\' + ' would break out if backslash unescaped
+]
+
+
+@pytest.mark.parametrize("filename", _SPECIAL_CHAR_FILENAMES)
+def test_run_emits_wellformed_sql_for_special_char_filenames(
+    tmp_path: Path, mock_cursor: MagicMock, mock_get_cursor: MagicMock, filename: str
+):
+    """Every statement run() emits (DELETE, PUT, INSERT) stays structurally valid for any
+    metacharacter in the filename — no literal/identifier terminated early (SQLSTATE 42601)."""
+    uploader = _make_uploader(flatten_metadata=True)
+    uploader._columns = {"element_id": "string", "text": "string", "record_id": "string"}
+    path = _staged_elements(tmp_path, {"element_id": "el-1", "text": "hello", "record_id": "r"})
+    file_data = FileData(
+        identifier=filename,
+        connector_type="databricks_volume_delta_tables",
+        source_identifiers=SourceIdentifiers(filename=filename, fullpath=filename),
+    )
+
+    uploader.run(path=path, file_data=file_data)
+
+    executed = _executed_sql(mock_cursor)
+    # Sanity: all three metacharacter-carrying statements were actually emitted.
+    assert any(s.startswith("DELETE") for s in executed)
+    assert any(s.startswith("PUT") for s in executed)
+    assert any(s.startswith("INSERT") for s in executed)
+    for sql in executed:
+        problems = _sql_wellformed_problems(sql)
+        assert not problems, f"{problems} in: {sql}"
+
+
+@pytest.mark.parametrize("filename", _SPECIAL_CHAR_FILENAMES)
+def test_put_target_and_insert_source_resolve_to_same_path(
+    tmp_path: Path, mock_cursor: MagicMock, mock_get_cursor: MagicMock, filename: str
+):
+    """PUT's single-quoted target and INSERT's backtick source use different escaping;
+    assert they decode to the same path, else INSERT reads the wrong file and loads nothing."""
+    uploader = _make_uploader(flatten_metadata=True)
+    uploader._columns = {"element_id": "string", "text": "string"}
+    path = _staged_elements(tmp_path, {"element_id": "el-1", "text": "hello"})
+    file_data = FileData(
+        identifier="doc",
+        connector_type="databricks_volume_delta_tables",
+        source_identifiers=SourceIdentifiers(filename=filename, fullpath=filename),
+    )
+
+    uploader.run(path=path, file_data=file_data)
+
+    expected = uploader.get_output_path(file_data=file_data)
+    # PUT '<local>' INTO '<target>' OVERWRITE — the target is the 2nd single-quoted literal.
+    put_literals, _ = _decode_sql_tokens(_put_sql(mock_cursor))
+    put_target = put_literals[1]
+    # INSERT ... FROM json.`<source>` — the source path is a backtick identifier.
+    _, insert_idents = _decode_sql_tokens(_insert_sql(mock_cursor))
+    insert_source = next(t for t in insert_idents if t == expected)
+
+    assert put_target == expected
+    assert insert_source == expected
+    assert put_target == insert_source
+
+
+@pytest.mark.parametrize(
+    "sql",
+    [
+        "PUT '/vol/o\\'brien.json' INTO '/vol/o\\'brien.json' OVERWRITE",  # backslash-escaped '
+        "SELECT * FROM `weird``name`",  # doubled backtick OK
+        "WHERE x = 'back\\\\slash'",  # doubled backslash stays inside the literal
+    ],
+)
+def test_oracle_accepts_wellformed_sql(sql: str):
+    assert _sql_wellformed_problems(sql) == []
+
+
+@pytest.mark.parametrize(
+    "sql",
+    [
+        "WHERE x = 'unterminated",  # never closed
+        "SELECT * FROM `unterminated",  # identifier never closed
+        # Regression guard: a lone trailing backslash escapes the closing quote, so the
+        # literal runs on -- this is why quote_literal MUST double source backslashes.
+        "PUT 'ends\\' INTO 'x'",
+    ],
+)
+def test_oracle_rejects_broken_or_injectable_sql(sql: str):
+    assert _sql_wellformed_problems(sql) != []
 
 
 def _file_data_rel(relative_path: str, filename: str) -> FileData:

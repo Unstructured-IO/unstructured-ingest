@@ -30,7 +30,7 @@ from unstructured_ingest.utils.data_prep import (
     get_json_data,
     write_data,
 )
-from unstructured_ingest.utils.databricks import quote_identifier
+from unstructured_ingest.utils.databricks import quote_identifier, quote_literal
 
 CONNECTOR_TYPE = "databricks_volume_delta_tables"
 
@@ -206,7 +206,7 @@ class DatabricksVolumeDeltaTableUploader(Uploader):
         )
         with self.get_cursor() as cursor:
             cursor.execute(
-                f"DELETE FROM `{self.upload_config.table_name}` WHERE {RECORD_ID_LABEL} = '{file_data.identifier}'"  # noqa: E501
+                f"DELETE FROM `{self.upload_config.table_name}` WHERE {RECORD_ID_LABEL} = {quote_literal(file_data.identifier)}"  # noqa: E501
             )
             results = cursor.fetchall()
             deleted_rows = results[0][0]
@@ -218,7 +218,11 @@ class DatabricksVolumeDeltaTableUploader(Uploader):
         with self.get_cursor(staging_allowed_local_path=path.parent.as_posix()) as cursor:
             catalog_path = self.get_output_path(file_data=file_data)
             logger.debug(f"uploading {path.as_posix()} to {catalog_path}")
-            cursor.execute(f"PUT '{path.as_posix()}' INTO '{catalog_path}' OVERWRITE")
+            # Single-quoted literals: escape via quote_literal so a metacharacter in the
+            # filename can't break out (SQLSTATE 42601). INSERT below uses quote_identifier.
+            cursor.execute(
+                f"PUT {quote_literal(path.as_posix())} INTO {quote_literal(catalog_path)} OVERWRITE"
+            )
             logger.debug(
                 f"migrating content from {catalog_path} to table {self.upload_config.table_name}"
             )
@@ -239,7 +243,10 @@ class DatabricksVolumeDeltaTableUploader(Uploader):
                 select_columns = ["PARSE_JSON(metadata)" if c == "metadata" else c for c in columns]
             column_str = ", ".join(columns)
             select_column_str = ", ".join(select_columns)
-            sql_statment = f"INSERT INTO `{self.upload_config.table_name}` ({column_str}) SELECT {select_column_str} FROM json.`{catalog_path}`"  # noqa: E501
+            # Backtick-quoted here (an identifier, not a literal): quote_identifier doubles
+            # any embedded backtick from the filename.
+            source_ref = f"json.{quote_identifier(catalog_path)}"
+            sql_statment = f"INSERT INTO `{self.upload_config.table_name}` ({column_str}) SELECT {select_column_str} FROM {source_ref}"  # noqa: E501
             cursor.execute(sql_statment)
 
 
