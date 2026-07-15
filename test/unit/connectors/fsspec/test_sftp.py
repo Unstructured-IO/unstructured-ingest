@@ -177,6 +177,17 @@ ECDSA_LINE = "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNT
 ECDSA_BLOB = ECDSA_LINE.split()[1]
 
 
+def _wire(*fields: bytes) -> bytes:
+    """Encode fields as an SSH wire blob (each field length-prefixed, big-endian)."""
+    return b"".join(len(f).to_bytes(4, "big") + f for f in fields)
+
+
+def _b64(raw: bytes) -> str:
+    import base64
+
+    return base64.b64encode(raw).decode()
+
+
 class TestParseHostPublicKey:
     """Key type is auto-detected from the blob; multiple input forms accepted."""
 
@@ -213,6 +224,37 @@ class TestParseHostPublicKey:
         # Valid-looking token but not a real SSH key blob.
         with pytest.raises(ValueError):
             parse_host_public_key("AAAA")
+
+    def test_synthetic_valid_ed25519_wire_is_accepted(self):
+        # Sanity check for the wire-format validation: a well-formed blob (algo
+        # name + 32-byte public key) parses even though the key bytes are dummy.
+        blob = _b64(_wire(b"ssh-ed25519", b"\x00" * 32))
+        key_type, out = parse_host_public_key(blob)
+        assert key_type == "ssh-ed25519"
+        assert out == blob
+
+    def test_supported_prefix_but_wrong_ed25519_length_raises(self):
+        # Correct algorithm name but the public key is not 32 bytes.
+        blob = _b64(_wire(b"ssh-ed25519", b"tooshort"))
+        with pytest.raises(ValueError, match="32 bytes"):
+            parse_host_public_key(blob)
+
+    def test_supported_prefix_but_extra_trailing_field_raises(self):
+        blob = _b64(_wire(b"ssh-ed25519", b"\x00" * 32, b"junk"))
+        with pytest.raises(ValueError, match="wire fields"):
+            parse_host_public_key(blob)
+
+    def test_supported_prefix_but_wrong_rsa_field_count_raises(self):
+        # ssh-rsa must be (name, e, n); only one parameter is malformed.
+        blob = _b64(_wire(b"ssh-rsa", b"\x01"))
+        with pytest.raises(ValueError, match="wire fields"):
+            parse_host_public_key(blob)
+
+    def test_supported_prefix_but_field_overruns_blob_raises(self):
+        # Length prefix declares 255 bytes but only 2 follow -> truncated key.
+        raw = _wire(b"ssh-ed25519") + b"\x00\x00\x00\xff" + b"\x01\x02"
+        with pytest.raises(ValueError, match="malformed"):
+            parse_host_public_key(_b64(raw))
 
 
 class TestBuildHostKey:
@@ -264,6 +306,13 @@ class TestHostPublicKeyValidator:
     def test_unsupported_type_rejected(self):
         with pytest.raises(ValidationError):
             _make_connection_config(host_public_key=ECDSA_BLOB)
+
+    def test_supported_prefix_but_malformed_key_rejected_at_config_time(self):
+        # A blob with a supported algorithm prefix but a truncated body must fail
+        # fast at config validation, not silently pass and blow up at connect.
+        malformed = _b64(_wire(b"ssh-ed25519", b"tooshort"))
+        with pytest.raises(ValidationError):
+            _make_connection_config(host_public_key=malformed)
 
     def test_host_public_key_not_leaked_into_ssh_kwargs(self):
         # host_public_key is not a paramiko connect kwarg; it must not be passed

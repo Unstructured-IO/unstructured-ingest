@@ -71,6 +71,52 @@ def _extract_ssh_key_type(raw: bytes) -> str:
         raise ValueError(f"host key blob has a non-ASCII key type: {e}") from e
 
 
+def _iter_ssh_wire_fields(raw: bytes) -> list[bytes]:
+    """Split an SSH wire blob into its length-prefixed fields.
+
+    Requires the fields to consume the blob exactly; raises ``ValueError`` on a
+    length prefix that overruns the buffer, a truncated prefix, or trailing bytes.
+    """
+    fields: list[bytes] = []
+    offset = 0
+    total = len(raw)
+    while offset < total:
+        if total - offset < 4:
+            raise ValueError("host key blob is malformed (truncated length prefix)")
+        length = int.from_bytes(raw[offset : offset + 4], "big")
+        offset += 4
+        if total - offset < length:
+            raise ValueError("host key blob is malformed (field overruns the blob)")
+        fields.append(raw[offset : offset + length])
+        offset += length
+    return fields
+
+
+# Number of wire fields per supported key type: the algorithm name plus its key
+# parameters (ed25519 -> name + 32-byte public key; rsa -> name + e + n).
+_EXPECTED_FIELD_COUNTS = {"ssh-ed25519": 2, "ssh-rsa": 3}
+
+
+def _validate_host_key_wire_format(raw: bytes, key_type: str) -> None:
+    """Validate the complete key wire format, not just the algorithm prefix.
+
+    ``_extract_ssh_key_type`` only reads the leading algorithm field, so a blob
+    that starts with a supported type but is truncated or padded with garbage
+    would otherwise pass config validation and fail only when a connection is
+    opened. This closes that gap so the advertised fail-fast validation holds.
+    """
+    fields = _iter_ssh_wire_fields(raw)
+    expected = _EXPECTED_FIELD_COUNTS[key_type]
+    if len(fields) != expected:
+        raise ValueError(
+            f"malformed {key_type} host key: expected {expected} wire fields, got {len(fields)}"
+        )
+    if key_type == "ssh-ed25519" and len(fields[1]) != 32:
+        raise ValueError(
+            f"malformed ssh-ed25519 host key: public key must be 32 bytes, got {len(fields[1])}"
+        )
+
+
 def parse_host_public_key(value: str) -> tuple[str, str]:
     """Return ``(key_type, base64_blob)`` for a server host public key string.
 
@@ -102,6 +148,9 @@ def parse_host_public_key(value: str) -> tuple[str, str]:
         except ValueError:
             continue
         if key_type in SUPPORTED_HOST_KEY_TYPES:
+            # Supported prefix -> validate the whole wire format so a truncated /
+            # garbage-padded blob fails here (config time) rather than at connect.
+            _validate_host_key_wire_format(raw, key_type)
             return key_type, token
         unsupported.append(key_type)
 
