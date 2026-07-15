@@ -164,11 +164,9 @@ class TestSftpUploaderMakeDirsAsync:
 
 from pydantic import ValidationError  # noqa: E402
 
-# Static, valid OpenSSH public keys used as test vectors. Kept as literals (rather
-# than generated with `cryptography`) so the pure parsing/validator tests below
-# run in CI's unit job, which installs only the `test` group and NOT the optional
-# `sftp` extra (paramiko / cryptography). Tests that actually build paramiko keys
-# or open a client guard themselves with `pytest.importorskip("paramiko")`.
+# Static OpenSSH public keys as test vectors: kept as literals (not generated with
+# `cryptography`) so the parsing/validator tests run in CI's unit job, which omits
+# the optional `sftp` extra. Tests needing paramiko use `pytest.importorskip`.
 ED25519_LINE = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOF3J5Ka7c/o1vAhfLfwqhlcW1rtB2QhHTAJJhSi6cBO"  # noqa: E501
 ED25519_BLOB = ED25519_LINE.split()[1]
 RSA_LINE = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDecqnagUMXkIIgIPUo/kioDeEIc/tVk1FFwfmewo2OiAxm/3GWnMtsCHdTv4vV3mksgkzo+1aJa+c6zTd4P2Pzgns6FKprteM7br66a1ECAZWC1CQwLS6E3T6QBoSezA88JSnjwI+H/nQaYBUKpyGaKurD/I21ZtKxtDNEaqHK1vWdWblNATX0LTUY6chCYzmU1dCJSWlafvk8zxGlD1l77mTbvpqsyNVl0169PwAraeFOcMAJ89HUIE1XeJgVNZyLHKDDThKuHW5THE/kE1zC3Ie6b+sWfg+OYCRfirl3VG0D7pDdKnoWN4U1COXeSsqVkWlubFKbICjP/v55eaDr"  # noqa: E501

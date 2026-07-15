@@ -53,12 +53,10 @@ SUPPORTED_HOST_KEY_TYPES: tuple[str, ...] = ("ssh-ed25519", "ssh-rsa")
 
 
 def _extract_ssh_key_type(raw: bytes) -> str:
-    """Read the algorithm name from a decoded SSH public key blob.
+    """Read the algorithm name (first length-prefixed field) from an SSH key blob.
 
-    SSH public keys are wire-encoded as a sequence of length-prefixed fields; the
-    first field is the algorithm name (e.g. b"ssh-ed25519"). This is
-    authoritative: the key type is derived from the key material itself, so no
-    separate type input is required.
+    The type is derived from the key material itself, so no separate type input
+    is required.
     """
     if len(raw) < 4:
         raise ValueError("host key blob is too short to contain a key type")
@@ -98,12 +96,18 @@ _EXPECTED_FIELD_COUNTS = {"ssh-ed25519": 2, "ssh-rsa": 3}
 
 
 def _validate_host_key_wire_format(raw: bytes, key_type: str) -> None:
-    """Validate the complete key wire format, not just the algorithm prefix.
+    """Validate the full key wire format, not just the algorithm prefix.
 
     ``_extract_ssh_key_type`` only reads the leading algorithm field, so a blob
-    that starts with a supported type but is truncated or padded with garbage
-    would otherwise pass config validation and fail only when a connection is
-    opened. This closes that gap so the advertised fail-fast validation holds.
+    with a supported prefix but a truncated/garbage body would otherwise pass
+    config validation and fail only at connect. This closes that gap.
+
+    Boundary: this checks *structure* only (field framing, field count, and the
+    fixed 32-byte ed25519 length), not cryptographic validity (e.g. that ssh-rsa
+    ``e``/``n`` are canonical/usable). Full validation would require building the
+    key via paramiko, which we avoid at config time so constructing
+    ``SftpConnectionConfig`` doesn't need the optional ``sftp`` extra; a
+    structurally valid but bogus key is caught later at connect (precheck).
     """
     fields = _iter_ssh_wire_fields(raw)
     expected = _EXPECTED_FIELD_COUNTS[key_type]
@@ -148,8 +152,7 @@ def parse_host_public_key(value: str) -> tuple[str, str]:
         except ValueError:
             continue
         if key_type in SUPPORTED_HOST_KEY_TYPES:
-            # Supported prefix -> validate the whole wire format so a truncated /
-            # garbage-padded blob fails here (config time) rather than at connect.
+            # Fail fast on a truncated/garbage body, not later at connect.
             _validate_host_key_wire_format(raw, key_type)
             return key_type, token
         unsupported.append(key_type)
