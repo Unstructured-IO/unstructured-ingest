@@ -12,6 +12,7 @@ from unstructured_ingest.error import (
     UserAuthError,
     UserError,
     ValueError,
+    safe_error_summary,
 )
 from unstructured_ingest.error import (
     RateLimitError as CustomRateLimitError,
@@ -131,7 +132,7 @@ class DropboxConnectionConfig(FsspecConnectionConfig):
         from dropbox.exceptions import AuthError, HttpError, RateLimitError
 
         if not isinstance(e, HttpError):
-            logger.error(f"Unhandled Dropbox exception: {repr(e)}", exc_info=True)
+            logger.error(f"Unhandled Dropbox exception: {safe_error_summary(e)}")
             return e
 
         if isinstance(e, AuthError):
@@ -151,7 +152,7 @@ class DropboxConnectionConfig(FsspecConnectionConfig):
             else:
                 return ProviderError(e.body)
 
-        logger.error(f"Unhandled Dropbox HttpError: {repr(e)}", exc_info=True)
+        logger.error(f"Unhandled Dropbox HttpError: {safe_error_summary(e)}")
         return e
 
 

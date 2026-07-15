@@ -12,7 +12,7 @@ from pydantic import Field, Secret
 from pydantic.functional_validators import BeforeValidator
 
 from unstructured_ingest.data_types.file_data import FileData, FileDataSourceMetadata
-from unstructured_ingest.error import ProviderError, UserAuthError, UserError
+from unstructured_ingest.error import ProviderError, UserAuthError, UserError, safe_error_summary
 from unstructured_ingest.interfaces import DownloadResponse
 from unstructured_ingest.logger import logger
 from unstructured_ingest.processes.connector_registry import (
@@ -271,7 +271,7 @@ class BoxConnectionConfig(FsspecConnectionConfig):
         if isinstance(e, BoxOAuthException):
             return UserAuthError(e.message)
         if not isinstance(e, BoxAPIException):
-            logger.error(f"unhandled exception from box ({type(e)}): {e}", exc_info=True)
+            logger.error(f"unhandled exception from box ({safe_error_summary(e)})")
             return e
         message = e.message or e
         if error_code_status := e.status:
@@ -280,7 +280,7 @@ class BoxConnectionConfig(FsspecConnectionConfig):
             if error_code_status >= 500:
                 return ProviderError(message)
 
-        logger.error(f"unhandled exception from box ({type(e)}): {e}", exc_info=True)
+        logger.error(f"unhandled exception from box ({safe_error_summary(e)})")
         return e
 
     @requires_dependencies(["boxsdk"], extras="box")
