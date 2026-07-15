@@ -20,6 +20,7 @@ from unstructured_ingest.error import (
     SourceConnectionError,
     SourceConnectionNetworkError,
     UnstructuredIngestError,
+    safe_error_summary,
 )
 from unstructured_ingest.interfaces import (
     AccessConfig,
@@ -170,9 +171,14 @@ class ElasticsearchIndexer(Indexer):
                             self.index_config.index_name, ", ".join(indices.keys())
                         )
                     )
+        except SourceConnectionError:
+            # Preserve our own static "index not found" guidance.
+            raise
         except Exception as e:
-            logger.error(f"failed to validate connection: {e}", exc_info=True)
-            raise SourceConnectionError(f"failed to validate connection: {e}")
+            logger.error(f"failed to validate connection: {safe_error_summary(e)}")
+            raise SourceConnectionError(
+                f"failed to validate connection: {safe_error_summary(e)}"
+            ) from None
 
     @requires_dependencies(["elasticsearch"], extras="elasticsearch")
     def load_scan(self):
@@ -394,9 +400,14 @@ class ElasticsearchUploader(Uploader):
                             self.upload_config.index_name, ", ".join(indices.keys())
                         )
                     )
+        except DestinationConnectionError:
+            # Preserve our own static "index not found" guidance.
+            raise
         except Exception as e:
-            logger.error(f"failed to validate connection: {e}", exc_info=True)
-            raise DestinationConnectionError(f"failed to validate connection: {e}")
+            logger.error(f"failed to validate connection: {safe_error_summary(e)}")
+            raise DestinationConnectionError(
+                f"failed to validate connection: {safe_error_summary(e)}"
+            ) from None
 
     @requires_dependencies(["elasticsearch"], extras="elasticsearch")
     def load_parallel_bulk(self):
@@ -444,21 +455,39 @@ class ElasticsearchUploader(Uploader):
                         self._sanitize_bulk_index_error(error) for error in e.errors
                     ]
                     logger.error(
-                        f"Batch upload failed - {e} - with following errors: {sanitized_errors}"
+                        f"Batch upload failed ({safe_error_summary(e)}) "
+                        f"with following errors: {sanitized_errors}"
                     )
-                    raise DestinationConnectionError(str(e))
+                    raise DestinationConnectionError(safe_error_summary(e)) from None
                 except Exception as e:
-                    logger.error(f"Batch upload failed - {e}")
-                    raise UnstructuredIngestError(str(e))
+                    logger.error(f"Batch upload failed - {safe_error_summary(e)}")
+                    raise UnstructuredIngestError(safe_error_summary(e)) from None
+
+    # Bulk item error fields safe to surface: operation metadata and, from the
+    # nested error object, the machine-readable exception type. Free-text fields
+    # (error.reason, error.caused_by) and the uploaded document ("data") can
+    # embed document content, so they are dropped rather than logged.
+    _SAFE_BULK_ERROR_KEYS = ("_index", "_id", "status")
 
     def _sanitize_bulk_index_error(self, error: dict[str, dict]) -> dict:
-        """Remove data uploaded to index from the log, leave only error information.
+        """Reduce a bulk item error to allowlisted, content-free fields.
 
-        Error structure is `{<operation-type>: {..., "data": <uploaded-object>}}`
+        Bulk errors have the shape `{<operation-type>: {..., "data": <doc>}}`.
+        Only operation metadata (index, id, status) and the error *type* (a
+        machine code, e.g. "mapper_parsing_exception") are kept; free-text
+        fields and the uploaded document are dropped because they can echo
+        document content.
         """
-        for error_data in error.values():
-            error_data.pop("data", None)
-        return error
+        sanitized: dict[str, dict] = {}
+        for op_type, error_data in error.items():
+            if not isinstance(error_data, dict):
+                continue
+            safe = {k: error_data[k] for k in self._SAFE_BULK_ERROR_KEYS if k in error_data}
+            nested = error_data.get("error")
+            if isinstance(nested, dict) and "type" in nested:
+                safe["error"] = {"type": nested["type"]}
+            sanitized[op_type] = safe
+        return sanitized
 
 
 elasticsearch_source_entry = SourceRegistryEntry(

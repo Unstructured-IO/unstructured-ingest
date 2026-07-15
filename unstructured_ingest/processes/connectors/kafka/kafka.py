@@ -19,6 +19,7 @@ from unstructured_ingest.error import (
     SourceConnectionNetworkError,
     UnstructuredIngestError,
     ValueError,
+    safe_error_summary,
 )
 from unstructured_ingest.interfaces import (
     AccessConfig,
@@ -179,9 +180,15 @@ class KafkaIndexer(Indexer, ABC):
                         )
                     )
                 logger.info(f"successfully checked available topics: {current_topics}")
+        except (ImportError, UnstructuredIngestError):
+            # Preserve dependency-install guidance and connector-authored typed
+            # errors; only unexpected exceptions are redacted below.
+            raise
         except Exception as e:
-            logger.error(f"failed to validate connection: {e}", exc_info=True)
-            raise SourceConnectionError(f"failed to validate connection: {e}")
+            logger.error(f"failed to validate connection: {safe_error_summary(e)}")
+            raise SourceConnectionError(
+                f"failed to validate connection: {safe_error_summary(e)}"
+            ) from None
 
 
 class KafkaDownloaderConfig(DownloaderConfig):
@@ -243,9 +250,15 @@ class KafkaUploader(Uploader, ABC):
                         )
                     )
 
+        except (ImportError, UnstructuredIngestError):
+            # Preserve dependency-install guidance and connector-authored typed
+            # errors; only unexpected exceptions are redacted below.
+            raise
         except Exception as e:
-            logger.error(f"failed to validate connection: {e}", exc_info=True)
-            raise DestinationConnectionError(f"failed to validate connection: {e}")
+            logger.error(f"failed to validate connection: {safe_error_summary(e)}")
+            raise DestinationConnectionError(
+                f"failed to validate connection: {safe_error_summary(e)}"
+            ) from None
 
     def produce_batch(self, elements: list[dict]) -> None:
         producer = self.connection_config.get_producer()

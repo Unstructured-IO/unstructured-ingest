@@ -17,6 +17,7 @@ from unstructured_ingest.error import (
     UnstructuredIngestError,
     UserAuthError,
     UserError,
+    safe_error_summary,
 )
 from unstructured_ingest.interfaces import (
     AccessConfig,
@@ -78,7 +79,7 @@ class GithubConnectionConfig(ConnectionConfig):
             return UserError(message)
         if status_code > 500:
             return ProviderError(message)
-        logger.debug(f"unhandled github error: {e}")
+        logger.debug(f"unhandled github error: {safe_error_summary(e)}")
         return e
 
     def wrap_http_error(self, e: "HTTPError") -> Exception:
@@ -89,8 +90,8 @@ class GithubConnectionConfig(ConnectionConfig):
             return UserError(e.response.text)
         if status_code > 500:
             return ProviderError(e.response.text)
-        logger.debug(f"unhandled http error: {e}")
-        return UnstructuredIngestError(str(e))
+        logger.debug(f"unhandled http error: {safe_error_summary(e)}")
+        return UnstructuredIngestError(safe_error_summary(e))
 
     @requires_dependencies(["requests"], extras="github")
     def wrap_error(self, e: Exception) -> Exception:
@@ -101,8 +102,8 @@ class GithubConnectionConfig(ConnectionConfig):
             return self.wrap_github_exception(e=e)
         if isinstance(e, HTTPError):
             return self.wrap_http_error(e=e)
-        logger.debug(f"unhandled error: {e}")
-        return UnstructuredIngestError(str(e))
+        logger.debug(f"unhandled error: {safe_error_summary(e)}")
+        return UnstructuredIngestError(safe_error_summary(e))
 
 
 class GithubIndexerConfig(IndexerConfig):
