@@ -6,7 +6,12 @@ from typing import TYPE_CHECKING, Any, Generator, TypeAlias
 from pydantic import Field, Secret
 
 from unstructured_ingest.data_types.file_data import FileData
-from unstructured_ingest.error import DestinationConnectionError, ValueError, WriteError
+from unstructured_ingest.error import (
+    DestinationConnectionError,
+    ValueError,
+    WriteError,
+    safe_error_summary,
+)
 from unstructured_ingest.interfaces import (
     AccessConfig,
     ConnectionConfig,
@@ -321,8 +326,10 @@ class AzureAISearchUploader(Uploader):
             with self.connection_config.get_search_client() as search_client:
                 search_client.get_document_count()
         except Exception as e:
-            logger.error(f"failed to validate connection: {e}", exc_info=True)
-            raise DestinationConnectionError(f"failed to validate connection: {e}")
+            logger.error(f"failed to validate connection: {safe_error_summary(e)}")
+            raise DestinationConnectionError(
+                f"failed to validate connection: {safe_error_summary(e)}"
+            ) from None
 
     def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
         logger.info(

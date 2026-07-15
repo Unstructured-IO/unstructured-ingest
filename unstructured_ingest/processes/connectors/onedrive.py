@@ -19,8 +19,10 @@ from unstructured_ingest.error import (
     DestinationConnectionError,
     SourceConnectionError,
     SourceConnectionNetworkError,
+    UnstructuredIngestError,
     UserAuthError,
     ValueError,
+    safe_error_summary,
 )
 from unstructured_ingest.interfaces import (
     AccessConfig,
@@ -250,9 +252,15 @@ class OnedriveIndexer(Indexer):
                 raise SourceConnectionError(
                     "{} ({})".format(error, token_resp.get("error_description"))
                 )
+        except (ImportError, UnstructuredIngestError):
+            # Preserve dependency-install guidance and connector-authored typed
+            # errors; only unexpected exceptions are redacted below.
+            raise
         except Exception as e:
-            logger.error(f"failed to validate connection: {e}", exc_info=True)
-            raise SourceConnectionError(f"failed to validate connection: {e}")
+            logger.error(f"failed to validate connection: {safe_error_summary(e)}")
+            raise SourceConnectionError(
+                f"failed to validate connection: {safe_error_summary(e)}"
+            ) from None
 
     def list_objects_sync(self, folder: DriveItem, recursive: bool) -> list["DriveItem"]:
         drive_items = folder.children.get().execute_query()
@@ -687,9 +695,15 @@ class OnedriveUploader(Uploader):
                     raise e
                 folder = root.create_folder(root_folder).execute_query()
                 logger.info(f"successfully created folder: {folder.name}")
+        except (ImportError, UnstructuredIngestError):
+            # Preserve dependency-install guidance and connector-authored typed
+            # errors; only unexpected exceptions are redacted below.
+            raise
         except Exception as e:
-            logger.error(f"failed to validate connection: {e}", exc_info=True)
-            raise SourceConnectionError(f"failed to validate connection: {e}")
+            logger.error(f"failed to validate connection: {safe_error_summary(e)}")
+            raise SourceConnectionError(
+                f"failed to validate connection: {safe_error_summary(e)}"
+            ) from None
 
     @requires_dependencies(["office365"], extras="onedrive")
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:

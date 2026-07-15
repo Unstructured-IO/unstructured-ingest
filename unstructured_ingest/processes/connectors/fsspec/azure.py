@@ -8,7 +8,13 @@ from typing import TYPE_CHECKING, Any, Generator, Optional
 from pydantic import Field, Secret
 
 from unstructured_ingest.data_types.file_data import FileDataSourceMetadata
-from unstructured_ingest.error import ProviderError, UserAuthError, UserError, ValueError
+from unstructured_ingest.error import (
+    ProviderError,
+    UserAuthError,
+    UserError,
+    ValueError,
+    safe_error_summary,
+)
 from unstructured_ingest.logger import logger
 from unstructured_ingest.processes.connector_registry import (
     DestinationRegistryEntry,
@@ -119,7 +125,7 @@ class AzureConnectionConfig(FsspecConnectionConfig):
         from azure.core.exceptions import ClientAuthenticationError, HttpResponseError
 
         if not isinstance(e, HttpResponseError):
-            logger.error(f"unhandled exception from azure ({type(e)}): {e}", exc_info=True)
+            logger.error(f"unhandled exception from azure ({safe_error_summary(e)})")
             return e
         if isinstance(e, ClientAuthenticationError):
             return UserAuthError(e.reason)
@@ -130,7 +136,7 @@ class AzureConnectionConfig(FsspecConnectionConfig):
                 return UserError(message)
             if status_code >= 500:
                 return ProviderError(message)
-        logger.error(f"unhandled exception from azure ({type(e)}): {e}", exc_info=True)
+        logger.error(f"unhandled exception from azure ({safe_error_summary(e)})")
         return e
 
 
