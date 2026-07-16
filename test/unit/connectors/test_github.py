@@ -173,7 +173,10 @@ def test_wrap_github_exception_unauthorized():
         e = SimpleNamespace(data={"message": "Bad credentials"}, status=401)
         error = _connection_config().wrap_github_exception(e)
     assert isinstance(error, UserAuthError)
-    assert "Bad credentials" in str(error)
+    # The provider's free-form error body must not leak into the raised message; only
+    # the sanitized summary (type + status) is surfaced.
+    assert "Bad credentials" not in str(error)
+    assert "401" in str(error)
 
 
 def test_wrap_github_exception_rate_limit_by_type():
@@ -204,7 +207,7 @@ def test_wrap_github_exception_unhandled_returns_original():
 
 
 def test_wrap_github_exception_non_dict_data():
-    """Non-dict e.data must not blow up message extraction."""
+    """Non-dict e.data must not break classification (the body is not read anymore)."""
     patcher, exc = _patch_github_module()
     with patcher:
         e = exc.GithubException(status=401, data="not-a-dict")
@@ -698,6 +701,44 @@ def test_wrap_http_error_429_is_rate_limit_error():
     err = _connection_config().wrap_http_error(SimpleNamespace(response=resp))
     assert isinstance(err, RateLimitError)
     assert err.retry_after == 12.0
+
+
+def test_wrap_http_error_secondary_rate_limit_403_is_rate_limit_error():
+    # Secondary/abuse limit: GitHub sends 403 + Retry-After while the PRIMARY budget
+    # (x-ratelimit-remaining) is still positive. Must be a retriable RateLimitError,
+    # not a permanent UserAuthError.
+    resp = SimpleNamespace(
+        status_code=403,
+        text="You have exceeded a secondary rate limit",
+        headers={"Retry-After": "45", "x-ratelimit-remaining": "4999"},
+    )
+    err = _connection_config().wrap_http_error(SimpleNamespace(response=resp))
+    assert isinstance(err, RateLimitError)
+    assert err.retry_after == 45.0
+
+
+def test_wrap_github_exception_secondary_rate_limit_403_is_rate_limit_error():
+    # Same secondary-limit case via PyGithub, but as a plain GithubException (not typed
+    # RateLimitExceededException) — header detection must still classify it as a throttle.
+    patcher, exc = _patch_github_module()
+    with patcher:
+        e = exc.GithubException(
+            status=403,
+            data={"message": "You have exceeded a secondary rate limit"},
+            headers={"Retry-After": "60", "x-ratelimit-remaining": "4321"},
+        )
+        err = _connection_config().wrap_github_exception(e)
+    assert isinstance(err, RateLimitError)
+    assert err.retry_after == 60.0
+
+
+def test_wrap_http_error_does_not_leak_response_body():
+    # The raw upstream response body must never reach the raised error message.
+    secret = "ghs_supersecrettoken_should_never_surface"
+    resp = SimpleNamespace(status_code=500, text=f"internal error {secret}", headers={})
+    err = _connection_config().wrap_http_error(SimpleNamespace(response=resp))
+    assert isinstance(err, ProviderError)
+    assert secret not in str(err)
 
 
 def test_wrap_error_maps_network_error_to_retriable():

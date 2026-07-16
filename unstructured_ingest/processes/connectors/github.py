@@ -108,6 +108,22 @@ def _rate_limit_backoff(headers: Any) -> Optional[float]:
     return None
 
 
+def _is_rate_limited(status_code: Optional[int], headers: Any) -> bool:
+    """True when a GitHub response is throttled. 429 is always a throttle; a 403 is a
+    throttle when the primary window is exhausted (``x-ratelimit-remaining: 0``) OR a
+    ``Retry-After`` header is present — secondary/abuse limits set ``Retry-After`` even
+    while the primary budget is still positive, and those must be retried, not treated
+    as a permanent auth failure."""
+    if status_code == 429:
+        return True
+    if status_code == 403:
+        if _header_value(headers, "Retry-After") is not None:
+            return True
+        if str(_header_value(headers, "x-ratelimit-remaining")) == "0":
+            return True
+    return False
+
+
 def _honor_retry_after(base_seconds: float, exc: BaseException) -> float:
     """Use the server's stamped ``retry_after`` when it exceeds the backoff, capped."""
     retry_after = getattr(exc, "retry_after", None)
@@ -200,18 +216,23 @@ class GithubConnectionConfig(ConnectionConfig):
         from github.GithubException import RateLimitExceededException
 
         headers = getattr(e, "headers", None) or {}
-        data = e.data if isinstance(e.data, dict) else {}
-        message = data.get("message") or safe_error_summary(e)
-        # PyGithub raises RateLimitExceededException with a 403 status for primary
-        # rate limits, so classify by type before falling back to the status map.
-        if isinstance(e, RateLimitExceededException):
+        # Never interpolate the provider's free-form error body into raised/logged
+        # messages — it can carry request data or secrets. The sanitized summary
+        # (type + allowlisted status/fields) is enough to act on.
+        summary = safe_error_summary(e)
+        # PyGithub types primary rate limits as RateLimitExceededException, but relies on
+        # message-text matching for secondary/abuse limits, so also detect a throttle from
+        # the response headers (Retry-After / exhausted window).
+        if isinstance(e, RateLimitExceededException) or _is_rate_limited(
+            getattr(e, "status", None), headers
+        ):
             error: Optional[Exception] = RateLimitError(
-                f"GitHub API rate limit exceeded: {message}"
+                f"GitHub API rate limit exceeded: {summary}"
             )
         else:
-            error = self._error_for_status(e.status, message)
+            error = self._error_for_status(e.status, summary)
             if error is None:
-                logger.debug(f"unhandled github error: {safe_error_summary(e)}")
+                logger.debug(f"unhandled github error: {summary}")
                 return e
         # Stamp the throttle backoff so a retry can honor GitHub's requested window.
         if isinstance(error, RateLimitError):
@@ -224,22 +245,21 @@ class GithubConnectionConfig(ConnectionConfig):
         response = e.response
         headers = getattr(response, "headers", None) or {}
         status_code = response.status_code
-        # A 403 whose primary rate-limit window is exhausted is a throttle, not an auth
-        # failure — classify it as a (retriable) RateLimitError and honor its backoff.
-        rate_limited = status_code == 429 or (
-            status_code == 403 and str(_header_value(headers, "x-ratelimit-remaining")) == "0"
-        )
-        if rate_limited:
-            error = RateLimitError(f"GitHub API rate limit exceeded: {response.text}")
+        # Sanitized summary only — never the raw (unbounded) response body.
+        summary = safe_error_summary(e)
+        # 429, or a 403 that is a primary (exhausted window) or secondary/abuse
+        # (Retry-After present) throttle, is a retriable RateLimitError, not an auth error.
+        if _is_rate_limited(status_code, headers):
+            error = RateLimitError(f"GitHub API rate limit exceeded: {summary}")
             backoff = _rate_limit_backoff(headers)
             if backoff is not None:
                 error.retry_after = backoff
             return error
-        mapped = self._error_for_status(status_code, response.text)
+        mapped = self._error_for_status(status_code, summary)
         if mapped is not None:
             return mapped
-        logger.debug(f"unhandled http error: {safe_error_summary(e)}")
-        return UnstructuredIngestError(safe_error_summary(e))
+        logger.debug(f"unhandled http error: {summary}")
+        return UnstructuredIngestError(summary)
 
     @requires_dependencies(["requests"], extras="github")
     def wrap_error(self, e: Exception) -> Exception:
