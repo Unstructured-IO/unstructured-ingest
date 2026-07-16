@@ -269,11 +269,11 @@ class BoxConnectionConfig(FsspecConnectionConfig):
         from boxsdk.exception import BoxAPIException, BoxOAuthException
 
         if isinstance(e, BoxOAuthException):
-            return UserAuthError(e.message)
+            return UserAuthError(safe_error_summary(e))
         if not isinstance(e, BoxAPIException):
             logger.error(f"unhandled exception from box ({safe_error_summary(e)})")
             return e
-        message = e.message or e
+        message = safe_error_summary(e)
         if error_code_status := e.status:
             if 400 <= error_code_status < 500:
                 return UserError(message)

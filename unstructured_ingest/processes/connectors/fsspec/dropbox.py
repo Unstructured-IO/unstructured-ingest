@@ -136,21 +136,15 @@ class DropboxConnectionConfig(FsspecConnectionConfig):
             return e
 
         if isinstance(e, AuthError):
-            raise UserAuthError(e.error)
+            raise UserAuthError(safe_error_summary(e))
         elif isinstance(e, RateLimitError):
             return CustomRateLimitError(e.error)
 
         status_code = e.status_code
         if 400 <= status_code < 500:
-            if body := getattr(e, "body", None):
-                return UserError(body)
-            else:
-                return UserError(e.body)
+            return UserError(safe_error_summary(e))
         if status_code >= 500:
-            if body := getattr(e, "body", None):
-                return ProviderError(body)
-            else:
-                return ProviderError(e.body)
+            return ProviderError(safe_error_summary(e))
 
         logger.error(f"Unhandled Dropbox HttpError: {safe_error_summary(e)}")
         return e
