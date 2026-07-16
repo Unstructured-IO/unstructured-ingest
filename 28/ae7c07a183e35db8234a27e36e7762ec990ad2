@@ -1,0 +1,19 @@
+unstructured_ingest/error.py
+  s_7f682e0f06a699::t_978c5e6d17f7bd 28-35
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "28ae7c07a183e35db8234a27e36e7762ec990ad2",
+  "prompts": {},
+  "sessions": {
+    "s_7f682e0f06a699": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d8bc9139-e708-46cf-8312-972bb2d5402b",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulkarayan <pk@unstructured.io>"
+    }
+  }
+}
