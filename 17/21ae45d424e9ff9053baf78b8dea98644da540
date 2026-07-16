@@ -16,6 +16,7 @@ test/unit/connectors/duckdb/test_duckdb.py
   s_7f682e0f06a699::t_380e8a66fcbc87 1-28,31,37-41
 CHANGELOG.md
   s_7f682e0f06a699::t_b220d8ba6447e8 2-6
+  s_7f682e0f06a699::t_0b06af78dc5cd3 1
 test/unit/connectors/databricks/test_volumes.py
   s_7f682e0f06a699::t_c778fdc478459c 44
   s_7f682e0f06a699::t_0a2b6d9679fe8a 1-21,23-31,33-43,45-55,57-69,71-75
@@ -23,6 +24,8 @@ test/unit/connectors/databricks/test_volumes.py
   s_7f682e0f06a699::t_fb9ef8c7d3e867 22
   s_7f682e0f06a699::t_ff90cbe4e6fef9 70
   s_7f682e0f06a699::t_7c5775032dd28b 56
+unstructured_ingest/__version__.py
+  s_7f682e0f06a699::t_0b06af78dc5cd3 1
 ---
 {
   "schema_version": "authorship/3.0.0",
