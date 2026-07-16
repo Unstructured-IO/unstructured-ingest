@@ -1,0 +1,22 @@
+test/unit/connectors/motherduck/test_motherduck.py
+  s_7f682e0f06a699::t_8d1eeebaa190b7 1-37,43-46
+  s_7f682e0f06a699::t_4bafee95a72b39 38-42
+CHANGELOG.md
+  s_7f682e0f06a699::t_2c364b2b127495 2-6
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "c8b007ee71ce2cd60ddbb89d48fce9de9604916f",
+  "prompts": {},
+  "sessions": {
+    "s_7f682e0f06a699": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d8bc9139-e708-46cf-8312-972bb2d5402b",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulkarayan <pk@unstructured.io>"
+    }
+  }
+}
