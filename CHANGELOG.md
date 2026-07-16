@@ -1,8 +1,39 @@
-## [1.6.29]
+## [1.7.1]
 
 ### Enhancements
 
 - **feat(PLU-441): add OAuth support to the GitHub source connector.** `GithubAccessConfig` now accepts `oauth_token` and `refresh_token` alongside the existing `access_token` (PAT), matching the field contract the platform's `init-oauth-refresh` container expects. The connector reads whichever access token is populated (`oauth_token` takes precedence) and builds its PyGithub client; token refresh is handled upstream by the platform, not the connector (per PLU-381). PAT (`access_token`) configurations continue to work unchanged, and PAT and OAuth auth are mutually exclusive. GitHub API errors are now classified consistently: an invalid/expired/revoked token (401) or a missing scope / insufficient permission (403) maps to `UserAuthError` so the platform surfaces a reconnect-required state, rate limits map to `RateLimitError`, and 5xx responses (including exactly 500, previously mis-bucketed) map to `ProviderError`.
+
+## [1.7.0]
+
+### Enhancements
+
+- **feat(sftp): verify SFTP server host key.** `SftpConnectionConfig` gains an optional `host_public_key` field. It accepts a base64 blob, an OpenSSH `.pub` line, or an ssh-keyscan/known_hosts line; the key algorithm (`ssh-ed25519` / `ssh-rsa`) is auto-detected from the key itself, so no key-type input is required. When set, the connector pins the expected host key and uses paramiko `RejectPolicy` to verify the server identity, rejecting a mismatched/unknown key instead of fsspec's default `AutoAddPolicy` (which silently trusts any key). An unparsable or unsupported key fails fast at config validation; a well-formed but wrong key surfaces as a host-key mismatch on the first connect (precheck). When `host_public_key` is omitted, connections behave as before but now log a warning that the server identity is unverified. Username/password remains the client authentication method in both cases.
+
+## [1.6.32]
+
+### Enhancements
+
+- **feat: Slack indexer emits records newest-first within each channel.** `SlackIndexer.run` sorts each channel's records (conversation-day packages and file attachments) by `metadata.version` descending before yielding, so the most recent content is indexed first.
+
+## [1.6.31]
+
+### Fixes
+
+- **fix(security): redact credential-bearing exception details from connector error logging.** Connector precheck, upload, and path-validation error paths — and the central `UnstructuredIngestError.wrap` decorator — interpolated caught exception text into logged and raised messages, which could echo credentials (tokens, passwords, DSNs, service-account JSON). These messages now carry a sanitized summary via the new `safe_error_summary()` helper: the exception type name plus allowlisted machine-readable fields (integer HTTP statuses, SDK error-code enums, opaque request/correlation IDs — e.g. `SlackApiError(status_code=401, error=invalid_auth)`), never free-form exception text. `exc_info` frame dumps were removed from credential-bearing paths (a rendered traceback's terminal line re-embeds `str(e)`). The GCS connector also no longer echoes raw service-account JSON via `OSError: File name too long` when key material is passed where a filename is expected. Exception classes and control flow are unchanged; only log and error-message payloads were sanitized.
+- **fix(security): preserve connector-authored guidance and harden the redaction.** Connector prechecks re-raise dependency-install hints (`requires_dependencies`) and connector-authored typed errors (missing index/database/collection, SCRAM-SHA-1 remediation, OAuth error codes, corpus-name mismatch) instead of flattening them to a bare type name. Every redacted re-raise now suppresses the provider exception chain (`from None`) so its text cannot resurface through traceback logging. The GCS service-account guard is narrowed to the too-long-filename case (`ENAMETOOLONG`) so a genuine filesystem error on a real path is no longer masked as "Invalid auth token value". Elasticsearch bulk-upload failure logs now allowlist safe fields (`_index`, `_id`, `status`, `error.type`) instead of only stripping the uploaded document, so document content in `error.reason` is no longer logged.
+
+## [1.6.30]
+
+### Fixes
+
+- **fix(ENG-1322): escape SQL metacharacters in databricks_volume_delta_tables statements.** Filenames or record identifiers containing a single quote or backslash no longer break (or inject into) the single-quoted `PUT`/`DELETE` string literals, and filenames containing a backtick no longer break the backtick-quoted volume path in the `INSERT ... FROM json.` clause (all surfaced as SQLSTATE 42601). A shared `quote_literal` helper escapes both backslashes and single quotes (Databricks processes backslash escapes in string literals by default) for the volume/staging paths and the delete record identifier, and the `INSERT` source path now goes through the existing `quote_identifier` helper.
+
+## [1.6.29]
+
+### Fixes
+
+- **fix(sharepoint): surface the real upstream HTTP status instead of masking every error as "Site not found".** SharePoint upstream errors now map to typed exceptions carrying the real status code and response body (instead of a generic `400`), and genuine throttles are retried, honoring the server's `Retry-After` backoff.
 
 ## [1.6.28]
 

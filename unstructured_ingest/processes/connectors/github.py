@@ -19,6 +19,7 @@ from unstructured_ingest.error import (
     UserAuthError,
     UserError,
     ValueError,
+    safe_error_summary,
 )
 from unstructured_ingest.interfaces import (
     AccessConfig,
@@ -127,7 +128,7 @@ class GithubConnectionConfig(ConnectionConfig):
         from github.GithubException import RateLimitExceededException
 
         data = e.data if isinstance(e.data, dict) else {}
-        message = data.get("message") or str(e)
+        message = data.get("message") or safe_error_summary(e)
         # PyGithub raises RateLimitExceededException with a 403 status for primary
         # rate limits, so classify by type before falling back to the status map.
         if isinstance(e, RateLimitExceededException):
@@ -135,15 +136,15 @@ class GithubConnectionConfig(ConnectionConfig):
         error = self._error_for_status(e.status, message)
         if error is not None:
             return error
-        logger.debug(f"unhandled github error: {e}")
+        logger.debug(f"unhandled github error: {safe_error_summary(e)}")
         return e
 
     def wrap_http_error(self, e: "HTTPError") -> Exception:
         error = self._error_for_status(e.response.status_code, e.response.text)
         if error is not None:
             return error
-        logger.debug(f"unhandled http error: {e}")
-        return UnstructuredIngestError(str(e))
+        logger.debug(f"unhandled http error: {safe_error_summary(e)}")
+        return UnstructuredIngestError(safe_error_summary(e))
 
     @requires_dependencies(["requests"], extras="github")
     def wrap_error(self, e: Exception) -> Exception:
@@ -154,8 +155,8 @@ class GithubConnectionConfig(ConnectionConfig):
             return self.wrap_github_exception(e=e)
         if isinstance(e, HTTPError):
             return self.wrap_http_error(e=e)
-        logger.debug(f"unhandled error: {e}")
-        return UnstructuredIngestError(str(e))
+        logger.debug(f"unhandled error: {safe_error_summary(e)}")
+        return UnstructuredIngestError(safe_error_summary(e))
 
 
 class GithubIndexerConfig(IndexerConfig):

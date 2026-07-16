@@ -20,7 +20,7 @@ from unstructured_ingest.data_types.file_data import (
     FileDataSourceMetadata,
     SourceIdentifiers,
 )
-from unstructured_ingest.error import SourceConnectionError, ValueError
+from unstructured_ingest.error import SourceConnectionError, ValueError, safe_error_summary
 from unstructured_ingest.interfaces import (
     AccessConfig,
     ConnectionConfig,
@@ -248,11 +248,14 @@ class SlackIndexer(Indexer):
             if not messages:
                 continue
 
-            for day, day_messages in self._group_messages_by_day(messages).items():
-                yield self._messages_to_file_data(day_messages, channel, client, day)
-
-            for file_data in self._message_files_to_file_data(messages, channel):
-                yield file_data
+            # NOTE: Emit a channel's records newest-first so recent content is processed first.
+            records = [
+                self._messages_to_file_data(day_messages, channel, client, day)
+                for day, day_messages in self._group_messages_by_day(messages).items()
+            ]
+            records.extend(self._message_files_to_file_data(messages, channel))
+            records.sort(key=self._recency_key, reverse=True)
+            yield from records
 
     @staticmethod
     def _message_day(message: dict) -> Optional[str]:
@@ -290,6 +293,15 @@ class SlackIndexer(Indexer):
         if not candidates:
             return None
         return max(candidates, key=float)
+
+    @staticmethod
+    def _recency_key(file_data: FileData) -> float:
+        # NOTE: version is set for both record kinds (conversation package and file), so it
+        # orders them against each other.
+        try:
+            return float(file_data.metadata.version)
+        except (TypeError, builtins.ValueError):
+            return 0.0
 
     def _messages_to_file_data(
         self,
@@ -457,12 +469,20 @@ class SlackIndexer(Indexer):
         else:
             self._validate_channels_bot(client, granted_scopes)
 
-    @SourceConnectionError.wrap
     def precheck(self) -> None:
-        client = self.connection_config.get_client()
-        granted_scopes = self._get_granted_scopes(client)
-        token = self.connection_config.access_config.get_secret_value().token
-        self._validate_channels(client, _token_kind(token), granted_scopes)
+        try:
+            client = self.connection_config.get_client()
+            granted_scopes = self._get_granted_scopes(client)
+            token = self.connection_config.access_config.get_secret_value().token
+            self._validate_channels(client, _token_kind(token), granted_scopes)
+        except SourceConnectionError:
+            raise
+        except Exception as e:
+            # 'from None' suppresses the provider exception chain so its text
+            # cannot resurface via traceback logging.
+            raise SourceConnectionError(
+                f"failed to validate connection: {safe_error_summary(e)}"
+            ) from None
 
 
 class SlackDownloaderConfig(DownloaderConfig):
