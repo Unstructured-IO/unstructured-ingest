@@ -138,14 +138,14 @@ class S3ConnectionConfig(FsspecConnectionConfig):
         # s3fs maps botocore errors into python ones using mapping here:
         # https://github.com/fsspec/s3fs/blob/main/s3fs/errors.py
         if isinstance(e, PermissionError):
-            return UserAuthError(e)
+            return UserAuthError(safe_error_summary(e))
         if isinstance(e, FileNotFoundError):
             return UserError(f"File not found: {e}")
         if cause := getattr(e, "__cause__", None):
             error_response = cause.response
             error_meta = error_response["ResponseMetadata"]
             http_code = error_meta["HTTPStatusCode"]
-            message = error_response["Error"].get("Message", str(e))
+            message = safe_error_summary(e)
             if 400 <= http_code < 500:
                 return UserError(message)
             if http_code >= 500:
