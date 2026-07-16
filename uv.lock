@@ -7128,6 +7128,7 @@ gcs = [
 github = [
     { name = "pygithub" },
     { name = "requests" },
+    { name = "tenacity" },
 ]
 gitlab = [
     { name = "python-gitlab" },
@@ -7470,6 +7471,7 @@ requires-dist = [
     { name = "slack-sdk", extras = ["optional"], marker = "extra == 'slack'" },
     { name = "snowflake-connector-python", marker = "extra == 'snowflake'" },
     { name = "tenacity", marker = "extra == 'delta-table'" },
+    { name = "tenacity", marker = "extra == 'github'" },
     { name = "tenacity", marker = "extra == 'google-drive'" },
     { name = "tenacity", marker = "extra == 'ibm-watsonx-s3'" },
     { name = "tenacity", marker = "extra == 'onedrive'" },
