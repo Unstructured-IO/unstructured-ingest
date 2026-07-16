@@ -5,6 +5,7 @@ from unittest import mock
 
 import pytest
 
+from unstructured_ingest.data_types.file_data import FileData
 from unstructured_ingest.error import (
     ProviderError,
     RateLimitError,
@@ -16,8 +17,11 @@ from unstructured_ingest.error import (
 from unstructured_ingest.processes.connectors.github import (
     GithubAccessConfig,
     GithubConnectionConfig,
+    GithubDownloader,
+    GithubDownloaderConfig,
     GithubIndexer,
     GithubIndexerConfig,
+    _GitFile,
 )
 
 REPO = "dcneiner/Downloadify"
@@ -128,24 +132,37 @@ def test_wrap_http_error_unhandled_falls_back():
     assert isinstance(error, UnstructuredIngestError)
 
 
-def _patch_github_exceptions():
-    """Inject a fake github.GithubException module exposing RateLimitExceededException."""
+def _patch_github_module():
+    """Inject a fake ``github``/``github.GithubException`` so tests don't require the
+    optional pygithub extra. Returns the patcher and the fake exception module."""
     github_mod = types.ModuleType("github")
     exc_mod = types.ModuleType("github.GithubException")
 
-    class RateLimitExceededException(Exception):
+    class GithubException(Exception):
+        def __init__(self, status=None, data=None, headers=None):
+            self.status = status
+            self.data = data if data is not None else {}
+            self.headers = headers
+            super().__init__(str(data))
+
+    class RateLimitExceededException(GithubException):
         pass
 
+    class UnknownObjectException(GithubException):
+        pass
+
+    exc_mod.GithubException = GithubException
     exc_mod.RateLimitExceededException = RateLimitExceededException
+    exc_mod.UnknownObjectException = UnknownObjectException
     github_mod.GithubException = exc_mod
     patcher = mock.patch.dict(
         sys.modules, {"github": github_mod, "github.GithubException": exc_mod}
     )
-    return patcher, RateLimitExceededException
+    return patcher, exc_mod
 
 
 def test_wrap_github_exception_unauthorized():
-    patcher, _ = _patch_github_exceptions()
+    patcher, _ = _patch_github_module()
     with patcher:
         e = SimpleNamespace(data={"message": "Bad credentials"}, status=401)
         error = _connection_config().wrap_github_exception(e)
@@ -154,9 +171,9 @@ def test_wrap_github_exception_unauthorized():
 
 
 def test_wrap_github_exception_rate_limit_by_type():
-    patcher, RateLimitExceededException = _patch_github_exceptions()
+    patcher, exc = _patch_github_module()
     with patcher:
-        e = RateLimitExceededException()
+        e = exc.RateLimitExceededException()
         e.data = {"message": "API rate limit exceeded"}
         e.status = 403  # GitHub returns 403 for primary rate limits
         error = _connection_config().wrap_github_exception(e)
@@ -164,69 +181,402 @@ def test_wrap_github_exception_rate_limit_by_type():
 
 
 def test_wrap_github_exception_forbidden_is_auth_error():
-    patcher, _ = _patch_github_exceptions()
+    patcher, _ = _patch_github_module()
     with patcher:
         e = SimpleNamespace(data={"message": "Resource not accessible"}, status=403)
         error = _connection_config().wrap_github_exception(e)
     assert isinstance(error, UserAuthError)
 
 
+def test_wrap_github_exception_unhandled_returns_original():
+    """An unclassified status (e.g. 302) returns the original exception unchanged."""
+    patcher, exc = _patch_github_module()
+    with patcher:
+        e = exc.GithubException(status=302, data={"message": "redirect"})
+        wrapped = _connection_config().wrap_github_exception(e)
+    assert wrapped is e
+
+
+def test_wrap_github_exception_non_dict_data():
+    """Non-dict e.data must not blow up message extraction."""
+    patcher, exc = _patch_github_module()
+    with patcher:
+        e = exc.GithubException(status=401, data="not-a-dict")
+        wrapped = _connection_config().wrap_github_exception(e)
+    assert isinstance(wrapped, UserAuthError)
+
+
+def test_wrap_error_dispatches_github_exception():
+    patcher, exc = _patch_github_module()
+    with patcher:
+        e = exc.GithubException(status=401, data={"message": "Bad creds"})
+        wrapped = _connection_config().wrap_error(e)
+    assert isinstance(wrapped, UserAuthError)
+
+
+def test_wrap_error_dispatches_http_error():
+    import requests
+
+    patcher, _ = _patch_github_module()
+    e = requests.HTTPError(response=SimpleNamespace(status_code=404, text="nope"))
+    with patcher:
+        wrapped = _connection_config().wrap_error(e)
+    assert isinstance(wrapped, UserError)
+
+
+def test_wrap_error_generic_returns_ingest_error():
+    patcher, _ = _patch_github_module()
+    with patcher:
+        wrapped = _connection_config().wrap_error(RuntimeError("weird"))
+    assert isinstance(wrapped, UnstructuredIngestError)
+
+
 # ---------------------------------------------------------------------------
-# metadata.version / date_modified
+# Indexer: version, listing, truncation, and API-call economy
 # ---------------------------------------------------------------------------
 
 
-def _indexer() -> GithubIndexer:
+def _indexer(**index_kwargs) -> GithubIndexer:
     return GithubIndexer(
         connection_config=_connection_config(),
-        index_config=GithubIndexerConfig(),
+        index_config=GithubIndexerConfig(**index_kwargs),
     )
 
 
-def _tree_element(**overrides) -> SimpleNamespace:
-    element = SimpleNamespace(
+def _entry(path, type="blob", sha="sha", size=1, mode="100644", url="u"):
+    return SimpleNamespace(path=path, type=type, sha=sha, size=size, mode=mode, url=url)
+
+
+class _FakeTree:
+    def __init__(self, entries, truncated=False):
+        self.tree = entries
+        self.truncated = truncated
+
+
+class _FakeRepo:
+    """Records get_git_tree calls and serves trees keyed by tree-ish."""
+
+    def __init__(self, trees, default_branch="main"):
+        self._trees = trees
+        self.default_branch = default_branch
+        self.get_git_tree_calls = []
+
+    def get_git_tree(self, tree_ish, recursive=False):
+        self.get_git_tree_calls.append((tree_ish, recursive))
+        return self._trees[tree_ish]
+
+
+def test_convert_element_maps_git_file_to_file_data():
+    """convert_element uses the blob SHA as version and carries size/mode/url through."""
+    indexer = _indexer()
+    git_file = _GitFile(
         path="src/app.py",
-        url="https://api.github.com/repos/dcneiner/Downloadify/git/blobs/deadbeef",
         sha="deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
         size=123,
         mode="100644",
-        last_modified_datetime=None,
+        url="https://api.github.com/repos/dcneiner/Downloadify/git/blobs/deadbeef",
     )
-    for key, value in overrides.items():
-        setattr(element, key, value)
-    return element
+
+    file_data = indexer.convert_element(git_file, "main")
+
+    assert file_data.metadata.version == git_file.sha
+    assert file_data.metadata.filesize_bytes == 123
+    assert file_data.metadata.date_modified is None  # no reliable per-file source
+    assert file_data.source_identifiers.relative_path == "src/app.py"
+    assert file_data.source_identifiers.fullpath == "main/src/app.py"
+    assert file_data.display_name.endswith("/blob/main/src/app.py")
 
 
-def test_convert_element_uses_blob_sha_as_version(monkeypatch):
-    """metadata.version must be the per-file git blob SHA (not the shared tree ETag)."""
+def test_list_files_fast_path_skips_empties_dirs_and_submodules():
+    repo = _FakeRepo(
+        {
+            "main": _FakeTree(
+                [
+                    _entry("README.md", size=10),
+                    _entry("empty.txt", size=0),  # empty file -> skipped
+                    _entry("src", type="tree", size=None),  # directory -> skipped
+                    _entry("vendored", type="commit", size=None),  # submodule -> skipped
+                    _entry("src/app.py", size=42),
+                ]
+            )
+        }
+    )
     indexer = _indexer()
-    monkeypatch.setattr(indexer, "get_branch", lambda: "main")
-    element = _tree_element()
 
-    file_data = indexer.convert_element(element)
+    files = indexer.list_files(repo, "main")
 
-    assert file_data.metadata.version == element.sha
+    assert sorted(f.path for f in files) == ["README.md", "src/app.py"]
+    # Fast path is a single recursive call.
+    assert repo.get_git_tree_calls == [("main", True)]
 
 
-def test_convert_element_null_guards_missing_date_modified(monkeypatch):
-    """A missing Last-Modified header (None) must not crash indexing."""
+def test_list_files_falls_back_to_per_directory_walk_when_truncated():
+    repo = _FakeRepo(
+        {
+            # Recursive call truncates -> triggers the walk.
+            "main": _FakeTree([], truncated=True),
+            # Walk: root is fetched non-recursively, then each subtree by sha.
+            "main_nonrecursive": _FakeTree(
+                [_entry("README.md", size=10), _entry("src", type="tree", sha="src-sha", size=None)]
+            ),
+            "src-sha": _FakeTree([_entry("app.py", size=42, sha="app-sha")]),
+        }
+    )
+
+    # get_git_tree is called with the same tree-ish "main" for both the recursive
+    # probe and the non-recursive root walk; disambiguate by the recursive flag.
+    def get_git_tree(tree_ish, recursive=False):
+        repo.get_git_tree_calls.append((tree_ish, recursive))
+        if tree_ish == "main":
+            return repo._trees["main"] if recursive else repo._trees["main_nonrecursive"]
+        return repo._trees[tree_ish]
+
+    repo.get_git_tree = get_git_tree
     indexer = _indexer()
-    monkeypatch.setattr(indexer, "get_branch", lambda: "main")
-    element = _tree_element(last_modified_datetime=None)
 
-    file_data = indexer.convert_element(element)
+    files = indexer.list_files(repo, "main")
 
-    assert file_data.metadata.date_modified is None
+    assert sorted(f.path for f in files) == ["README.md", "src/app.py"]
+    assert ("main", True) in repo.get_git_tree_calls  # recursive probe
+    assert ("main", False) in repo.get_git_tree_calls  # root walk
+    assert ("src-sha", False) in repo.get_git_tree_calls  # subtree walk
 
 
-def test_convert_element_sets_date_modified_when_present(monkeypatch):
-    from datetime import datetime, timezone
+def test_run_fetches_repo_only_once(monkeypatch):
+    """Regression guard: convert_element must not re-fetch the repo per file."""
+    repo = _FakeRepo(
+        {"main": _FakeTree([_entry("a.py", size=1, sha="s1"), _entry("b.py", size=1, sha="s2")])}
+    )
+    calls = {"get_repo": 0}
+
+    def fake_get_repo(self):
+        calls["get_repo"] += 1
+        return repo
+
+    monkeypatch.setattr(GithubConnectionConfig, "get_repo", fake_get_repo)
+    indexer = _indexer()
+
+    file_data = list(indexer.run())
+
+    assert calls["get_repo"] == 1  # not 2N + 1
+    assert repo.get_git_tree_calls == [("main", True)]
+    assert {fd.metadata.version for fd in file_data} == {"s1", "s2"}
+
+
+def test_get_branch_prefers_pinned_branch_over_default():
+    repo = _FakeRepo({}, default_branch="main")
+    assert _indexer().get_branch(repo) == "main"
+    assert _indexer(branch="develop").get_branch(repo) == "develop"
+
+
+def test_convert_element_identifier_is_stable_uuid5():
+    """The record identifier must be a deterministic uuid5 of the blob URL so the
+    platform can match records across runs (incremental skip depends on it)."""
+    from uuid import NAMESPACE_DNS, uuid5
 
     indexer = _indexer()
-    monkeypatch.setattr(indexer, "get_branch", lambda: "main")
-    modified = datetime(2026, 1, 2, 3, 4, 5, tzinfo=timezone.utc)
-    element = _tree_element(last_modified_datetime=modified)
+    git_file = _GitFile(path="src/app.py", sha="sha", size=1, mode="100644", url="u")
 
-    file_data = indexer.convert_element(element)
+    file_data = indexer.convert_element(git_file, "main")
 
-    assert file_data.metadata.date_modified == str(modified.timestamp())
+    expected_url = "https://github.com/dcneiner/Downloadify/blob/main/src/app.py"
+    assert file_data.identifier == str(uuid5(NAMESPACE_DNS, expected_url))
+    # Stable across repeated conversions of the same file.
+    assert indexer.convert_element(git_file, "main").identifier == file_data.identifier
+    assert file_data.metadata.permissions_data == [{"mode": "100644"}]
+
+
+def test_list_files_honors_recursive_false():
+    repo = _FakeRepo({"main": _FakeTree([_entry("README.md", size=1)])})
+
+    files = _indexer(recursive=False).list_files(repo, "main")
+
+    assert [f.path for f in files] == ["README.md"]
+    assert repo.get_git_tree_calls == [("main", False)]
+
+
+def test_list_files_recursive_false_truncated_returns_partial():
+    """A truncated non-recursive tree can't be paginated or descended into, so the
+    connector returns the partial listing (with a warning) rather than walking."""
+    repo = _FakeRepo({"main": _FakeTree([_entry("a.txt", size=1)], truncated=True)})
+
+    files = _indexer(recursive=False).list_files(repo, "main")
+
+    assert [f.path for f in files] == ["a.txt"]
+    assert repo.get_git_tree_calls == [("main", False)]  # no walk
+
+
+def test_walk_tree_reconstructs_nested_paths():
+    repo = _FakeRepo(
+        {
+            "root-sha": _FakeTree(
+                [
+                    _entry("a", type="tree", sha="a-sha", size=None),
+                    _entry("top.txt", size=1),
+                ]
+            ),
+            "a-sha": _FakeTree(
+                [
+                    _entry("b", type="tree", sha="b-sha", size=None),
+                    _entry("mid.txt", size=1),
+                ]
+            ),
+            "b-sha": _FakeTree([_entry("deep.txt", size=1)]),
+        }
+    )
+
+    files = _indexer()._walk_tree(repo, "root-sha", prefix="")
+
+    assert sorted(f.path for f in files) == ["a/b/deep.txt", "a/mid.txt", "top.txt"]
+
+
+def test_precheck_succeeds_when_repo_reachable(monkeypatch):
+    monkeypatch.setattr(GithubConnectionConfig, "get_repo", lambda self: object())
+    _indexer().precheck()  # must not raise
+
+
+def test_precheck_wraps_connection_failure(monkeypatch):
+    patcher, _ = _patch_github_module()
+
+    def boom(self):
+        raise RuntimeError("cannot reach github")
+
+    monkeypatch.setattr(GithubConnectionConfig, "get_repo", boom)
+    with patcher, pytest.raises(UnstructuredIngestError):
+        _indexer().precheck()
+
+
+def test_conform_url_keeps_owner_repo_pair():
+    conn = _connection_config()
+    assert conn.url == "dcneiner/Downloadify"
+    assert conn.get_full_url() == "https://github.com/dcneiner/Downloadify"
+
+
+# ---------------------------------------------------------------------------
+# Downloader: repo caching, fetch, content resolution, and file write
+# ---------------------------------------------------------------------------
+
+
+def _downloader(**download_kwargs) -> GithubDownloader:
+    return GithubDownloader(
+        download_config=GithubDownloaderConfig(**download_kwargs),
+        connection_config=_connection_config(),
+    )
+
+
+def _file_data(path: str = "README.md") -> FileData:
+    return _indexer().convert_element(
+        _GitFile(path=path, sha="sha", size=1, mode="100644", url="u"), "main"
+    )
+
+
+def test_downloader_caches_repo(monkeypatch):
+    """_get_repo memoizes so repeated get_file calls don't re-issue GET /repos."""
+    calls = {"n": 0}
+    sentinel = object()
+
+    def fake_get_repo(self):
+        calls["n"] += 1
+        return sentinel
+
+    monkeypatch.setattr(GithubConnectionConfig, "get_repo", fake_get_repo)
+    downloader = _downloader()
+
+    assert downloader._get_repo() is sentinel
+    assert downloader._get_repo() is sentinel
+    assert calls["n"] == 1
+
+
+def test_get_file_returns_content_file():
+    patcher, _ = _patch_github_module()
+    downloader = _downloader()
+    sentinel = object()
+    downloader._repo = SimpleNamespace(get_contents=lambda path: sentinel)
+    with patcher:
+        assert downloader.get_file(_file_data("README.md")) is sentinel
+
+
+def test_get_file_missing_raises_user_error():
+    patcher, exc = _patch_github_module()
+    downloader = _downloader()
+
+    def boom(path):
+        raise exc.UnknownObjectException(status=404, data={"message": "Not Found"})
+
+    downloader._repo = SimpleNamespace(get_contents=boom)
+    with patcher, pytest.raises(UserError):
+        downloader.get_file(_file_data("missing.txt"))
+
+
+def test_get_contents_returns_decoded_content():
+    """Base64-decoded content from the contents API is used without a second fetch."""
+    downloader = _downloader()
+    content_file = SimpleNamespace(decoded_content=b"hello", download_url="https://raw/x")
+    assert downloader.get_contents(content_file) == b"hello"
+
+
+def test_get_contents_falls_back_to_download_url(monkeypatch):
+    """Large files return empty decoded_content, so we fetch the raw download URL."""
+    downloader = _downloader()
+    content_file = SimpleNamespace(decoded_content=b"", download_url="https://raw/big")
+    captured = {}
+
+    def fake_get(url):
+        captured["url"] = url
+        return SimpleNamespace(raise_for_status=lambda: None, content=b"raw-bytes")
+
+    monkeypatch.setattr("requests.get", fake_get)
+
+    assert downloader.get_contents(content_file) == b"raw-bytes"
+    assert captured["url"] == "https://raw/big"
+
+
+def test_get_contents_wraps_http_error(monkeypatch):
+    import requests
+
+    patcher, _ = _patch_github_module()
+    downloader = _downloader()
+    content_file = SimpleNamespace(decoded_content=None, download_url="https://raw/big")
+
+    def raise_for_status():
+        raise requests.HTTPError(response=SimpleNamespace(status_code=500, text="boom"))
+
+    monkeypatch.setattr(
+        "requests.get",
+        lambda url: SimpleNamespace(raise_for_status=raise_for_status, content=b""),
+    )
+    with patcher, pytest.raises(ProviderError):
+        downloader.get_contents(content_file)
+
+
+def test_downloader_run_writes_file(tmp_path):
+    patcher, _ = _patch_github_module()
+    downloader = _downloader(download_dir=tmp_path)
+    downloader._repo = SimpleNamespace(
+        get_contents=lambda path: SimpleNamespace(decoded_content=b"payload", download_url=None)
+    )
+    file_data = _file_data("README.md")
+
+    with patcher:
+        result = downloader.run(file_data)
+
+    written = tmp_path / "README.md"
+    assert written.read_bytes() == b"payload"
+    assert result["path"] == written
+    assert file_data.local_download_path == str(written.resolve())
+
+
+def test_downloader_run_creates_parent_directories(tmp_path):
+    # Regression guard: run() must mkdir the full parent chain before writing, or
+    # files in subdirectories (and the download dir itself) fail with FileNotFoundError.
+    patcher, _ = _patch_github_module()
+    downloader = _downloader(download_dir=tmp_path)
+    downloader._repo = SimpleNamespace(
+        get_contents=lambda path: SimpleNamespace(decoded_content=b"x", download_url=None)
+    )
+    file_data = _file_data("src/app.py")
+
+    with patcher:
+        downloader.run(file_data)
+
+    assert (tmp_path / "src" / "app.py").read_bytes() == b"x"

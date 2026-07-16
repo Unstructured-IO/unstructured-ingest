@@ -159,6 +159,22 @@ class GithubConnectionConfig(ConnectionConfig):
         return UnstructuredIngestError(safe_error_summary(e))
 
 
+@dataclass
+class _GitFile:
+    """A blob entry resolved to its full repo-relative path.
+
+    The fast recursive-tree path and the truncation-fallback walk both produce
+    these, so ``convert_element`` consumes a single uniform shape regardless of
+    how the tree was listed.
+    """
+
+    path: str
+    sha: str
+    size: int
+    mode: str
+    url: str
+
+
 class GithubIndexerConfig(IndexerConfig):
     branch: Optional[str] = Field(
         description="Branch to index, use the default if one isn't provided", default=None
@@ -180,60 +196,106 @@ class GithubIndexer(Indexer):
         except Exception as e:
             raise self.connection_config.wrap_error(e=e)
 
-    def get_branch(self) -> str:
-        repo = self.connection_config.get_repo()
-        sha = self.index_config.branch or repo.default_branch
-        return sha
+    def get_branch(self, repo: "Repository") -> str:
+        # No extra call: a pinned branch short-circuits, otherwise default_branch is
+        # already populated on the repo object we fetch once in run().
+        return self.index_config.branch or repo.default_branch
 
-    def list_files(self) -> list["GitTreeElement"]:
-        repo = self.connection_config.get_repo()
-        sha = self.index_config.branch or repo.default_branch
-        git_tree = repo.get_git_tree(sha, recursive=self.index_config.recursive)
-        file_elements = [
-            element for element in git_tree.tree if element.size is not None and element.size > 0
-        ]
-        return file_elements
+    def list_files(self, repo: "Repository", branch: str) -> list[_GitFile]:
+        """List every non-empty blob under *branch*, robust to tree truncation.
 
-    def convert_element(self, element: "GitTreeElement") -> FileData:
-        full_path = (
-            f"{self.connection_config.get_full_url()}/blob/{self.get_branch()}/{element.path}"
+        Fast path: a single recursive git-tree call. GitHub caps the recursive tree
+        at ~100k entries / 7 MB and cannot paginate it, so when the response is
+        truncated we fall back to a per-directory walk that fetches each subtree
+        individually and reassembles full paths.
+        """
+        recursive = self.index_config.recursive
+        git_tree = repo.get_git_tree(branch, recursive=recursive)
+        if not git_tree.truncated:
+            return self._blobs(git_tree.tree)
+
+        if not recursive:
+            # A non-recursive listing can't be completed — git trees have no page
+            # param and there's no lower level to descend into.
+            logger.warning(
+                "GitHub root tree for %s is truncated; some files may be missing",
+                self.connection_config.url,
+            )
+            return self._blobs(git_tree.tree)
+
+        logger.warning(
+            "GitHub tree for %s is truncated; falling back to a per-directory walk",
+            self.connection_config.url,
         )
+        return self._walk_tree(repo, branch, prefix="")
+
+    @staticmethod
+    def _blobs(entries: list["GitTreeElement"], prefix: str = "") -> list[_GitFile]:
+        # Keep only blobs with content: skips trees (directories), submodules
+        # (type "commit"), and empty files (size 0 / None).
+        files: list[_GitFile] = []
+        for e in entries:
+            if e.type == "blob" and e.size:
+                path = f"{prefix}/{e.path}" if prefix else e.path
+                files.append(_GitFile(path=path, sha=e.sha, size=e.size, mode=e.mode, url=e.url))
+        return files
+
+    def _walk_tree(self, repo: "Repository", tree_ish: str, prefix: str) -> list[_GitFile]:
+        """Collect blobs one directory at a time (recursive-tree truncation fallback)."""
+        tree = repo.get_git_tree(tree_ish, recursive=False)
+        if tree.truncated:
+            # A single directory exceeding the per-tree cap is astronomically rare;
+            # warn rather than silently drop entries.
+            logger.warning(
+                "GitHub subtree %r under %s is truncated; some files may be missing",
+                prefix or "/",
+                self.connection_config.url,
+            )
+        files = self._blobs(tree.tree, prefix)
+        for e in tree.tree:
+            if e.type == "tree":
+                child_prefix = f"{prefix}/{e.path}" if prefix else e.path
+                files.extend(self._walk_tree(repo, e.sha, child_prefix))
+        return files
+
+    def convert_element(self, file: _GitFile, branch: str) -> FileData:
+        full_path = f"{self.connection_config.get_full_url()}/blob/{branch}/{file.path}"
 
         return FileData(
             identifier=str(uuid5(NAMESPACE_DNS, full_path)),
             connector_type=self.connector_type,
             display_name=full_path,
             source_identifiers=SourceIdentifiers(
-                filename=Path(element.path).name,
-                fullpath=(Path(self.get_branch()) / element.path).as_posix(),
-                rel_path=element.path,
+                filename=Path(file.path).name,
+                fullpath=(Path(branch) / file.path).as_posix(),
+                rel_path=file.path,
             ),
             metadata=FileDataSourceMetadata(
-                url=element.url,
-                # Git blob SHA: a content hash already returned in the recursive tree
-                # listing (no extra API call). It changes iff the file content changes,
-                # which is exactly what the platform's per-record incremental skip logic
-                # compares on. (element.etag is the shared tree-response ETag — identical
-                # for every file and bumped on any repo change — so it can't drive skip.)
-                version=element.sha,
+                url=file.url,
+                # Git blob SHA: a content hash already returned in the tree listing (no
+                # extra API call). It changes iff the file content changes, which is
+                # exactly what the platform's per-record incremental skip logic compares
+                # on. (element.etag is the shared tree-response ETag — identical for every
+                # file and bumped on any repo change — so it cannot drive per-file skip.)
+                version=file.sha,
                 record_locator={},
-                # last_modified_datetime derives from the tree response's Last-Modified
-                # header, which the git-data API may omit; guard against None so indexing
-                # doesn't crash. Not used for skip logic — version is the sole signal.
-                date_modified=(
-                    str(element.last_modified_datetime.timestamp())
-                    if element.last_modified_datetime is not None
-                    else None
-                ),
+                # Git tree entries carry no per-file timestamp, and the only date the API
+                # exposes here (the tree response's shared Last-Modified header) is not a
+                # real per-file value, so date_modified is intentionally left unset. Not
+                # needed for skip logic — version is the sole signal.
                 date_processed=str(time()),
-                filesize_bytes=element.size,
-                permissions_data=[{"mode": element.mode}],
+                filesize_bytes=file.size,
+                permissions_data=[{"mode": file.mode}],
             ),
         )
 
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
-        for element in self.list_files():
-            yield self.convert_element(element=element)
+        # Fetch the repo (and thus default_branch) exactly once per run — convert_element
+        # no longer re-derives them per file (previously 2 get_repo calls per file).
+        repo = self.connection_config.get_repo()
+        branch = self.get_branch(repo)
+        for file in self.list_files(repo, branch):
+            yield self.convert_element(file, branch)
 
 
 class GithubDownloaderConfig(DownloaderConfig):
@@ -245,13 +307,21 @@ class GithubDownloader(Downloader):
     download_config: GithubDownloaderConfig
     connection_config: GithubConnectionConfig
     connector_type: str = CONNECTOR_TYPE
+    _repo: Optional["Repository"] = field(default=None, init=False, repr=False)
+
+    def _get_repo(self) -> "Repository":
+        # Cache the repo so repeated get_file calls in one downloader process don't
+        # each re-issue GET /repos/{owner}/{repo}.
+        if self._repo is None:
+            self._repo = self.connection_config.get_repo()
+        return self._repo
 
     @requires_dependencies(["github"], extras="github")
     def get_file(self, file_data: FileData) -> "ContentFile":
         from github.GithubException import UnknownObjectException
 
         path = file_data.source_identifiers.relative_path
-        repo = self.connection_config.get_repo()
+        repo = self._get_repo()
 
         try:
             content_file = repo.get_contents(path)
@@ -278,6 +348,10 @@ class GithubDownloader(Downloader):
         content_file = self.get_file(file_data)
         contents = self.get_contents(content_file)
         download_path = self.get_download_path(file_data)
+        # Repo files live under nested paths (e.g. src/com/.../Base64.as) and the
+        # download dir itself may not exist yet, so create the full parent chain
+        # before writing — nothing upstream does this for us.
+        download_path.parent.mkdir(parents=True, exist_ok=True)
         with download_path.open("wb") as f:
             f.write(contents)
         return self.generate_download_response(file_data=file_data, download_path=download_path)
