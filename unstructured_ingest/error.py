@@ -25,6 +25,14 @@ _SAFE_ERROR_ATTRS = (
 # Enum-like machine codes are short tokens with no whitespace (e.g. "invalid_auth",
 # "Neo.ClientError.Security.Unauthorized"). Free text virtually always
 # contains whitespace or punctuation outside this set and is rejected.
+#
+# NOTE: this is a shape filter, not a secret detector. A credential shaped
+# like a machine code (an API key "sk-live-...", an AWS key, a hex token)
+# would pass it. The safety guarantee therefore rests on the
+# _SAFE_ERROR_ATTRS *name* allowlist above: only attributes SDKs use for
+# statuses, error codes, and request IDs are ever read. If an SDK stashed a
+# secret under one of those names it would surface verbatim -- so keep
+# _SAFE_ERROR_ATTRS limited to fields that never carry free text.
 _MACHINE_CODE_RE = re.compile(r"[A-Za-z0-9_.\-]{1,64}")
 
 
