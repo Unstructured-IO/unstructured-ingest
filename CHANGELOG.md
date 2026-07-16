@@ -1,8 +1,14 @@
-## [1.7.3]
+## [1.7.4]
 
 ### Enhancements
 
 - **feat(PLU-441): ready the GitHub source connector for Foundation.** Adds OAuth support (`oauth_token`/`refresh_token` alongside the existing PAT, refresh handled upstream per PLU-381) and emits the git blob SHA as `metadata.version` for incremental change detection. Indexing fetches the repo once per run instead of twice per file, falls back to a per-directory walk when GitHub truncates the recursive tree, and skips empty files, directories, and submodules. Fixes downloads failing with `FileNotFoundError` on nested paths. GitHub API errors are classified consistently (auth → `UserAuthError`, throttle → `RateLimitError`, 5xx → `ProviderError`), and transient throttles / 5xx / network errors are retried with exponential backoff that honors GitHub's `Retry-After` (`max_retries`, default 10).
+
+## [1.7.3]
+
+### Fixes
+
+- **fix(security): redact provider exceptions from missed connector error sinks.** VastDB/DuckDB `precheck` overrides and the Databricks/Zendesk/S3 unhandled-exception logs no longer interpolate raw exceptions or dump `exc_info` tracebacks; the Zendesk/S3/Databricks `wrap_error` classified branches route returned messages through `safe_error_summary`; Zendesk now classifies HTTP 500 as `ProviderError`.
 
 ## [1.7.2]
 
