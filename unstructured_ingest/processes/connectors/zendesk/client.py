@@ -238,7 +238,7 @@ class ZendeskClient:
                 f"Failed to connect to {url} using zendesk response, status code {response_code}"
             )
             return UserError(safe_error_summary(e))
-        if response_code > 500:
+        if response_code >= 500:
             logger.error(
                 f"Failed to connect to {url} using zendesk response, status code {response_code}"
             )
