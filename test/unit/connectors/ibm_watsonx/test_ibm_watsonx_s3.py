@@ -8,7 +8,7 @@ from pyiceberg.exceptions import CommitFailedException, RESTError
 from pytest_mock import MockerFixture
 
 from unstructured_ingest.data_types.file_data import FileData, SourceIdentifiers
-from unstructured_ingest.error import ProviderError, UserError
+from unstructured_ingest.error import ProviderError, UserAuthError, UserError
 from unstructured_ingest.processes.connectors.ibm_watsonx import IBM_WATSONX_S3_CONNECTOR_TYPE
 from unstructured_ingest.processes.connectors.ibm_watsonx.ibm_watsonx_s3 import (
     IbmWatsonxAccessConfig,
@@ -597,3 +597,64 @@ def test_ibm_watsonx_uploader_precheck_calls_get_catalog_with_max_retries_1(
     uploader.precheck()
 
     mock_get_catalog.assert_called_once_with(uploader.connection_config, max_retries=1)
+
+
+_SECRET = "leaked-bearer-token-abc123XYZ"
+
+
+def _http_status_error(status_code: int):
+    """Build an httpx.HTTPStatusError whose request URL and message carry a secret."""
+    import httpx
+
+    request = httpx.Request(
+        "GET", f"https://watsonx.example.com/data?token={_SECRET}&other=1"
+    )
+    response = httpx.Response(status_code, request=request)
+    return httpx.HTTPStatusError(f"boom {_SECRET}", request=request, response=response)
+
+
+@pytest.mark.parametrize(
+    ("status_code", "expected_type"),
+    [
+        (401, UserAuthError),
+        (403, UserAuthError),
+        (404, UserError),
+        (500, ProviderError),
+    ],
+)
+def test_ibm_watsonx_wrap_error_redacts_provider_text(
+    connection_config: IbmWatsonxConnectionConfig,
+    status_code: int,
+    expected_type: type,
+):
+    """wrap_error classifies by status and never surfaces the token from the URL/message."""
+    error = _http_status_error(status_code)
+
+    wrapped = connection_config.wrap_error(error)
+
+    assert isinstance(wrapped, expected_type)
+    assert _SECRET not in str(wrapped)
+
+
+def test_ibm_watsonx_wrap_error_500_is_provider_error(
+    connection_config: IbmWatsonxConnectionConfig,
+):
+    """Regression: HTTP 500 must map to ProviderError (was `> 500`, now `>= 500`)."""
+    wrapped = connection_config.wrap_error(_http_status_error(500))
+
+    assert isinstance(wrapped, ProviderError)
+
+
+def test_ibm_watsonx_wrap_error_strips_query_string_from_logs(
+    caplog: pytest.LogCaptureFixture,
+    connection_config: IbmWatsonxConnectionConfig,
+):
+    """The logged URL keeps the path but drops the token-bearing query string."""
+    import logging
+
+    with caplog.at_level(logging.ERROR):
+        connection_config.wrap_error(_http_status_error(401))
+
+    assert _SECRET not in caplog.text
+    assert "token=" not in caplog.text
+    assert "https://watsonx.example.com/data" in caplog.text
