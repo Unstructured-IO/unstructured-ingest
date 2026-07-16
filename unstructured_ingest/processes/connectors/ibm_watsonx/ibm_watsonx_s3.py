@@ -112,7 +112,7 @@ class IbmWatsonxConnectionConfig(ConnectionConfig):
                 f"status code {response_code}"
             )
             return UserError(safe_error_summary(e))
-        if response_code > 500:
+        if response_code >= 500:
             logger.error(
                 f"Request to {url} failed in IBM watsonx.data connector, "
                 f"status code {response_code}"
