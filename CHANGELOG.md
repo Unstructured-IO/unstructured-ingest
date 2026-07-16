@@ -1,3 +1,9 @@
+## [1.7.5]
+
+### Fixes
+
+- **fix(security): redact provider text from fsspec/watsonx wrap_error classified branches.** Dropbox/Box/Azure/GCS/watsonx `wrap_error` route classified-branch messages through `safe_error_summary` instead of raw provider text (`e.body`/`e.message`/`e.reason`/full request URL); watsonx strips the URL query string from logs and now classifies HTTP 500 as `ProviderError` (was `> 500`).
+
 ## [1.7.4]
 
 ### Enhancements

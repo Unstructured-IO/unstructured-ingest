@@ -56,3 +56,45 @@ class TestBoxAccessConfigValidation:
         )
         assert ac.box_app_config is None
         assert ac.access_token == "ya29.access"
+
+
+_SECRET = "leaked-box-message-abc123XYZ"
+
+
+def _box_connection_config():
+    from pydantic import Secret
+
+    from unstructured_ingest.processes.connectors.fsspec.box import BoxConnectionConfig
+
+    return BoxConnectionConfig(
+        access_config=Secret(BoxAccessConfig(access_token="ya29.access")),
+        remote_url="box://test",
+    )
+
+
+class TestBoxWrapErrorRedaction:
+    def test_client_error_redacts_message(self):
+        pytest.importorskip("boxsdk")
+        from boxsdk.exception import BoxAPIException
+
+        from unstructured_ingest.error import UserError
+
+        error = BoxAPIException(401, message=f"unauthorized {_SECRET}")
+
+        wrapped = _box_connection_config().wrap_error(error)
+
+        assert isinstance(wrapped, UserError)
+        assert _SECRET not in str(wrapped)
+
+    def test_server_error_redacts_message(self):
+        pytest.importorskip("boxsdk")
+        from boxsdk.exception import BoxAPIException
+
+        from unstructured_ingest.error import ProviderError
+
+        error = BoxAPIException(500, message=f"server error {_SECRET}")
+
+        wrapped = _box_connection_config().wrap_error(error)
+
+        assert isinstance(wrapped, ProviderError)
+        assert _SECRET not in str(wrapped)

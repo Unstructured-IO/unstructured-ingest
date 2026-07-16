@@ -93,30 +93,31 @@ class IbmWatsonxConnectionConfig(ConnectionConfig):
                 f"Unhandled exception from IBM watsonx.data connector: {safe_error_summary(e)}"
             )
             return e
-        url = e.request.url
+        # Drop the query string; it can carry tokens / presigned signatures.
+        url = str(e.request.url).split("?", 1)[0]
         response_code = e.response.status_code
         if response_code == 401:
             logger.error(
                 f"Failed to authenticate IBM watsonx.data user {url}, status code {response_code}"
             )
-            return UserAuthError(e)
+            return UserAuthError(safe_error_summary(e))
         if response_code == 403:
             logger.error(
                 f"Given IBM watsonx.data user is not authorized {url}, status code {response_code}"
             )
-            return UserAuthError(e)
+            return UserAuthError(safe_error_summary(e))
         if 400 <= response_code < 500:
             logger.error(
                 f"Request to {url} failed in IBM watsonx.data connector, "
                 f"status code {response_code}"
             )
-            return UserError(e)
-        if response_code > 500:
+            return UserError(safe_error_summary(e))
+        if response_code >= 500:
             logger.error(
                 f"Request to {url} failed in IBM watsonx.data connector, "
                 f"status code {response_code}"
             )
-            return ProviderError(e)
+            return ProviderError(safe_error_summary(e))
         logger.error(
             f"Unhandled exception from IBM watsonx.data connector: {safe_error_summary(e)}"
         )

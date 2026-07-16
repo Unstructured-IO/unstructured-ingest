@@ -137,7 +137,7 @@ class GcsConnectionConfig(FsspecConnectionConfig):
         if isinstance(e, ValueError) and "Bad Request" in str(e):
             raise UserError(e)
         if isinstance(e, HttpError) and (http_error_code := e.code):
-            message = e.message or e
+            message = safe_error_summary(e)
             if 400 <= http_error_code < 500:
                 raise UserError(message)
             if http_error_code >= 500:
