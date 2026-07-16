@@ -18,6 +18,7 @@ from unstructured_ingest.error import (
     RateLimitError,
     UserAuthError,
     UserError,
+    safe_error_summary,
 )
 from unstructured_ingest.interfaces import (
     AccessConfig,
@@ -92,7 +93,7 @@ class DatabricksVolumesConnectionConfig(ConnectionConfig, ABC):
                     return UserError(e)
                 if 500 <= status_code < 600:
                     return ProviderError(e)
-        logger.error(f"unhandled exception from databricks: {e}", exc_info=True)
+        logger.error(f"unhandled exception from databricks: {safe_error_summary(e)}")
         return e
 
     @requires_dependencies(dependencies=["databricks.sdk"], extras="databricks-volumes")
