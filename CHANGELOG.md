@@ -1,8 +1,20 @@
-## [1.7.1]
+## [1.8.0]
 
 ### Enhancements
 
 - **feat(PLU-441): ready the GitHub source connector for Foundation.** Adds OAuth support (`oauth_token`/`refresh_token` alongside the existing PAT, refresh handled upstream per PLU-381) and emits the git blob SHA as `metadata.version` for incremental change detection. Indexing fetches the repo once per run instead of twice per file, falls back to a per-directory walk when GitHub truncates the recursive tree, and skips empty files, directories, and submodules. Fixes downloads failing with `FileNotFoundError` on nested paths. GitHub API errors are classified consistently (auth → `UserAuthError`, throttle → `RateLimitError`, 5xx → `ProviderError`), and transient throttles / 5xx / network errors are retried with exponential backoff that honors GitHub's `Retry-After` (`max_retries`, default 10).
+
+## [1.7.2]
+
+### Fixes
+
+- **fix(security): redact MotherDuck token from precheck connection errors.** `MotherDuckUploader.precheck` now routes caught exceptions through `safe_error_summary` and drops `exc_info`, so a bad-token `OperationalError` no longer leaks `md:?motherduck_token=<token>` into logs or the API response.
+
+## [1.7.1]
+
+### Fixes
+
+- **docs(security): document that `safe_error_summary`'s allowlist rests on attribute names.** Adds a comment in `error.py` recording that `_MACHINE_CODE_RE` is a shape filter, not a secret detector, so the guarantee depends on keeping `_SAFE_ERROR_ATTRS` limited to fields that never carry free text. Comment-only; no runtime change.
 
 ## [1.7.0]
 
