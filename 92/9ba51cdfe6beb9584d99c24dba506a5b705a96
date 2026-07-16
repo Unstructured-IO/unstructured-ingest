@@ -1,0 +1,33 @@
+unstructured_ingest/processes/connectors/sql/vastdb.py
+  s_7f682e0f06a699::t_ec2dee2abe6d60 109-112,114-117,199-202,204-207
+  s_7f682e0f06a699::t_a2f8438ef53f91 11-15
+unstructured_ingest/processes/connectors/databricks/volumes.py
+  s_7f682e0f06a699::t_beea00936204f4 21
+  s_7f682e0f06a699::t_e0d37582c1ff0f 96
+unstructured_ingest/processes/connectors/zendesk/client.py
+  s_7f682e0f06a699::t_8b0c6115d37e66 246
+  s_7f682e0f06a699::t_20564b99de020e 220
+  s_7f682e0f06a699::t_c60aaa2f16631a 13
+unstructured_ingest/processes/connectors/fsspec/s3.py
+  s_7f682e0f06a699::t_3bd5681a687bae 13-18
+  s_7f682e0f06a699::t_69dc643315e741 157
+unstructured_ingest/processes/connectors/duckdb/duckdb.py
+  s_7f682e0f06a699::t_9f614df62b6730 104-107,109-112
+  s_7f682e0f06a699::t_2c7c2a74bda528 9-14
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "929ba51cdfe6beb9584d99c24dba506a5b705a96",
+  "prompts": {},
+  "sessions": {
+    "s_7f682e0f06a699": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d8bc9139-e708-46cf-8312-972bb2d5402b",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulkarayan <pk@unstructured.io>"
+    }
+  }
+}
