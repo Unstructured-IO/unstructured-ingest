@@ -1,0 +1,30 @@
+unstructured_ingest/processes/connectors/ibm_watsonx/ibm_watsonx_s3.py
+  s_7f682e0f06a699::t_1a733915cf9244 120
+  s_7f682e0f06a699::t_4b9b3fddc00931 96-97
+  s_7f682e0f06a699::t_732c70fa894695 103,108
+  s_7f682e0f06a699::t_bb22fe8f1aec7e 114
+unstructured_ingest/processes/connectors/fsspec/dropbox.py
+  s_7f682e0f06a699::t_1146a9ecfe528d 139,145,147
+unstructured_ingest/processes/connectors/fsspec/box.py
+  s_7f682e0f06a699::t_a583f5f39a587f 272,276
+unstructured_ingest/processes/connectors/fsspec/gcs.py
+  s_7f682e0f06a699::t_3b0d2874b18f09 140
+unstructured_ingest/processes/connectors/fsspec/azure.py
+  s_7f682e0f06a699::t_7e10c78d497f25 131,133
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "b113853b3429aaefea60cdb90e7c0b7137f87f59",
+  "prompts": {},
+  "sessions": {
+    "s_7f682e0f06a699": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d8bc9139-e708-46cf-8312-972bb2d5402b",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulkarayan <pk@unstructured.io>"
+    }
+  }
+}
