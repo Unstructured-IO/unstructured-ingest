@@ -1,5 +1,6 @@
 import sys
 import types
+from time import time
 from types import SimpleNamespace
 from unittest import mock
 
@@ -9,12 +10,14 @@ from unstructured_ingest.data_types.file_data import FileData
 from unstructured_ingest.error import (
     ProviderError,
     RateLimitError,
+    SourceConnectionNetworkError,
     UnstructuredIngestError,
     UserAuthError,
     UserError,
     ValueError,
 )
 from unstructured_ingest.processes.connectors.github import (
+    _MAX_RETRY_AFTER_WAIT,
     GithubAccessConfig,
     GithubConnectionConfig,
     GithubDownloader,
@@ -22,6 +25,9 @@ from unstructured_ingest.processes.connectors.github import (
     GithubIndexer,
     GithubIndexerConfig,
     _GitFile,
+    _honor_retry_after,
+    _parse_retry_after,
+    _rate_limit_backoff,
 )
 
 REPO = "dcneiner/Downloadify"
@@ -521,21 +527,26 @@ def test_get_contents_falls_back_to_download_url(monkeypatch):
     content_file = SimpleNamespace(decoded_content=b"", download_url="https://raw/big")
     captured = {}
 
-    def fake_get(url):
+    def fake_get(url, **kwargs):
         captured["url"] = url
+        captured["timeout"] = kwargs.get("timeout")
         return SimpleNamespace(raise_for_status=lambda: None, content=b"raw-bytes")
 
     monkeypatch.setattr("requests.get", fake_get)
 
     assert downloader.get_contents(content_file) == b"raw-bytes"
     assert captured["url"] == "https://raw/big"
+    # The raw-blob fetch must be bounded so a hung connection can't stall a worker.
+    assert captured["timeout"] is not None
 
 
 def test_get_contents_wraps_http_error(monkeypatch):
     import requests
 
     patcher, _ = _patch_github_module()
-    downloader = _downloader()
+    # max_retries=1: a 500 is now a retriable ProviderError, so a single attempt keeps
+    # the test fast while still asserting the HTTPError is wrapped, not leaked raw.
+    downloader = _downloader(max_retries=1)
     content_file = SimpleNamespace(decoded_content=None, download_url="https://raw/big")
 
     def raise_for_status():
@@ -543,7 +554,7 @@ def test_get_contents_wraps_http_error(monkeypatch):
 
     monkeypatch.setattr(
         "requests.get",
-        lambda url: SimpleNamespace(raise_for_status=raise_for_status, content=b""),
+        lambda url, **kwargs: SimpleNamespace(raise_for_status=raise_for_status, content=b""),
     )
     with patcher, pytest.raises(ProviderError):
         downloader.get_contents(content_file)
@@ -580,3 +591,195 @@ def test_downloader_run_creates_parent_directories(tmp_path):
         downloader.run(file_data)
 
     assert (tmp_path / "src" / "app.py").read_bytes() == b"x"
+
+
+# ---------------------------------------------------------------------------
+# Rate limiting & retry: backoff parsing, error classification, retry loop
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def no_sleep(monkeypatch):
+    """Make tenacity's backoff instant so retry-loop tests don't actually sleep.
+
+    tenacity's default nap looks up ``time.sleep`` at call time, so patching the time
+    module (rather than the bound-at-import ``tenacity.nap.sleep``) is what takes effect.
+    """
+    monkeypatch.setattr("time.sleep", lambda *_a, **_k: None)
+
+
+def test_parse_retry_after_delta_seconds():
+    assert _parse_retry_after({"Retry-After": "42"}) == 42.0
+    # Header lookup is case-insensitive (PyGithub vs requests casing).
+    assert _parse_retry_after({"retry-after": "7"}) == 7.0
+    assert _parse_retry_after({}) is None
+    assert _parse_retry_after({"Retry-After": "not-a-number"}) is None
+
+
+def test_parse_retry_after_http_date():
+    # An HTTP-date ~30s in the future should resolve to roughly 30s of wait.
+    from datetime import datetime, timedelta, timezone
+    from email.utils import format_datetime
+
+    future = datetime.now(timezone.utc) + timedelta(seconds=30)
+    seconds = _parse_retry_after({"Retry-After": format_datetime(future)})
+    assert seconds is not None
+    assert 20 <= seconds <= 30
+
+
+def test_rate_limit_backoff_prefers_retry_after_over_reset():
+    reset = str(int(time()) + 999)
+    headers = {"Retry-After": "5", "x-ratelimit-remaining": "0", "x-ratelimit-reset": reset}
+    assert _rate_limit_backoff(headers) == 5.0
+
+
+def test_rate_limit_backoff_uses_reset_when_window_exhausted():
+    reset = str(int(time()) + 45)
+    backoff = _rate_limit_backoff({"x-ratelimit-remaining": "0", "x-ratelimit-reset": reset})
+    assert backoff is not None
+    assert 40 <= backoff <= 45
+
+
+def test_rate_limit_backoff_none_when_window_not_exhausted():
+    # Remaining budget left -> no primary-limit backoff hint.
+    assert _rate_limit_backoff({"x-ratelimit-remaining": "17"}) is None
+    assert _rate_limit_backoff({}) is None
+
+
+def test_honor_retry_after_caps_at_max():
+    err = RateLimitError("throttled")
+    err.retry_after = 10_000  # absurdly long window
+    assert _honor_retry_after(base_seconds=2.0, exc=err) == _MAX_RETRY_AFTER_WAIT
+
+
+def test_honor_retry_after_falls_back_to_base_when_absent():
+    assert _honor_retry_after(base_seconds=3.0, exc=RuntimeError("no hint")) == 3.0
+
+
+def test_wrap_github_exception_stamps_retry_after_from_header():
+    patcher, exc = _patch_github_module()
+    with patcher:
+        e = exc.RateLimitExceededException(
+            status=403, data={"message": "rate limited"}, headers={"Retry-After": "30"}
+        )
+        err = _connection_config().wrap_github_exception(e)
+    assert isinstance(err, RateLimitError)
+    assert err.retry_after == 30.0
+
+
+def test_wrap_github_exception_stamps_retry_after_from_reset():
+    patcher, exc = _patch_github_module()
+    reset = str(int(time()) + 45)
+    with patcher:
+        e = exc.RateLimitExceededException(
+            status=403,
+            data={"message": "rl"},
+            headers={"x-ratelimit-remaining": "0", "x-ratelimit-reset": reset},
+        )
+        err = _connection_config().wrap_github_exception(e)
+    assert isinstance(err, RateLimitError)
+    assert 40 <= err.retry_after <= 45
+
+
+def test_wrap_http_error_403_rate_limit_is_rate_limit_error():
+    reset = str(int(time()) + 30)
+    resp = SimpleNamespace(
+        status_code=403,
+        text="rate limited",
+        headers={"x-ratelimit-remaining": "0", "x-ratelimit-reset": reset},
+    )
+    err = _connection_config().wrap_http_error(SimpleNamespace(response=resp))
+    assert isinstance(err, RateLimitError)
+    assert 0 < err.retry_after <= 30
+
+
+def test_wrap_http_error_429_is_rate_limit_error():
+    resp = SimpleNamespace(status_code=429, text="slow down", headers={"Retry-After": "12"})
+    err = _connection_config().wrap_http_error(SimpleNamespace(response=resp))
+    assert isinstance(err, RateLimitError)
+    assert err.retry_after == 12.0
+
+
+def test_wrap_error_maps_network_error_to_retriable():
+    import requests
+
+    patcher, _ = _patch_github_module()
+    with patcher:
+        wrapped = _connection_config().wrap_error(requests.ConnectionError("reset by peer"))
+    assert isinstance(wrapped, SourceConnectionNetworkError)
+
+
+def test_run_with_retry_retries_then_succeeds(no_sleep):
+    conn = _connection_config()
+    calls = {"n": 0}
+
+    def fn():
+        calls["n"] += 1
+        if calls["n"] < 3:
+            raise RateLimitError("throttled")
+        return "ok"
+
+    assert conn.run_with_retry(fn, max_retries=5) == "ok"
+    assert calls["n"] == 3
+
+
+def test_run_with_retry_does_not_retry_user_error(no_sleep):
+    conn = _connection_config()
+    calls = {"n": 0}
+
+    def fn():
+        calls["n"] += 1
+        raise UserAuthError("bad token")
+
+    with pytest.raises(UserAuthError):
+        conn.run_with_retry(fn, max_retries=5)
+    assert calls["n"] == 1  # auth failures are permanent — no retry
+
+
+def test_run_with_retry_exhausts_and_reraises(no_sleep):
+    conn = _connection_config()
+    calls = {"n": 0}
+
+    def fn():
+        calls["n"] += 1
+        raise ProviderError("upstream 500")
+
+    with pytest.raises(ProviderError):
+        conn.run_with_retry(fn, max_retries=4)
+    assert calls["n"] == 4
+
+
+def test_run_with_retry_wraps_and_retries_raw_network_error(no_sleep):
+    import requests
+
+    patcher, _ = _patch_github_module()
+    conn = _connection_config()
+    calls = {"n": 0}
+
+    def fn():
+        calls["n"] += 1
+        raise requests.ConnectionError("reset by peer")
+
+    with patcher, pytest.raises(SourceConnectionNetworkError):
+        conn.run_with_retry(fn, max_retries=3)
+    assert calls["n"] == 3  # network blips are transient -> retried then reraised
+
+
+def test_run_with_retry_honors_stamped_retry_after(monkeypatch):
+    """The retry wait uses the error's stamped retry_after when it exceeds the base."""
+    conn = _connection_config()
+    seen_waits = []
+    monkeypatch.setattr("time.sleep", lambda seconds, *_a, **_k: seen_waits.append(seconds))
+
+    calls = {"n": 0}
+
+    def fn():
+        calls["n"] += 1
+        if calls["n"] < 2:
+            err = RateLimitError("throttled")
+            err.retry_after = 25
+            raise err
+        return "done"
+
+    assert conn.run_with_retry(fn, max_retries=5) == "done"
+    assert seen_waits and seen_waits[0] == 25
