@@ -10,6 +10,7 @@ from unstructured_ingest.error import (
     UnstructuredIngestError,
     UserAuthError,
     UserError,
+    safe_error_summary,
 )
 from unstructured_ingest.logger import logger
 from unstructured_ingest.utils.dep_check import requires_dependencies
@@ -216,7 +217,7 @@ class ZendeskClient:
         import httpx
 
         if not isinstance(e, httpx.HTTPStatusError):
-            logger.error(f"unhandled exception from Zendesk client: {e}", exc_info=True)
+            logger.error(f"unhandled exception from Zendesk client: {safe_error_summary(e)}")
             return UnstructuredIngestError(str(e))
         url = e.request.url
         response_code = e.response.status_code
@@ -242,7 +243,7 @@ class ZendeskClient:
                 f"Failed to connect to {url} using zendesk response, status code {response_code}"
             )
             return ProviderError(e)
-        logger.error(f"unhandled http status error from Zendesk client: {e}", exc_info=True)
+        logger.error(f"unhandled http status error from Zendesk client: {safe_error_summary(e)}")
         return e
 
     async def fetch_content(self, url: str, content_key: str) -> AsyncGenerator[dict, None]:
