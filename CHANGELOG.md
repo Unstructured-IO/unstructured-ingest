@@ -1,3 +1,9 @@
+## [1.7.1]
+
+### Fixes
+
+- **docs(security): document that `safe_error_summary`'s allowlist rests on attribute names.** Adds a comment in `error.py` recording that `_MACHINE_CODE_RE` is a shape filter, not a secret detector, so the guarantee depends on keeping `_SAFE_ERROR_ATTRS` limited to fields that never carry free text. Comment-only; no runtime change.
+
 ## [1.7.0]
 
 ### Enhancements
