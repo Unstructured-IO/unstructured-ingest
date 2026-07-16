@@ -105,7 +105,9 @@ class SalesforceAccessConfig(AccessConfig):
                     data=str(self.private_key).encode("utf-8"), password=None
                 )
             except Exception as e:
-                raise ValueError(f"failed to validate private key data: {e}") from e
+                raise ValueError(
+                    f"failed to validate private key data: {safe_error_summary(e)}"
+                ) from None
             return self.private_key, str
 
         raise ValueError("private_key does not contain PEM private key or path")

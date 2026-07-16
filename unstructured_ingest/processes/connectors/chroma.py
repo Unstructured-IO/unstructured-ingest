@@ -153,7 +153,7 @@ class ChromaUploader(Uploader):
                 metadatas=batch["metadatas"],
             )
         except Exception as e:
-            raise DestinationConnectionError(f"chroma error: {e}") from e
+            raise DestinationConnectionError(f"chroma error: {safe_error_summary(e)}") from None
 
     @staticmethod
     def prepare_chroma_list(chunk: tuple[dict[str, Any]]) -> dict[str, list[Any]]:

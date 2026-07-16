@@ -1,3 +1,9 @@
+## [1.7.6]
+
+### Fixes
+
+- **fix(security): redact raw exceptions from Salesforce/Chroma non-precheck raises.** Salesforce private-key parse failures and Chroma upsert failures route the caught exception through `safe_error_summary` and re-raise `from None`, so key material / driver text no longer surfaces in the raised error or its chained traceback.
+
 ## [1.7.5]
 
 ### Fixes
