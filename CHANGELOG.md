@@ -1,3 +1,9 @@
+## [1.7.3]
+
+### Fixes
+
+- **fix(security): redact provider exceptions from missed connector error sinks.** VastDB/DuckDB `precheck` overrides and the Databricks/Zendesk/S3 unhandled-exception logs no longer interpolate raw exceptions or dump `exc_info` tracebacks; the Zendesk/S3/Databricks `wrap_error` classified branches route returned messages through `safe_error_summary`; Zendesk now classifies HTTP 500 as `ProviderError`.
+
 ## [1.7.2]
 
 ### Fixes
