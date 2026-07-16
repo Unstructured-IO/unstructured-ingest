@@ -210,9 +210,21 @@ class GithubIndexer(Indexer):
             ),
             metadata=FileDataSourceMetadata(
                 url=element.url,
-                version=element.etag,
+                # Git blob SHA: a content hash already returned in the recursive tree
+                # listing (no extra API call). It changes iff the file content changes,
+                # which is exactly what the platform's per-record incremental skip logic
+                # compares on. (element.etag is the shared tree-response ETag — identical
+                # for every file and bumped on any repo change — so it can't drive skip.)
+                version=element.sha,
                 record_locator={},
-                date_modified=str(element.last_modified_datetime.timestamp()),
+                # last_modified_datetime derives from the tree response's Last-Modified
+                # header, which the git-data API may omit; guard against None so indexing
+                # doesn't crash. Not used for skip logic — version is the sole signal.
+                date_modified=(
+                    str(element.last_modified_datetime.timestamp())
+                    if element.last_modified_datetime is not None
+                    else None
+                ),
                 date_processed=str(time()),
                 filesize_bytes=element.size,
                 permissions_data=[{"mode": element.mode}],

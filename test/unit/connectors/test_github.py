@@ -16,6 +16,8 @@ from unstructured_ingest.error import (
 from unstructured_ingest.processes.connectors.github import (
     GithubAccessConfig,
     GithubConnectionConfig,
+    GithubIndexer,
+    GithubIndexerConfig,
 )
 
 REPO = "dcneiner/Downloadify"
@@ -167,3 +169,64 @@ def test_wrap_github_exception_forbidden_is_auth_error():
         e = SimpleNamespace(data={"message": "Resource not accessible"}, status=403)
         error = _connection_config().wrap_github_exception(e)
     assert isinstance(error, UserAuthError)
+
+
+# ---------------------------------------------------------------------------
+# metadata.version / date_modified
+# ---------------------------------------------------------------------------
+
+
+def _indexer() -> GithubIndexer:
+    return GithubIndexer(
+        connection_config=_connection_config(),
+        index_config=GithubIndexerConfig(),
+    )
+
+
+def _tree_element(**overrides) -> SimpleNamespace:
+    element = SimpleNamespace(
+        path="src/app.py",
+        url="https://api.github.com/repos/dcneiner/Downloadify/git/blobs/deadbeef",
+        sha="deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
+        size=123,
+        mode="100644",
+        last_modified_datetime=None,
+    )
+    for key, value in overrides.items():
+        setattr(element, key, value)
+    return element
+
+
+def test_convert_element_uses_blob_sha_as_version(monkeypatch):
+    """metadata.version must be the per-file git blob SHA (not the shared tree ETag)."""
+    indexer = _indexer()
+    monkeypatch.setattr(indexer, "get_branch", lambda: "main")
+    element = _tree_element()
+
+    file_data = indexer.convert_element(element)
+
+    assert file_data.metadata.version == element.sha
+
+
+def test_convert_element_null_guards_missing_date_modified(monkeypatch):
+    """A missing Last-Modified header (None) must not crash indexing."""
+    indexer = _indexer()
+    monkeypatch.setattr(indexer, "get_branch", lambda: "main")
+    element = _tree_element(last_modified_datetime=None)
+
+    file_data = indexer.convert_element(element)
+
+    assert file_data.metadata.date_modified is None
+
+
+def test_convert_element_sets_date_modified_when_present(monkeypatch):
+    from datetime import datetime, timezone
+
+    indexer = _indexer()
+    monkeypatch.setattr(indexer, "get_branch", lambda: "main")
+    modified = datetime(2026, 1, 2, 3, 4, 5, tzinfo=timezone.utc)
+    element = _tree_element(last_modified_datetime=modified)
+
+    file_data = indexer.convert_element(element)
+
+    assert file_data.metadata.date_modified == str(modified.timestamp())
