@@ -1,3 +1,9 @@
+## [1.7.2]
+
+### Fixes
+
+- **fix(security): redact MotherDuck token from precheck connection errors.** `MotherDuckUploader.precheck` now routes caught exceptions through `safe_error_summary` and drops `exc_info`, so a bad-token `OperationalError` no longer leaks `md:?motherduck_token=<token>` into logs or the API response.
+
 ## [1.7.1]
 
 ### Fixes
