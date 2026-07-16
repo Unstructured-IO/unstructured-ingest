@@ -3,6 +3,7 @@ test/unit/connectors/motherduck/test_motherduck.py
   s_7f682e0f06a699::t_4bafee95a72b39 38-42
 CHANGELOG.md
   s_7f682e0f06a699::t_2c364b2b127495 2-6
+  s_7f682e0f06a699::t_17d8343e412ad6 1
 ---
 {
   "schema_version": "authorship/3.0.0",
