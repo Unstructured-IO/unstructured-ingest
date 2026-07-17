@@ -1,3 +1,9 @@
+## [1.7.8]
+
+### Fixes
+
+- **fix(security): redact provider exceptions from Teradata error logs and user-fault responses.** The seven `logger.error(..., exc_info=True)` sites route through `safe_error_summary` with `exc_info` dropped; `_raise_classified_teradata_error` no longer interpolates the raw driver message into the user-fault `UserError` (`Teradata reported: {exc}`) — it surfaces only the numeric code + fixed descriptor — and both classified raises use `from None`, so the driver text (host/user/password) can't reach the response or resurface via traceback logging.
+
 ## [1.7.7]
 
 ### Fixes
