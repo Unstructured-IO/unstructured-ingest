@@ -1,0 +1,21 @@
+CHANGELOG.md
+  s_233093dc6687b4::t_184ef63eafd465 2-6
+uv.lock
+  s_233093dc6687b4::t_c83e91fbbe6386 7295-7297,7413,7510
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "bc3f1951c7e9a13c6ad204872a170e1ff861e75f",
+  "prompts": {},
+  "sessions": {
+    "s_233093dc6687b4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9858509e-c242-4567-92f4-fa8516232a87",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulkarayan <pk@unstructured.io>"
+    }
+  }
+}
