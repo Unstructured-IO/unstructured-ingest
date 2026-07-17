@@ -1,3 +1,9 @@
+## [1.7.9]
+
+### Fixes
+
+- **test(teradata): extend the log-redaction regression suite to all seven logger.error sites.** Adds secret-leak tests for the `create_destination`, `delete_by_record_id`, and insert-batch (`executemany`) driver-error branches, which previously had no coverage — each plants a credential in the driver exception and asserts it never reaches the logs.
+
 ## [1.7.8]
 
 ### Fixes
