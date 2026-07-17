@@ -1,3 +1,4 @@
+import logging
 from unittest.mock import MagicMock
 
 import pandas as pd
@@ -1302,17 +1303,21 @@ def test_extract_teradata_error_code(message: str, expected_code: int | None):
 def test_classified_teradata_error_user_fault_codes_raise_user_error(
     code: int, fragment: str
 ):
-    """Recognised user-fault codes → UserError with the descriptor and raw message."""
-    exc = _FakeTeradataDriverError(f"[Error {code}] something bad happened")
+    """Recognised user-fault codes → UserError with the code+descriptor only,
+    never the raw driver text, and with the source exception unchained."""
+    secret = "logon password=hunter2 host=td.internal"
+    exc = _FakeTeradataDriverError(f"[Error {code}] {secret}")
     with pytest.raises(UserError) as excinfo:
         _raise_classified_teradata_error(exc, host="td.example.com", table="my_table")
     msg = str(excinfo.value)
     assert str(code) in msg
     assert fragment in msg
     assert "'my_table'" in msg
-    assert "Teradata reported" in msg
-    # Original exception is chained so the driver traceback survives in logs.
-    assert excinfo.value.__cause__ is exc
+    # Raw driver text is redacted and the chain is suppressed so it can't
+    # resurface via traceback logging.
+    assert secret not in msg
+    assert "hunter2" not in msg
+    assert excinfo.value.__cause__ is None
 
 
 def test_classified_teradata_error_extract_picks_last_code_in_chain():
@@ -1650,3 +1655,95 @@ def test_teradata_uploader_init_marks_destination_ensured_so_upload_skips_reprob
     )
 
     assert spy.call_count == 1
+
+
+# --- Log-redaction tests -----------------------------------------------------
+# The connector's logger.error sites route driver exceptions through
+# safe_error_summary(), which emits only the exception type + allowlisted
+# machine fields — never str(e). A driver message can embed the host/user/
+# password (the Teradata connection string), so these tests prove that a secret
+# planted in the driver exception text never reaches the logs.
+
+_LEAKY_SECRET = "password=SUPERSECRET123 host=db.internal"
+
+
+def test_indexer_precheck_connection_failure_does_not_log_secret(
+    mock_cursor: MagicMock,
+    teradata_indexer: TeradataIndexer,
+    mock_get_cursor: MagicMock,
+    caplog,
+):
+    """The 'failed to validate connection' log site must not leak driver text."""
+    mock_cursor.execute.side_effect = Exception(_LEAKY_SECRET)
+
+    with (
+        caplog.at_level(logging.DEBUG, logger="unstructured_ingest"),
+        pytest.raises(SourceConnectionError),
+    ):
+        teradata_indexer.precheck()
+
+    assert "SUPERSECRET123" not in caplog.text
+    assert "db.internal" not in caplog.text
+
+
+def test_uploader_precheck_connection_failure_does_not_log_secret(
+    mock_cursor: MagicMock,
+    teradata_uploader: TeradataUploader,
+    mock_get_cursor: MagicMock,
+    caplog,
+):
+    """The uploader precheck log site must not leak driver text."""
+    mock_cursor.execute.side_effect = Exception(_LEAKY_SECRET)
+
+    with (
+        caplog.at_level(logging.DEBUG, logger="unstructured_ingest"),
+        pytest.raises(DestinationConnectionError),
+    ):
+        teradata_uploader.precheck()
+
+    assert "SUPERSECRET123" not in caplog.text
+    assert "db.internal" not in caplog.text
+
+
+def test_indexer_precheck_table_probe_failure_does_not_log_secret(
+    mock_cursor: MagicMock,
+    teradata_indexer: TeradataIndexer,
+    mock_get_cursor: MagicMock,
+    caplog,
+):
+    """The table-probe log site (driver-error branch) must not leak driver text."""
+    mock_cursor.execute.side_effect = [
+        None,  # SELECT 1 succeeds
+        _FakeTeradataDriverError(f"some driver error {_LEAKY_SECRET}"),
+    ]
+
+    with (
+        caplog.at_level(logging.DEBUG, logger="unstructured_ingest"),
+        pytest.raises(SourceConnectionError),
+    ):
+        teradata_indexer.precheck()
+
+    assert "SUPERSECRET123" not in caplog.text
+    assert "db.internal" not in caplog.text
+
+
+def test_uploader_get_table_columns_failure_does_not_log_secret(
+    mock_cursor: MagicMock,
+    teradata_uploader: TeradataUploader,
+    mock_get_cursor: MagicMock,
+    caplog,
+):
+    """The get_table_columns log site (driver-error branch) must not leak driver text."""
+    mock_cursor.execute.side_effect = _FakeTeradataDriverError(
+        f"[Error 3807] Object 'test_table' does not exist {_LEAKY_SECRET}"
+    )
+    teradata_uploader._columns = None
+
+    with (
+        caplog.at_level(logging.DEBUG, logger="unstructured_ingest"),
+        pytest.raises(UserError),
+    ):
+        teradata_uploader.get_table_columns()
+
+    assert "SUPERSECRET123" not in caplog.text
+    assert "db.internal" not in caplog.text
