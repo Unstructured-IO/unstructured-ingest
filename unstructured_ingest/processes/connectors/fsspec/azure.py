@@ -128,9 +128,9 @@ class AzureConnectionConfig(FsspecConnectionConfig):
             logger.error(f"unhandled exception from azure ({safe_error_summary(e)})")
             return e
         if isinstance(e, ClientAuthenticationError):
-            return UserAuthError(e.reason)
+            return UserAuthError(safe_error_summary(e))
         status_code = e.status_code
-        message = e.reason
+        message = safe_error_summary(e)
         if status_code is not None:
             if 400 <= status_code < 500:
                 return UserError(message)
