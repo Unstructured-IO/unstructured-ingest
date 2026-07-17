@@ -1,4 +1,5 @@
 import http.server
+import ipaddress
 import socketserver
 import threading
 from pathlib import Path
@@ -15,12 +16,31 @@ from unstructured_ingest.processes.connectors.url import (
     UrlDownloaderConfig,
     UrlIndexer,
     UrlIndexerConfig,
+    _is_public_address,
+    _nat64_embedded_ipv4,
+    _parse_nat64_prefixes,
     _pinned_transport,
     _safe_filename,
     _ssrf_safe_download,
     _validate_and_pin,
     url_source_entry,
 )
+
+
+def _synthesize_nat64(prefix: str, ipv4: str) -> str:
+    """Build the NAT64 address embedding `ipv4` under `prefix` per RFC 6052 §2.2."""
+    net = ipaddress.ip_network(prefix)
+    packed = bytearray(net.network_address.packed)
+    v4 = ipaddress.IPv4Address(ipv4).packed
+    i, j = net.prefixlen // 8, 0
+    while j < 4:
+        if i == 8:  # reserved octet
+            i += 1
+            continue
+        packed[i] = v4[j]
+        i += 1
+        j += 1
+    return str(ipaddress.IPv6Address(bytes(packed)))
 
 
 class _Handler(http.server.SimpleHTTPRequestHandler):
@@ -180,7 +200,7 @@ def test_download_leaves_no_file_on_midstream_failure(tmp_path, monkeypatch):
         def close(self):
             pass
 
-    monkeypatch.setattr(url_mod, "_validate_and_pin", lambda host, allow_private: "127.0.0.1")
+    monkeypatch.setattr(url_mod, "_validate_and_pin", lambda host, allow_private, *a: "127.0.0.1")
     monkeypatch.setattr(
         url_mod,
         "_pinned_transport",
@@ -235,13 +255,55 @@ def test_validate_and_pin_blocks_when_any_record_private(monkeypatch):
         _validate_and_pin("evil.example.com", allow_private=False)
 
 
+# --- NAT64 / DNS64 configurable prefixes (RFC 6052) ------------------------
+@pytest.mark.parametrize(
+    ("prefix", "addr", "expected_v4"),
+    [
+        ("2001:db8::/32", "2001:db8:c000:221::", "192.0.2.33"),
+        ("2001:db8:100::/40", "2001:db8:1c0:2:21::", "192.0.2.33"),
+        ("2001:db8:122::/48", "2001:db8:122:c000:2:2100::", "192.0.2.33"),
+        ("64:ff9b::/96", "64:ff9b::c000:221", "192.0.2.33"),
+    ],
+)
+def test_nat64_embedded_ipv4_rfc6052_vectors(prefix, addr, expected_v4):
+    prefixes = _parse_nat64_prefixes([prefix])
+    decoded = _nat64_embedded_ipv4(ipaddress.IPv6Address(addr), prefixes)
+    assert decoded == ipaddress.IPv4Address(expected_v4)
+
+
+def test_nsp_nat64_embedding_private_ipv4_is_rejected_only_when_declared(monkeypatch):
+    # A DNS64 resolver using a Network-Specific Prefix (in globally-routable space)
+    # synthesizes an IPv6 embedding 169.254.169.254. is_global is True, so without
+    # declaring the NSP the embedded metadata IP slips past; declaring it closes the hole.
+    nsp = "2001:4860:1::/48"  # inside Google's globally-routable 2001:4860::/32
+    v6 = _synthesize_nat64(nsp, "169.254.169.254")
+    assert ipaddress.ip_address(v6).is_global  # guard: NSP address is globally routable
+
+    # default (WKP only) does not decode the NSP -> the address looks public (the gap)
+    assert _is_public_address(v6) is True
+    # declaring the NSP decodes the embedded private IPv4 -> rejected
+    assert _is_public_address(v6, _parse_nat64_prefixes([nsp])) is False
+
+    monkeypatch.setattr(url_mod.socket, "getaddrinfo", lambda *a, **k: [(0, 0, 0, "", (v6, 0))])
+    with pytest.raises(IngestValueError, match="Refusing non-public"):
+        _validate_and_pin(
+            "attacker.example", allow_private=False, nat64_prefixes=_parse_nat64_prefixes([nsp])
+        )
+
+
+@pytest.mark.parametrize("bad", ["2001:db8::/60", "192.0.2.0/24", "not-an-address"])
+def test_parse_nat64_prefixes_rejects_invalid(bad):
+    with pytest.raises((IngestValueError, ValueError)):
+        _parse_nat64_prefixes([bad])
+
+
 def test_redirect_target_is_revalidated(tmp_path, server, monkeypatch):
     # The post-redirect host must be validated, not just the first hop.
     _Handler.redirect_to = "http://evil.internal/secret"
     _, base = server
     seen = []
 
-    def fake_pin(host, allow_private):
+    def fake_pin(host, allow_private, *a):
         seen.append(host)
         if host == "evil.internal":
             raise IngestValueError("Refusing non-public address 10.0.0.1 for host evil.internal")

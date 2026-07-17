@@ -121,6 +121,16 @@ class UrlDownloaderConfig(DownloaderConfig):
         "Replaces the playground downloader's `environment != 'dev'` env check.",
     )
     timeout_seconds: int = Field(default=120)
+    nat64_prefixes: list[str] = Field(
+        default_factory=lambda: ["64:ff9b::/96"],
+        description=(
+            "NAT64/DNS64 prefixes to decode when validating IPv6 addresses (RFC 6052). "
+            "Defaults to the Well-Known Prefix only. Operators running DNS64 with a "
+            "Network-Specific Prefix MUST list it here, otherwise a synthesized IPv6 "
+            "embedding a private/metadata IPv4 would pass the public-address check. "
+            "Each entry must be an IPv6 network with prefix length 32/40/48/56/64/96."
+        ),
+    )
 
 
 # --- SSRF-safe fetch: no TOCTOU --------------------------------------------
@@ -133,18 +143,60 @@ class UrlDownloaderConfig(DownloaderConfig):
 # each hop is revalidated.
 
 
-_NAT64_PREFIX = ipaddress.ip_network("64:ff9b::/96")
+_WELL_KNOWN_NAT64 = ipaddress.ip_network("64:ff9b::/96")
 _CGNAT = ipaddress.ip_network("100.64.0.0/10")
+# RFC 6052 §2.2 allows exactly these prefix lengths for embedded IPv4.
+_VALID_NAT64_PREFIX_LENGTHS = frozenset({32, 40, 48, 56, 64, 96})
 
 
-def _embedded_ipv4(v6: ipaddress.IPv6Address) -> "ipaddress.IPv4Address | None":
+def _parse_nat64_prefixes(prefixes: list[str]) -> tuple[ipaddress.IPv6Network, ...]:
+    """Parse configured NAT64 prefixes, enforcing RFC 6052 prefix lengths."""
+    parsed: list[ipaddress.IPv6Network] = []
+    for entry in prefixes:
+        net = ipaddress.ip_network(entry)
+        if not isinstance(net, ipaddress.IPv6Network):
+            raise IngestValueError(f"NAT64 prefix must be IPv6: {entry}")
+        if net.prefixlen not in _VALID_NAT64_PREFIX_LENGTHS:
+            raise IngestValueError(
+                f"NAT64 prefix length must be one of {sorted(_VALID_NAT64_PREFIX_LENGTHS)}: {entry}"
+            )
+        parsed.append(net)
+    return tuple(parsed)
+
+
+def _nat64_embedded_ipv4(
+    v6: ipaddress.IPv6Address, nat64_prefixes: "tuple[ipaddress.IPv6Network, ...]"
+) -> "ipaddress.IPv4Address | None":
+    """Decode the IPv4 embedded by a NAT64 address per RFC 6052 §2.2, for any configured
+    prefix length. The reserved 'u' octet (bits 64-71) is skipped."""
+    packed = v6.packed
+    for net in nat64_prefixes:
+        if v6 not in net:
+            continue
+        v4_bytes = bytearray()
+        i = net.prefixlen // 8
+        while len(v4_bytes) < 4:
+            if i == 8:  # RFC 6052 reserved octet, never part of the embedded IPv4
+                i += 1
+                continue
+            v4_bytes.append(packed[i])
+            i += 1
+        return ipaddress.IPv4Address(bytes(v4_bytes))
+    return None
+
+
+def _embedded_ipv4(
+    v6: ipaddress.IPv6Address,
+    nat64_prefixes: "tuple[ipaddress.IPv6Network, ...]" = (_WELL_KNOWN_NAT64,),
+) -> "ipaddress.IPv4Address | None":
     """The IPv4 an IPv6 transition address embeds (mapped / 6to4 / NAT64 / compat), else None."""
     if v6.ipv4_mapped:
         return v6.ipv4_mapped
     if v6.sixtofour:
         return v6.sixtofour
-    if v6 in _NAT64_PREFIX:
-        return ipaddress.IPv4Address(int(v6) & 0xFFFFFFFF)
+    nat64 = _nat64_embedded_ipv4(v6, nat64_prefixes)
+    if nat64 is not None:
+        return nat64
     # IPv4-compatible ::/96 (deprecated), e.g. ::7f00:1 -> 127.0.0.1 (skip :: and ::1)
     if int(v6) >> 32 == 0 and (int(v6) & 0xFFFFFFFF) not in (0, 1):
         return ipaddress.IPv4Address(int(v6) & 0xFFFFFFFF)
@@ -157,7 +209,9 @@ def _is_public_ipv4(v4: ipaddress.IPv4Address) -> bool:
     return v4.is_global and v4 not in _CGNAT
 
 
-def _is_public_address(ip: str) -> bool:
+def _is_public_address(
+    ip: str, nat64_prefixes: "tuple[ipaddress.IPv6Network, ...]" = (_WELL_KNOWN_NAT64,)
+) -> bool:
     addr = ipaddress.ip_address(ip)
     if isinstance(addr, ipaddress.IPv4Address):
         return _is_public_ipv4(addr)
@@ -165,11 +219,15 @@ def _is_public_address(ip: str) -> bool:
     # that IPv4 must be public too — otherwise it can reach a private/metadata host.
     if not addr.is_global:
         return False
-    embedded = _embedded_ipv4(addr)
+    embedded = _embedded_ipv4(addr, nat64_prefixes)
     return embedded is None or _is_public_ipv4(embedded)
 
 
-def _validate_and_pin(host: str, allow_private: bool) -> str:
+def _validate_and_pin(
+    host: str,
+    allow_private: bool,
+    nat64_prefixes: "tuple[ipaddress.IPv6Network, ...]" = (_WELL_KNOWN_NAT64,),
+) -> str:
     """Resolve host, reject if ANY address is non-public, return one pinned IP."""
     try:
         infos = socket.getaddrinfo(host, None, proto=socket.IPPROTO_TCP)
@@ -181,7 +239,7 @@ def _validate_and_pin(host: str, allow_private: bool) -> str:
     for ip in ips:
         # Allowlist: rejects private/loopback/link-local/reserved/multicast/CGNAT and
         # IPv6 transition addrs that embed a private/metadata IPv4. Skipped in dev.
-        if not allow_private and not _is_public_address(ip):
+        if not allow_private and not _is_public_address(ip, nat64_prefixes):
             raise IngestValueError(f"Refusing non-public address {ip} for host {host}")
     return ips[0]  # deterministic pin; all addresses already validated
 
@@ -211,7 +269,12 @@ def _pinned_transport(pinned_ip: str) -> "httpx.HTTPTransport":
 
 
 def _ssrf_safe_download(
-    url: str, dest: Path, allow_private: bool, timeout: int, max_redirects: int = 5
+    url: str,
+    dest: Path,
+    allow_private: bool,
+    timeout: int,
+    max_redirects: int = 5,
+    nat64_prefixes: "tuple[ipaddress.IPv6Network, ...]" = (_WELL_KNOWN_NAT64,),
 ) -> None:
     """Stream a validated GET to `dest`. Redirects are followed manually so every hop
     is revalidated; the body is streamed to disk rather than buffered whole, so a large
@@ -226,7 +289,7 @@ def _ssrf_safe_download(
         host = parts.hostname
         if not host:
             raise IngestValueError(f"No host in url: {current}")
-        pinned = _validate_and_pin(host, allow_private)
+        pinned = _validate_and_pin(host, allow_private, nat64_prefixes)
         with (
             httpx.Client(
                 transport=_pinned_transport(pinned), timeout=timeout, follow_redirects=False
@@ -282,6 +345,7 @@ class UrlDownloader(Downloader):
             download_path,
             allow_private=self.download_config.allow_private_ips,
             timeout=self.download_config.timeout_seconds,
+            nat64_prefixes=_parse_nat64_prefixes(self.download_config.nat64_prefixes),
         )
 
         return self.generate_download_response(file_data=file_data, download_path=download_path)
