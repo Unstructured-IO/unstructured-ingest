@@ -16,7 +16,9 @@ Registered as `url` in the source registry (`url_source_entry` below, wired via
 """
 
 import ipaddress
+import os
 import socket
+import tempfile
 import urllib.parse
 import uuid
 from dataclasses import dataclass
@@ -239,9 +241,21 @@ def _ssrf_safe_download(
                 continue
             if resp.status_code != 200:
                 raise RuntimeError(f"GET {current} -> {resp.status_code}")
-            with open(dest, "wb") as f:
-                for chunk in resp.iter_bytes():
-                    f.write(chunk)
+            # Stream to a temp file in the destination dir, then atomically replace,
+            # so a mid-stream failure (dropped connection, timeout, short write) never
+            # leaves a truncated file at `dest` for a later pipeline pass to pick up.
+            fd, tmp_name = tempfile.mkstemp(
+                dir=str(dest.parent), prefix=f".{dest.name}.", suffix=".part"
+            )
+            tmp_path = Path(tmp_name)
+            try:
+                with os.fdopen(fd, "wb") as f:
+                    for chunk in resp.iter_bytes():
+                        f.write(chunk)
+                os.replace(tmp_path, dest)
+            except BaseException:
+                tmp_path.unlink(missing_ok=True)
+                raise
             return
     raise IngestValueError(f"Too many redirects for url: {url}")
 

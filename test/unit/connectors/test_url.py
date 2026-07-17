@@ -170,6 +170,32 @@ def test_download_follows_redirect(tmp_path, server):
     assert Path(resp["path"]).read_text() == "hello alpha"
 
 
+def test_download_leaves_no_file_on_midstream_failure(tmp_path, monkeypatch):
+    # A mid-stream read failure must not leave a truncated file at `dest`.
+    class _BoomStream(httpx.SyncByteStream):
+        def __iter__(self):
+            yield b"partial-bytes"
+            raise httpx.ReadError("connection dropped mid-stream")
+
+        def close(self):
+            pass
+
+    monkeypatch.setattr(url_mod, "_validate_and_pin", lambda host, allow_private: "127.0.0.1")
+    monkeypatch.setattr(
+        url_mod,
+        "_pinned_transport",
+        lambda pinned_ip: httpx.MockTransport(
+            lambda request: httpx.Response(200, stream=_BoomStream())
+        ),
+    )
+
+    dest = tmp_path / "out.bin"
+    with pytest.raises(httpx.ReadError):
+        _ssrf_safe_download("http://example.com/x", dest, allow_private=False, timeout=5)
+    assert not dest.exists()
+    assert list(tmp_path.glob(".*.part")) == []  # temp file cleaned up on failure
+
+
 # --- SSRF validator --------------------------------------------------------
 @pytest.mark.parametrize("good", ["8.8.8.8", "2606:4700:4700::1111"])
 def test_validate_and_pin_allows_public(good):
