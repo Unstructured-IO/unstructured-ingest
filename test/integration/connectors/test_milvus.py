@@ -538,7 +538,7 @@ def test_precheck_fails_on_nonexisting_db(collection: str):
     )
     with pytest.raises(
         DestinationConnectionError,
-        match="database not found",
+        match="failed to precheck Milvus",
     ):
         uploader.precheck()
 

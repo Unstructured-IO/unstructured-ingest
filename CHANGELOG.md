@@ -1,3 +1,9 @@
+## [1.7.7]
+
+### Fixes
+
+- **fix(milvus): align nonexistent-db precheck test with the wrapped error message.** `test_precheck_fails_on_nonexisting_db` now asserts on the `"failed to precheck Milvus"` message raised by the uploader's precheck wrapper instead of the raw upstream `"database not found"` text, so the test no longer breaks when the underlying Milvus client error string changes.
+
 ## [1.7.6]
 
 ### Fixes
