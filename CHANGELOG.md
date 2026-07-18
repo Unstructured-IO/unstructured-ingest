@@ -1,3 +1,9 @@
+## [1.7.10]
+
+### Fixes
+
+- **fix(google-drive): record the drive id in each file's record locator.** The indexer used an annotation statement (`record_locator["drive_id"]: object_id`) instead of an assignment, so `drive_id` was silently never written into `record_locator`. Changed to a real assignment so downstream consumers can resolve which drive a file came from.
+
 ## [1.7.9]
 
 ### Fixes
