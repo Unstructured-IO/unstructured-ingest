@@ -332,7 +332,11 @@ class SQLUploadStager(UploadStager):
 
 class SQLUploaderConfig(UploaderConfig):
     batch_size: int = Field(default=50, description="Number of records per batch")
-    table_name: str = Field(default="elements", description="which table to upload contents to")
+    table_name: str = Field(
+        default="elements",
+        description="which table to upload contents to",
+        json_schema_extra={"x-runtime-eligible": True},
+    )
     record_id_key: str = Field(
         default=RECORD_ID_LABEL,
         description="searchable key to find entries for the same record on previous runs",

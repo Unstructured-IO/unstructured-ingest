@@ -24,6 +24,7 @@ from unstructured_ingest.interfaces import (
 from unstructured_ingest.logger import logger
 from unstructured_ingest.processes.connector_registry import (
     DestinationRegistryEntry,
+    LocationShape,
 )
 from unstructured_ingest.processes.connectors.sql.sql import (
     SQLUploader,
@@ -214,8 +215,10 @@ class IbmWatsonxUploadStager(SQLUploadStager):
 
 
 class IbmWatsonxUploaderConfig(UploaderConfig):
-    namespace: str = Field(description="Namespace name")
-    table: str = Field(description="Table name")
+    namespace: str = Field(
+        description="Namespace name", json_schema_extra={"x-runtime-eligible": True}
+    )
+    table: str = Field(description="Table name", json_schema_extra={"x-runtime-eligible": True})
     max_retries: int = Field(
         default=50,
         description="Maximum number of retries to upload data (CommitFailedException)",
@@ -380,4 +383,7 @@ ibm_watsonx_s3_destination_entry = DestinationRegistryEntry(
     uploader_config=IbmWatsonxUploaderConfig,
     upload_stager=IbmWatsonxUploadStager,
     upload_stager_config=IbmWatsonxUploadStagerConfig,
+    location_shape=LocationShape.SQL_TABLE,
+    location_identity=("uploader_config.namespace", "uploader_config.table"),
+    supports_recursion=False,
 )

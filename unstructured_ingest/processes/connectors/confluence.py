@@ -33,6 +33,7 @@ from unstructured_ingest.interfaces import (
 )
 from unstructured_ingest.logger import logger
 from unstructured_ingest.processes.connector_registry import (
+    LocationShape,
     SourceRegistryEntry,
 )
 from unstructured_ingest.utils.dep_check import requires_dependencies
@@ -83,7 +84,10 @@ class ConfluenceAccessConfig(AccessConfig):
 
 
 class ConfluenceConnectionConfig(ConnectionConfig):
-    url: str = Field(description="URL of the Confluence instance")
+    url: str = Field(
+        description="URL of the Confluence instance",
+        json_schema_extra={"x-runtime-eligible": True},
+    )
     cloud_id: Optional[str] = Field(
         description="Atlassian Cloud ID for OAuth 2.0 API gateway requests",
         default=None,
@@ -166,7 +170,11 @@ class ConfluenceIndexerConfig(IndexerConfig):
     max_num_of_docs_from_each_space: int = Field(
         100, description="Maximum number of documents to fetch from each space"
     )
-    spaces: Optional[List[str]] = Field(None, description="List of specific space keys to index")
+    spaces: Optional[List[str]] = Field(
+        None,
+        description="List of specific space keys to index",
+        json_schema_extra={"x-runtime-eligible": True},
+    )
 
 
 @dataclass
@@ -705,4 +713,12 @@ confluence_source_entry = SourceRegistryEntry(
     indexer=ConfluenceIndexer,
     downloader_config=ConfluenceDownloaderConfig,
     downloader=ConfluenceDownloader,
+    location_shape=LocationShape.API_FOLDER,
+    location_identity=(
+        "connector_config.url",
+        "connector_config.cloud_id",
+        "indexer_config.spaces",
+    ),
+    emits_record_version=True,
+    supports_recursion=False,
 )

@@ -31,7 +31,10 @@ from unstructured_ingest.interfaces import (
     IndexerConfig,
 )
 from unstructured_ingest.logger import logger
-from unstructured_ingest.processes.connector_registry import SourceRegistryEntry
+from unstructured_ingest.processes.connector_registry import (
+    LocationShape,
+    SourceRegistryEntry,
+)
 from unstructured_ingest.utils.dep_check import requires_dependencies
 
 if TYPE_CHECKING:
@@ -198,7 +201,8 @@ class SlackConnectionConfig(ConnectionConfig):
 class SlackIndexerConfig(IndexerConfig):
     channels: list[str] = Field(
         description="Comma-delimited list of Slack channel IDs to pull messages from, can be"
-        " both public or private channels."
+        " both public or private channels.",
+        json_schema_extra={"x-runtime-eligible": True},
     )
     start_date: Optional[datetime] = Field(
         default=None,
@@ -627,4 +631,8 @@ slack_source_entry = SourceRegistryEntry(
     downloader=SlackDownloader,
     downloader_config=DownloaderConfig,
     connection_config=SlackConnectionConfig,
+    location_shape=LocationShape.API_FOLDER,
+    location_identity=("indexer_config.channels",),
+    emits_record_version=True,
+    supports_recursion=False,
 )

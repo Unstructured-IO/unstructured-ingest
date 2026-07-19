@@ -20,7 +20,10 @@ from unstructured_ingest.interfaces import (
     UploadStagerConfig,
 )
 from unstructured_ingest.logger import logger
-from unstructured_ingest.processes.connector_registry import DestinationRegistryEntry
+from unstructured_ingest.processes.connector_registry import (
+    DestinationRegistryEntry,
+    LocationShape,
+)
 from unstructured_ingest.processes.connectors.duckdb.base import BaseDuckDBUploadStager
 from unstructured_ingest.utils.data_prep import get_data_df
 from unstructured_ingest.utils.dep_check import requires_dependencies
@@ -40,10 +43,12 @@ class MotherDuckConnectionConfig(ConnectionConfig):
     connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
     database: str = Field(
         description="Database name. Name of the MotherDuck database.",
+        json_schema_extra={"x-runtime-eligible": True},
     )
     db_schema: Optional[str] = Field(
         default="main",
         description="Schema name. Schema in the database where the elements table is located.",
+        json_schema_extra={"x-runtime-eligible": True},
     )
     table: Optional[str] = Field(
         default="elements",
@@ -137,4 +142,11 @@ motherduck_destination_entry = DestinationRegistryEntry(
     uploader_config=MotherDuckUploaderConfig,
     upload_stager=MotherDuckUploadStager,
     upload_stager_config=MotherDuckUploadStagerConfig,
+    location_shape=LocationShape.SQL_TABLE,
+    location_identity=(
+        "connector_config.database",
+        "connector_config.db_schema",
+        "connector_config.table",
+    ),
+    supports_recursion=False,
 )

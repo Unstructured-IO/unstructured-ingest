@@ -27,6 +27,7 @@ from unstructured_ingest.interfaces.downloader import download_responses
 from unstructured_ingest.logger import logger
 from unstructured_ingest.processes.connector_registry import (
     DestinationRegistryEntry,
+    LocationShape,
     SourceRegistryEntry,
 )
 from unstructured_ingest.processes.connectors.elasticsearch.elasticsearch import (
@@ -576,6 +577,10 @@ opensearch_source_entry = SourceRegistryEntry(
     indexer_config=OpenSearchIndexerConfig,
     downloader=OpenSearchDownloader,
     downloader_config=OpenSearchDownloaderConfig,
+    location_shape=LocationShape.SEARCH_INDEX,
+    location_identity=("connector_config.hosts", "indexer_config.index_name"),
+    emits_record_version=True,
+    supports_recursion=False,
 )
 
 
@@ -585,4 +590,7 @@ opensearch_destination_entry = DestinationRegistryEntry(
     upload_stager=OpenSearchUploadStager,
     uploader_config=OpenSearchUploaderConfig,
     uploader=OpenSearchUploader,
+    location_shape=LocationShape.SEARCH_INDEX,
+    location_identity=("connector_config.hosts", "uploader_config.index_name"),
+    supports_recursion=False,
 )

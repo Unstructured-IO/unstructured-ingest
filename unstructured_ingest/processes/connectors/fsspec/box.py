@@ -17,6 +17,7 @@ from unstructured_ingest.interfaces import DownloadResponse
 from unstructured_ingest.logger import logger
 from unstructured_ingest.processes.connector_registry import (
     DestinationRegistryEntry,
+    LocationShape,
     SourceRegistryEntry,
 )
 from unstructured_ingest.processes.connectors.fsspec.fsspec import (
@@ -436,6 +437,8 @@ box_source_entry = SourceRegistryEntry(
     downloader=BoxDownloader,
     downloader_config=BoxDownloaderConfig,
     connection_config=BoxConnectionConfig,
+    location_shape=LocationShape.FSSPEC_URL,
+    location_identity=("indexer_config.remote_url",),
 )
 
 box_destination_entry = DestinationRegistryEntry(
@@ -444,4 +447,6 @@ box_destination_entry = DestinationRegistryEntry(
     connection_config=BoxConnectionConfig,
     upload_stager_config=BlobStoreUploadStagerConfig,
     upload_stager=BlobStoreUploadStager,
+    location_shape=LocationShape.FSSPEC_URL,
+    location_identity=("uploader_config.remote_url",),
 )

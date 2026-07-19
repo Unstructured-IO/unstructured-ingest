@@ -24,7 +24,10 @@ from unstructured_ingest.interfaces import (
     IndexerConfig,
 )
 from unstructured_ingest.logger import logger
-from unstructured_ingest.processes.connector_registry import SourceRegistryEntry
+from unstructured_ingest.processes.connector_registry import (
+    LocationShape,
+    SourceRegistryEntry,
+)
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.utils.html import HtmlMixin
 
@@ -49,7 +52,10 @@ class ZendeskAccessConfig(AccessConfig):
 
 
 class ZendeskConnectionConfig(ConnectionConfig):
-    subdomain: str = Field(description="Subdomain for zendesk site, <sub-domain>.company.com")
+    subdomain: str = Field(
+        description="Subdomain for zendesk site, <sub-domain>.company.com",
+        json_schema_extra={"x-runtime-eligible": True},
+    )
     email: str = Field(description="Email for zendesk site registered at the subdomain")
     access_config: Secret[ZendeskAccessConfig]
 
@@ -65,6 +71,7 @@ class ZendeskIndexerConfig(IndexerConfig):
     item_type: Literal["tickets", "articles", "all"] = Field(
         default="tickets",
         description="Type of item from zendesk to parse, can only be `tickets` or `articles`.",
+        json_schema_extra={"x-runtime-eligible": True},
     )
 
 
@@ -238,4 +245,7 @@ zendesk_source_entry = SourceRegistryEntry(
     indexer=ZendeskIndexer,
     downloader=ZendeskDownloader,
     downloader_config=ZendeskDownloaderConfig,
+    location_shape=LocationShape.API_FOLDER,
+    location_identity=("connector_config.subdomain", "indexer_config.item_type"),
+    supports_recursion=False,
 )

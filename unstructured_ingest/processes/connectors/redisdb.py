@@ -20,7 +20,10 @@ from unstructured_ingest.interfaces import (
     UploaderConfig,
 )
 from unstructured_ingest.logger import logger
-from unstructured_ingest.processes.connector_registry import DestinationRegistryEntry
+from unstructured_ingest.processes.connector_registry import (
+    DestinationRegistryEntry,
+    LocationShape,
+)
 from unstructured_ingest.utils.data_prep import batch_generator
 from unstructured_ingest.utils.dep_check import requires_dependencies
 
@@ -52,8 +55,13 @@ class RedisConnectionConfig(ConnectionConfig):
         default=None,
         description="Hostname or IP address of a Redis instance to connect to "
         "if uri is not specified.",
+        json_schema_extra={"x-runtime-eligible": True},
     )
-    database: int = Field(default=0, description="Database index to connect to.")
+    database: int = Field(
+        default=0,
+        description="Database index to connect to.",
+        json_schema_extra={"x-runtime-eligible": True},
+    )
     port: Optional[int] = Field(
         default=6379, description="Port used to connect to database if uri is not specified."
     )
@@ -223,4 +231,11 @@ redis_destination_entry = DestinationRegistryEntry(
     connection_config=RedisConnectionConfig,
     uploader=RedisUploader,
     uploader_config=RedisUploaderConfig,
+    location_shape=LocationShape.OTHER,
+    location_identity=(
+        "connector_config.host",
+        "connector_config.port",
+        "connector_config.database",
+    ),
+    supports_recursion=False,
 )

@@ -31,6 +31,7 @@ from unstructured_ingest.interfaces import (
 )
 from unstructured_ingest.logger import logger
 from unstructured_ingest.processes.connector_registry import (
+    LocationShape,
     SourceRegistryEntry,
 )
 from unstructured_ingest.utils.dep_check import requires_dependencies
@@ -139,7 +140,10 @@ class JiraAccessConfig(AccessConfig):
 
 
 class JiraConnectionConfig(ConnectionConfig):
-    url: str = Field(description="URL of the Jira instance")
+    url: str = Field(
+        description="URL of the Jira instance",
+        json_schema_extra={"x-runtime-eligible": True},
+    )
     cloud_id: Optional[str] = Field(
         description="Atlassian Cloud ID for OAuth 2.0 API gateway requests",
         default=None,
@@ -203,9 +207,21 @@ class JiraConnectionConfig(ConnectionConfig):
 
 
 class JiraIndexerConfig(IndexerConfig):
-    projects: Optional[list[str]] = Field(None, description="List of project keys")
-    boards: Optional[list[str]] = Field(None, description="List of board IDs")
-    issues: Optional[list[str]] = Field(None, description="List of issue keys or IDs")
+    projects: Optional[list[str]] = Field(
+        None,
+        description="List of project keys",
+        json_schema_extra={"x-runtime-eligible": True},
+    )
+    boards: Optional[list[str]] = Field(
+        None,
+        description="List of board IDs",
+        json_schema_extra={"x-runtime-eligible": True},
+    )
+    issues: Optional[list[str]] = Field(
+        None,
+        description="List of issue keys or IDs",
+        json_schema_extra={"x-runtime-eligible": True},
+    )
     status_filters: Optional[list[str]] = Field(
         default=None,
         description="List of status filters, if provided will only return issues that have these statuses",  # noqa: E501
@@ -588,4 +604,13 @@ jira_source_entry = SourceRegistryEntry(
     indexer=JiraIndexer,
     downloader_config=JiraDownloaderConfig,
     downloader=JiraDownloader,
+    location_shape=LocationShape.API_FOLDER,
+    location_identity=(
+        "connector_config.url",
+        "connector_config.cloud_id",
+        "indexer_config.projects",
+        "indexer_config.boards",
+        "indexer_config.issues",
+    ),
+    supports_recursion=False,
 )

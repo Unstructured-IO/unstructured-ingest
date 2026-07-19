@@ -17,6 +17,7 @@ from unstructured_ingest.interfaces import (
     IndexerConfig,
 )
 from unstructured_ingest.processes.connector_registry import (
+    LocationShape,
     SourceRegistryEntry,
 )
 from unstructured_ingest.utils.dep_check import requires_dependencies
@@ -95,6 +96,7 @@ class AirtableIndexerConfig(IndexerConfig):
             table1          → has to mention base to be valid
             base1/view1     → has to mention table to be valid
                 """,
+        json_schema_extra={"x-runtime-eligible": True},
     )
 
     @classmethod
@@ -235,4 +237,7 @@ airtable_source_entry = SourceRegistryEntry(
     downloader=AirtableDownloader,
     downloader_config=AirtableDownloaderConfig,
     connection_config=AirtableConnectionConfig,
+    location_shape=LocationShape.OTHER,
+    location_identity=("indexer_config.list_of_paths",),
+    supports_recursion=False,
 )

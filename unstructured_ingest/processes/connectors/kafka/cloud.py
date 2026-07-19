@@ -7,6 +7,7 @@ from pydantic import Field, Secret, SecretStr
 from unstructured_ingest.logger import logger
 from unstructured_ingest.processes.connector_registry import (
     DestinationRegistryEntry,
+    LocationShape,
     SourceRegistryEntry,
 )
 from unstructured_ingest.processes.connectors.kafka.kafka import (
@@ -112,10 +113,24 @@ kafka_cloud_source_entry = SourceRegistryEntry(
     indexer_config=CloudKafkaIndexerConfig,
     downloader=CloudKafkaDownloader,
     downloader_config=CloudKafkaDownloaderConfig,
+    location_shape=LocationShape.OTHER,
+    location_identity=(
+        "connector_config.bootstrap_server",
+        "connector_config.port",
+        "indexer_config.topic",
+    ),
+    supports_recursion=False,
 )
 
 kafka_cloud_destination_entry = DestinationRegistryEntry(
     connection_config=CloudKafkaConnectionConfig,
     uploader=CloudKafkaUploader,
     uploader_config=CloudKafkaUploaderConfig,
+    location_shape=LocationShape.OTHER,
+    location_identity=(
+        "connector_config.bootstrap_server",
+        "connector_config.port",
+        "uploader_config.topic",
+    ),
+    supports_recursion=False,
 )

@@ -18,6 +18,7 @@ from unstructured_ingest.interfaces import (
 from unstructured_ingest.logger import logger
 from unstructured_ingest.processes.connector_registry import (
     DestinationRegistryEntry,
+    LocationShape,
 )
 from unstructured_ingest.processes.connectors.databricks.volumes import DatabricksPathMixin
 from unstructured_ingest.processes.connectors.sql.databricks_delta_tables import (
@@ -39,8 +40,16 @@ if TYPE_CHECKING:
 
 
 class DatabricksVolumeDeltaTableUploaderConfig(UploaderConfig, DatabricksPathMixin):
-    database: str = Field(description="Database name", default="default")
-    table_name: Optional[str] = Field(description="Table name", default=None)
+    database: str = Field(
+        description="Database name",
+        default="default",
+        json_schema_extra={"x-runtime-eligible": True},
+    )
+    table_name: Optional[str] = Field(
+        description="Table name",
+        default=None,
+        json_schema_extra={"x-runtime-eligible": True},
+    )
     flatten_metadata: bool = Field(
         default=False,
         description=(
@@ -256,4 +265,13 @@ databricks_volumes_delta_tables_destination_entry = DestinationRegistryEntry(
     uploader_config=DatabricksVolumeDeltaTableUploaderConfig,
     upload_stager=DatabricksVolumeDeltaTableStager,
     upload_stager_config=DatabricksVolumeDeltaTableStagerConfig,
+    location_shape=LocationShape.SQL_TABLE,
+    location_identity=(
+        "uploader_config.catalog",
+        "uploader_config.database",
+        "uploader_config.schema",
+        "uploader_config.volume",
+        "uploader_config.table_name",
+    ),
+    supports_recursion=False,
 )

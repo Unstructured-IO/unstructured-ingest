@@ -25,6 +25,7 @@ from unstructured_ingest.interfaces import (
 from unstructured_ingest.logger import logger
 from unstructured_ingest.processes.connector_registry import (
     DestinationRegistryEntry,
+    LocationShape,
 )
 from unstructured_ingest.utils.constants import RECORD_ID_LABEL
 from unstructured_ingest.utils.data_prep import flatten_dict
@@ -165,8 +166,15 @@ class MilvusUploadStager(UploadStager):
 
 
 class MilvusUploaderConfig(UploaderConfig):
-    db_name: Optional[str] = Field(default=None, description="Milvus database name")
-    collection_name: str = Field(description="Milvus collections to write to")
+    db_name: Optional[str] = Field(
+        default=None,
+        description="Milvus database name",
+        json_schema_extra={"x-runtime-eligible": True},
+    )
+    collection_name: str = Field(
+        description="Milvus collections to write to",
+        json_schema_extra={"x-runtime-eligible": True},
+    )
     record_id_key: str = Field(
         default=RECORD_ID_LABEL,
         description="searchable key to find entries for the same record on previous runs",
@@ -315,4 +323,11 @@ milvus_destination_entry = DestinationRegistryEntry(
     uploader_config=MilvusUploaderConfig,
     upload_stager=MilvusUploadStager,
     upload_stager_config=MilvusUploadStagerConfig,
+    location_shape=LocationShape.SEARCH_INDEX,
+    location_identity=(
+        "connector_config.db_name",
+        "uploader_config.db_name",
+        "uploader_config.collection_name",
+    ),
+    supports_recursion=False,
 )

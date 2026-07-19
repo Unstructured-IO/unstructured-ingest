@@ -29,7 +29,10 @@ from unstructured_ingest.interfaces import (
     IndexerConfig,
 )
 from unstructured_ingest.logger import logger
-from unstructured_ingest.processes.connector_registry import SourceRegistryEntry
+from unstructured_ingest.processes.connector_registry import (
+    LocationShape,
+    SourceRegistryEntry,
+)
 from unstructured_ingest.utils.dep_check import requires_dependencies
 
 CONNECTOR_TYPE = "gitlab"
@@ -51,7 +54,10 @@ class GitLabConnectionConfig(ConnectionConfig):
         validate_default=True,
         description="Secret configuration for accessing the GitLab API by authentication token.",
     )
-    url: str = Field(description="The full URL to the GitLab project or repository.")
+    url: str = Field(
+        description="The full URL to the GitLab project or repository.",
+        json_schema_extra={"x-runtime-eligible": True},
+    )
     base_url: str = Field(
         default="https://gitlab.com",
         description="The base URL for the GitLab instance (default is GitLab's public domain).",
@@ -278,4 +284,7 @@ gitlab_source_entry = SourceRegistryEntry(
     indexer=GitLabIndexer,
     downloader_config=GitLabDownloaderConfig,
     downloader=GitLabDownloader,
+    location_shape=LocationShape.API_FOLDER,
+    location_identity=("connector_config.url",),
+    supports_recursion=False,
 )
