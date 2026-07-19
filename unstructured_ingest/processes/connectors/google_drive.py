@@ -545,7 +545,7 @@ class GoogleDriveIndexer(Indexer):
                 f["permissions"] = self.extract_permissions(f.get("permissions"))
                 data.append(self.map_file_data(root_info=f))
         for d in data:
-            d.metadata.record_locator["drive_id"]: object_id
+            d.metadata.record_locator["drive_id"] = object_id
         return data
 
     def extract_permissions(self, permissions: Optional[list[dict]]) -> list[dict]:

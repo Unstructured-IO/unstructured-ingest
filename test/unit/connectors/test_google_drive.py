@@ -511,3 +511,71 @@ class TestGoogleDriveExtensionFiltering:
         )
 
         assert count == 3
+
+
+class TestGoogleDriveRecordLocator:
+    """The indexer must stamp the source drive id onto every file's
+    record_locator so downstream consumers can resolve which drive a file
+    came from."""
+
+    @staticmethod
+    def _indexer() -> GoogleDriveIndexer:
+        return GoogleDriveIndexer(
+            connection_config=MagicMock(),
+            index_config=GoogleDriveIndexerConfig(),
+        )
+
+    def test_get_files_sets_drive_id_for_single_file(self):
+        indexer = self._indexer()
+        files_client = MagicMock()
+        files_client.get.return_value.execute.return_value = {
+            "id": "file-1",
+            "name": "doc.pdf",
+            "mimeType": "application/pdf",
+            "createdTime": "2024-01-01T00:00:00.000Z",
+            "modifiedTime": "2024-01-02T00:00:00.000Z",
+        }
+
+        data = indexer.get_files(files_client=files_client, object_id="drive-123")
+
+        assert len(data) == 1
+        assert data[0].metadata.record_locator["drive_id"] == "drive-123"
+        assert data[0].metadata.record_locator["file_id"] == "file-1"
+
+    def test_get_files_sets_drive_id_for_every_file_in_folder(self, monkeypatch):
+        indexer = self._indexer()
+
+        monkeypatch.setattr(
+            indexer,
+            "get_root_info",
+            lambda files_client, object_id: {
+                "id": object_id,
+                "name": "root",
+                "mimeType": "application/vnd.google-apps.folder",
+            },
+        )
+        monkeypatch.setattr(
+            indexer,
+            "get_paginated_results",
+            lambda **kwargs: [
+                {
+                    "id": "file-1",
+                    "name": "a.pdf",
+                    "mimeType": "application/pdf",
+                    "createdTime": "2024-01-01T00:00:00.000Z",
+                    "modifiedTime": "2024-01-02T00:00:00.000Z",
+                },
+                {
+                    "id": "file-2",
+                    "name": "b.pdf",
+                    "mimeType": "application/pdf",
+                    "createdTime": "2024-01-01T00:00:00.000Z",
+                    "modifiedTime": "2024-01-02T00:00:00.000Z",
+                },
+            ],
+        )
+
+        data = indexer.get_files(files_client=MagicMock(), object_id="drive-xyz")
+
+        assert len(data) == 2
+        assert all(d.metadata.record_locator["drive_id"] == "drive-xyz" for d in data)
