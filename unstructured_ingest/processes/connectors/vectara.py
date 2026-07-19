@@ -9,7 +9,12 @@ from typing import Any, Dict, Mapping, Optional
 from pydantic import Field, Secret
 
 from unstructured_ingest.data_types.file_data import FileData
-from unstructured_ingest.error import DestinationConnectionError, ValueError
+from unstructured_ingest.error import (
+    DestinationConnectionError,
+    UnstructuredIngestError,
+    ValueError,
+    safe_error_summary,
+)
 from unstructured_ingest.interfaces import (
     AccessConfig,
     ConnectionConfig,
@@ -125,9 +130,16 @@ class VectaraUploader(Uploader):
     def precheck(self) -> None:
         try:
             self._check_connection_and_corpora()
+        except (ImportError, UnstructuredIngestError):
+            # _check_connection_and_corpora is @DestinationConnectionError.wrap-
+            # decorated, so our own typed errors (corpus-name / auth guidance)
+            # already arrive sanitized; re-raise them instead of flattening.
+            raise
         except Exception as e:
-            logger.error(f"Failed to validate connection {e}", exc_info=True)
-            raise DestinationConnectionError(f"failed to validate connection: {e}")
+            logger.error(f"Failed to validate connection: {safe_error_summary(e)}")
+            raise DestinationConnectionError(
+                f"failed to validate connection: {safe_error_summary(e)}"
+            ) from None
 
     @property
     async def jwt_token_async(self) -> str:

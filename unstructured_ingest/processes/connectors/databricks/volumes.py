@@ -18,6 +18,7 @@ from unstructured_ingest.error import (
     RateLimitError,
     UserAuthError,
     UserError,
+    safe_error_summary,
 )
 from unstructured_ingest.interfaces import (
     AccessConfig,
@@ -89,19 +90,19 @@ class DatabricksVolumesConnectionConfig(ConnectionConfig, ABC):
             if (message_split[0].endswith("auth")) or (
                 "Client authentication failed" in error_message
             ):
-                return UserAuthError(e)
+                return UserAuthError(safe_error_summary(e))
         if isinstance(e, DatabricksError):
             reverse_mapping = {v: k for k, v in STATUS_CODE_MAPPING.items()}
             if status_code := reverse_mapping.get(type(e)):
                 if status_code in [401, 403]:
-                    return UserAuthError(e)
+                    return UserAuthError(safe_error_summary(e))
                 if status_code == 429:
-                    return RateLimitError(e)
+                    return RateLimitError(safe_error_summary(e))
                 if 400 <= status_code < 500:
-                    return UserError(e)
+                    return UserError(safe_error_summary(e))
                 if 500 <= status_code < 600:
-                    return ProviderError(e)
-        logger.error(f"unhandled exception from databricks: {e}", exc_info=True)
+                    return ProviderError(safe_error_summary(e))
+        logger.error(f"unhandled exception from databricks: {safe_error_summary(e)}")
         return e
 
     @requires_dependencies(dependencies=["databricks.sdk"], extras="databricks-volumes")

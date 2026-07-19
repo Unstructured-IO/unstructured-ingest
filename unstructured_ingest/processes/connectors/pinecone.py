@@ -12,9 +12,11 @@ from unstructured_ingest.error import (
     NotFoundError,
     ProviderError,
     RateLimitError,
+    UnstructuredIngestError,
     UserAuthError,
     UserError,
     WriteError,
+    safe_error_summary,
 )
 from unstructured_ingest.interfaces import (
     AccessConfig,
@@ -223,8 +225,10 @@ class PineconeUploader(VectorDBUploader):
         except NotFoundException:
             return False
         except Exception as e:
-            logger.error(f"failed to check if pinecone index exists : {e}")
-            raise DestinationConnectionError(f"failed to check if pinecone index exists : {e}")
+            logger.error(f"failed to check if pinecone index exists : {safe_error_summary(e)}")
+            raise DestinationConnectionError(
+                f"failed to check if pinecone index exists : {safe_error_summary(e)}"
+            ) from None
 
     def precheck(self):
         try:
@@ -235,9 +239,15 @@ class PineconeUploader(VectorDBUploader):
                 self.connection_config.index_name
             ):
                 raise NotFoundError(f"index {self.connection_config.index_name} does not exist")
+        except (ImportError, UnstructuredIngestError):
+            # Preserve dependency-install guidance and connector-authored typed
+            # errors; only unexpected exceptions are redacted below.
+            raise
         except Exception as e:
-            logger.error(f"failed to validate connection: {e}", exc_info=True)
-            raise DestinationConnectionError(f"failed to validate connection: {e}")
+            logger.error(f"failed to validate connection: {safe_error_summary(e)}")
+            raise DestinationConnectionError(
+                f"failed to validate connection: {safe_error_summary(e)}"
+            ) from None
 
     def format_destination_name(self, destination_name: str) -> str:
         # Pinecone naming requirements:

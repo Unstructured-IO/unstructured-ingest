@@ -9,7 +9,12 @@ from urllib.parse import urlparse
 from pydantic import Field, Secret
 
 from unstructured_ingest.data_types.file_data import FileData
-from unstructured_ingest.error import DestinationConnectionError, ValueError
+from unstructured_ingest.error import (
+    DestinationConnectionError,
+    UnstructuredIngestError,
+    ValueError,
+    safe_error_summary,
+)
 from unstructured_ingest.interfaces import (
     AccessConfig,
     ConnectionConfig,
@@ -149,9 +154,15 @@ class DeltaTableUploader(Uploader):
                         f"'{self.connection_config.aws_region}'."
                     )
 
+            except (ImportError, UnstructuredIngestError):
+                # Preserve dependency-install guidance and connector-authored typed
+                # errors; only unexpected exceptions are redacted below.
+                raise
             except Exception as e:
-                logger.error(f"failed to validate connection: {e}", exc_info=True)
-                raise DestinationConnectionError(f"failed to validate connection: {e}")
+                logger.error(f"failed to validate connection: {safe_error_summary(e)}")
+                raise DestinationConnectionError(
+                    f"failed to validate connection: {safe_error_summary(e)}"
+                ) from None
 
     @requires_dependencies(["tenacity"], extras="delta-table")
     def upload_dataframe(self, df: "DataFrame", file_data: FileData) -> None:

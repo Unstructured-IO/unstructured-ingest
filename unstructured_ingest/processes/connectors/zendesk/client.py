@@ -10,6 +10,7 @@ from unstructured_ingest.error import (
     UnstructuredIngestError,
     UserAuthError,
     UserError,
+    safe_error_summary,
 )
 from unstructured_ingest.logger import logger
 from unstructured_ingest.utils.dep_check import requires_dependencies
@@ -216,8 +217,8 @@ class ZendeskClient:
         import httpx
 
         if not isinstance(e, httpx.HTTPStatusError):
-            logger.error(f"unhandled exception from Zendesk client: {e}", exc_info=True)
-            return UnstructuredIngestError(str(e))
+            logger.error(f"unhandled exception from Zendesk client: {safe_error_summary(e)}")
+            return UnstructuredIngestError(safe_error_summary(e))
         url = e.request.url
         response_code = e.response.status_code
         if response_code == 401:
@@ -225,24 +226,24 @@ class ZendeskClient:
                 f"Failed to connect via auth,"
                 f"{url} using zendesk response, status code {response_code}"
             )
-            return UserAuthError(e)
+            return UserAuthError(safe_error_summary(e))
         if response_code == 429:
             logger.error(
                 f"Failed to connect via rate limits"
                 f"{url} using zendesk response, status code {response_code}"
             )
-            return RateLimitError(e)
+            return RateLimitError(safe_error_summary(e))
         if 400 <= response_code < 500:
             logger.error(
                 f"Failed to connect to {url} using zendesk response, status code {response_code}"
             )
-            return UserError(e)
-        if response_code > 500:
+            return UserError(safe_error_summary(e))
+        if response_code >= 500:
             logger.error(
                 f"Failed to connect to {url} using zendesk response, status code {response_code}"
             )
-            return ProviderError(e)
-        logger.error(f"unhandled http status error from Zendesk client: {e}", exc_info=True)
+            return ProviderError(safe_error_summary(e))
+        logger.error(f"unhandled http status error from Zendesk client: {safe_error_summary(e)}")
         return e
 
     async def fetch_content(self, url: str, content_key: str) -> AsyncGenerator[dict, None]:

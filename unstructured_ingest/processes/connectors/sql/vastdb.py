@@ -8,7 +8,11 @@ from pydantic import Field, Secret
 from unstructured_ingest.data_types.file_data import (
     FileData,
 )
-from unstructured_ingest.error import DestinationConnectionError
+from unstructured_ingest.error import (
+    DestinationConnectionError,
+    UnstructuredIngestError,
+    safe_error_summary,
+)
 from unstructured_ingest.logger import logger
 from unstructured_ingest.processes.connector_registry import (
     DestinationRegistryEntry,
@@ -103,9 +107,15 @@ class VastdbIndexer(SQLIndexer):
         try:
             with self.connection_config.get_table(self.index_config.table_name) as table:
                 table.select()
+        except (ImportError, UnstructuredIngestError):
+            # Preserve dependency-install guidance and connector-authored typed
+            # errors; only unexpected exceptions are redacted below.
+            raise
         except Exception as e:
-            logger.error(f"failed to validate connection: {e}", exc_info=True)
-            raise DestinationConnectionError(f"failed to validate connection: {e}")
+            logger.error(f"failed to validate connection: {safe_error_summary(e)}")
+            raise DestinationConnectionError(
+                f"failed to validate connection: {safe_error_summary(e)}"
+            ) from None
 
 
 class VastdbDownloaderConfig(SQLDownloaderConfig):
@@ -187,9 +197,15 @@ class VastdbUploader(SQLUploader):
         try:
             with self.connection_config.get_table(self.upload_config.table_name) as table:
                 table.select()
+        except (ImportError, UnstructuredIngestError):
+            # Preserve dependency-install guidance and connector-authored typed
+            # errors; only unexpected exceptions are redacted below.
+            raise
         except Exception as e:
-            logger.error(f"failed to validate connection: {e}", exc_info=True)
-            raise DestinationConnectionError(f"failed to validate connection: {e}")
+            logger.error(f"failed to validate connection: {safe_error_summary(e)}")
+            raise DestinationConnectionError(
+                f"failed to validate connection: {safe_error_summary(e)}"
+            ) from None
 
     @requires_dependencies(["pandas"], extras="vastdb")
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:

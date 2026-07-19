@@ -70,6 +70,9 @@ jobs:
         uses: dorny/paths-filter@v3
         id: changes
         with:
+          # Empty token forces detection via local git diff instead of the
+          # GitHub REST listFiles API, which intermittently returns 500s.
+          token: ''
           filters: |
             src:
               - 'unstructured_ingest/**'

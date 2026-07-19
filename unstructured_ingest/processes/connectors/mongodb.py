@@ -18,7 +18,9 @@ from unstructured_ingest.error import (
     ConnectionError,
     DestinationConnectionError,
     SourceConnectionError,
+    UnstructuredIngestError,
     ValueError,
+    safe_error_summary,
 )
 from unstructured_ingest.interfaces import (
     AccessConfig,
@@ -161,9 +163,16 @@ class MongoDBIndexer(Indexer):
                             collection_name, ", ".join(collection_names)
                         )
                     )
+        except (ImportError, UnstructuredIngestError):
+            # Preserve dependency-install guidance and connector-authored typed
+            # errors (missing database/collection, SCRAM-SHA-1 remediation);
+            # only unexpected exceptions are redacted below.
+            raise
         except Exception as e:
-            logger.error(f"Failed to validate connection: {e}", exc_info=True)
-            raise SourceConnectionError(f"Failed to validate connection: {e}")
+            logger.error(f"Failed to validate connection: {safe_error_summary(e)}")
+            raise SourceConnectionError(
+                f"Failed to validate connection: {safe_error_summary(e)}"
+            ) from None
 
     def run(self, **kwargs: Any) -> Generator[BatchFileData, None, None]:
         """Generates FileData objects for each document in the MongoDB collection."""
@@ -346,9 +355,16 @@ class MongoDBUploader(Uploader):
                             collection_name, ", ".join(collection_names)
                         )
                     )
+        except (ImportError, UnstructuredIngestError):
+            # Preserve dependency-install guidance and connector-authored typed
+            # errors (missing database/collection, SCRAM-SHA-1 remediation);
+            # only unexpected exceptions are redacted below.
+            raise
         except Exception as e:
-            logger.error(f"failed to validate connection: {e}", exc_info=True)
-            raise DestinationConnectionError(f"failed to validate connection: {e}")
+            logger.error(f"failed to validate connection: {safe_error_summary(e)}")
+            raise DestinationConnectionError(
+                f"failed to validate connection: {safe_error_summary(e)}"
+            ) from None
 
     def can_delete(self, collection: "Collection") -> bool:
         indexed_keys = []

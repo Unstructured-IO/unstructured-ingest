@@ -29,7 +29,9 @@ from unstructured_ingest.error import (
     MissingCategoryError,
     SourceConnectionError,
     SourceConnectionNetworkError,
+    UnstructuredIngestError,
     ValueError,
+    safe_error_summary,
 )
 from unstructured_ingest.interfaces import (
     AccessConfig,
@@ -104,7 +106,9 @@ class SalesforceAccessConfig(AccessConfig):
                     data=str(self.private_key).encode("utf-8"), password=None
                 )
             except Exception as e:
-                raise ValueError(f"failed to validate private key data: {e}") from e
+                raise ValueError(
+                    f"failed to validate private key data: {safe_error_summary(e)}"
+                ) from None
             return self.private_key, str
 
         raise ValueError("private_key does not contain PEM private key or path")
@@ -147,9 +151,15 @@ class SalesforceIndexer(Indexer):
     def precheck(self) -> None:
         try:
             self.connection_config.get_client()
+        except (ImportError, UnstructuredIngestError):
+            # Preserve dependency-install guidance and connector-authored typed
+            # errors; only unexpected exceptions are redacted below.
+            raise
         except Exception as e:
-            logger.error(f"failed to validate connection: {e}", exc_info=True)
-            raise SourceConnectionError(f"failed to validate connection: {e}")
+            logger.error(f"failed to validate connection: {safe_error_summary(e)}")
+            raise SourceConnectionError(
+                f"failed to validate connection: {safe_error_summary(e)}"
+            ) from None
 
     def get_file_extension(self, record_type) -> str:
         if record_type == "EmailMessage":

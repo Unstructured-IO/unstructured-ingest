@@ -11,7 +11,12 @@ from dateutil import parser
 from pydantic import Field, Secret
 
 from unstructured_ingest.data_types.file_data import FileData
-from unstructured_ingest.error import DestinationConnectionError, ValueError, WriteError
+from unstructured_ingest.error import (
+    DestinationConnectionError,
+    ValueError,
+    WriteError,
+    safe_error_summary,
+)
 from unstructured_ingest.interfaces import (
     AccessConfig,
     ConnectionConfig,
@@ -352,8 +357,10 @@ class WeaviateUploader(VectorDBUploader, ABC):
         except DestinationConnectionError:
             raise
         except Exception as e:
-            logger.error(f"Failed to validate connection {e}", exc_info=True)
-            raise DestinationConnectionError(f"failed to validate connection: {e}")
+            logger.error(f"Failed to validate connection: {safe_error_summary(e)}")
+            raise DestinationConnectionError(
+                f"failed to validate connection: {safe_error_summary(e)}"
+            ) from None
 
     def init(self, **kwargs: Any) -> None:
         self.create_destination(**kwargs)

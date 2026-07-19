@@ -13,7 +13,12 @@ from unstructured_ingest.data_types.file_data import (
     FileDataSourceMetadata,
     SourceIdentifiers,
 )
-from unstructured_ingest.error import SourceConnectionError, UserAuthError, ValueError
+from unstructured_ingest.error import (
+    SourceConnectionError,
+    UserAuthError,
+    ValueError,
+    safe_error_summary,
+)
 from unstructured_ingest.interfaces import (
     AccessConfig,
     ConnectionConfig,
@@ -398,12 +403,16 @@ class GoogleDriveIndexer(Indexer):
                 # If the target is a file, precheck passes.
                 logger.info("Drive ID corresponds to a file. Precheck passed.")
 
+        except SourceConnectionError:
+            # Preserve our own static guidance (API-not-enabled, unreachable);
+            # only unexpected exceptions are redacted below.
+            raise
         except Exception as e:
             logger.error(
-                "Failed to validate Google Drive connection during precheck",
-                exc_info=True,
+                "Failed to validate Google Drive connection during precheck: "
+                f"{safe_error_summary(e)}"
             )
-            raise SourceConnectionError(f"Precheck failed: {e}")
+            raise SourceConnectionError(f"Precheck failed: {safe_error_summary(e)}") from None
 
     @staticmethod
     def is_dir(record: dict) -> bool:
@@ -542,7 +551,7 @@ class GoogleDriveIndexer(Indexer):
                 f["permissions"] = self.extract_permissions(f.get("permissions"))
                 data.append(self.map_file_data(root_info=f))
         for d in data:
-            d.metadata.record_locator["drive_id"]: object_id
+            d.metadata.record_locator["drive_id"] = object_id
         return data
 
     def extract_permissions(self, permissions: Optional[list[dict]]) -> list[dict]:

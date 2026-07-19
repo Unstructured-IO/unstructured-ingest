@@ -1,3 +1,4 @@
+import logging
 from unittest.mock import MagicMock
 
 import pandas as pd
@@ -664,9 +665,7 @@ def test_teradata_uploader_config_preserves_user_table_name_for_precheck(
     """User-provided table names are not modified; precheck passes them through as-is."""
     uploader = TeradataUploader(
         connection_config=teradata_connection_config,
-        upload_config=TeradataUploaderConfig(
-            table_name="my-bad-table", record_id_key="record_id"
-        ),
+        upload_config=TeradataUploaderConfig(table_name="my-bad-table", record_id_key="record_id"),
     )
     assert uploader.upload_config.table_name == "my-bad-table"
     uploader.precheck()  # must not raise
@@ -1044,7 +1043,13 @@ def test_teradata_stager_conform_dict_json_mode(
     )
 
     assert set(result.keys()) == {
-        "id", "record_id", "element_id", "text", "type", "embeddings", "metadata",
+        "id",
+        "record_id",
+        "element_id",
+        "text",
+        "type",
+        "embeddings",
+        "metadata",
     }
     assert result["element_id"] == "abc123"
     assert result["text"] == "Hello world"
@@ -1299,20 +1304,22 @@ def test_extract_teradata_error_code(message: str, expected_code: int | None):
         (5315, "user does not have any access to the database"),
     ],
 )
-def test_classified_teradata_error_user_fault_codes_raise_user_error(
-    code: int, fragment: str
-):
-    """Recognised user-fault codes → UserError with the descriptor and raw message."""
-    exc = _FakeTeradataDriverError(f"[Error {code}] something bad happened")
+def test_classified_teradata_error_user_fault_codes_raise_user_error(code: int, fragment: str):
+    """Recognised user-fault codes → UserError with the code+descriptor only,
+    never the raw driver text, and with the source exception unchained."""
+    secret = "logon password=hunter2 host=td.internal"
+    exc = _FakeTeradataDriverError(f"[Error {code}] {secret}")
     with pytest.raises(UserError) as excinfo:
         _raise_classified_teradata_error(exc, host="td.example.com", table="my_table")
     msg = str(excinfo.value)
     assert str(code) in msg
     assert fragment in msg
     assert "'my_table'" in msg
-    assert "Teradata reported" in msg
-    # Original exception is chained so the driver traceback survives in logs.
-    assert excinfo.value.__cause__ is exc
+    # Raw driver text is redacted and the chain is suppressed so it can't
+    # resurface via traceback logging.
+    assert secret not in msg
+    assert "hunter2" not in msg
+    assert excinfo.value.__cause__ is None
 
 
 def test_classified_teradata_error_extract_picks_last_code_in_chain():
@@ -1333,9 +1340,7 @@ def test_classified_teradata_error_unknown_code_source_fallback():
     """Unknown code on a source path → SourceConnectionError preserved."""
     exc = _FakeTeradataDriverError("connection reset by peer")
     with pytest.raises(SourceConnectionError):
-        _raise_classified_teradata_error(
-            exc, host="td.example.com", table="t", direction="source"
-        )
+        _raise_classified_teradata_error(exc, host="td.example.com", table="t", direction="source")
 
 
 def test_classified_teradata_error_no_code_falls_back():
@@ -1351,7 +1356,9 @@ def test_classified_teradata_error_rejects_invalid_direction():
     exc = _FakeTeradataDriverError("[Error 9999]")
     with pytest.raises(AssertionError, match="direction must be"):
         _raise_classified_teradata_error(
-            exc, host="td.example.com", direction="DESTINATION"  # type: ignore[arg-type]
+            exc,
+            host="td.example.com",
+            direction="DESTINATION",  # type: ignore[arg-type]
         )
 
 
@@ -1409,9 +1416,7 @@ def test_teradata_uploader_delete_by_record_id_type_mismatch_raises_user_error(
     BIGINT instead of VARCHAR. Connector sends a string identifier, Teradata returns
     [Error 3754]. Without this mapping the customer sees 'Failed to connect…' (wrong);
     with it they see the actual type-mismatch message."""
-    mocker.patch.object(
-        teradata_uploader, "_get_db_column_name", return_value="record_id"
-    )
+    mocker.patch.object(teradata_uploader, "_get_db_column_name", return_value="record_id")
     mock_cursor.execute.side_effect = _FakeTeradataDriverError(
         "[Error 3754] Precision error in FLOAT type constant or during implicit conversions."
     )
@@ -1436,9 +1441,7 @@ def test_teradata_uploader_delete_by_record_id_missing_table_raises_user_error(
 ):
     """delete_by_record_id surfaces a 3807 as UserError, not a swallowed driver error."""
     # Skip the get_table_columns lookup that delete_by_record_id makes first.
-    mocker.patch.object(
-        teradata_uploader, "_get_db_column_name", return_value="record_id"
-    )
+    mocker.patch.object(teradata_uploader, "_get_db_column_name", return_value="record_id")
     mock_cursor.execute.side_effect = _FakeTeradataDriverError(
         "[Error 3807] Object 'test_table' does not exist"
     )
@@ -1530,7 +1533,12 @@ def test_teradata_uploader_create_destination_no_privilege_raises_user_error(
 # orchestrators that skip init() fail with Teradata 3807 ("object does not exist").
 
 _OPINIONATED_COLUMNS = [
-    ("id",), ("record_id",), ("element_id",), ("text",), ("type",), ("metadata",),
+    ("id",),
+    ("record_id",),
+    ("element_id",),
+    ("text",),
+    ("type",),
+    ("metadata",),
 ]
 
 
@@ -1603,9 +1611,7 @@ def test_teradata_uploader_upload_dataframe_auto_creates_default_table_when_name
     )
 
     assert teradata_uploader_auto_create.upload_config.table_name == DEFAULT_TABLE_NAME
-    assert any(
-        "CREATE MULTISET TABLE" in c[0][0] for c in mock_cursor.execute.call_args_list
-    )
+    assert any("CREATE MULTISET TABLE" in c[0][0] for c in mock_cursor.execute.call_args_list)
     assert any("INSERT INTO" in c[0][0] for c in mock_cursor.executemany.call_args_list)
 
 
@@ -1650,3 +1656,185 @@ def test_teradata_uploader_init_marks_destination_ensured_so_upload_skips_reprob
     )
 
     assert spy.call_count == 1
+
+
+# --- Log-redaction tests -----------------------------------------------------
+# The connector's logger.error sites route driver exceptions through
+# safe_error_summary(), which emits only the exception type + allowlisted
+# machine fields — never str(e). A driver message can embed the host/user/
+# password (the Teradata connection string), so these tests prove that a secret
+# planted in the driver exception text never reaches the logs.
+
+_LEAKY_SECRET = "password=SUPERSECRET123 host=db.internal"
+
+
+def test_indexer_precheck_connection_failure_does_not_log_secret(
+    mock_cursor: MagicMock,
+    teradata_indexer: TeradataIndexer,
+    mock_get_cursor: MagicMock,
+    caplog,
+):
+    """The 'failed to validate connection' log site must not leak driver text."""
+    mock_cursor.execute.side_effect = Exception(_LEAKY_SECRET)
+
+    with (
+        caplog.at_level(logging.DEBUG, logger="unstructured_ingest"),
+        pytest.raises(SourceConnectionError),
+    ):
+        teradata_indexer.precheck()
+
+    assert "SUPERSECRET123" not in caplog.text
+    assert "db.internal" not in caplog.text
+
+
+def test_uploader_precheck_connection_failure_does_not_log_secret(
+    mock_cursor: MagicMock,
+    teradata_uploader: TeradataUploader,
+    mock_get_cursor: MagicMock,
+    caplog,
+):
+    """The uploader precheck log site must not leak driver text."""
+    mock_cursor.execute.side_effect = Exception(_LEAKY_SECRET)
+
+    with (
+        caplog.at_level(logging.DEBUG, logger="unstructured_ingest"),
+        pytest.raises(DestinationConnectionError),
+    ):
+        teradata_uploader.precheck()
+
+    assert "SUPERSECRET123" not in caplog.text
+    assert "db.internal" not in caplog.text
+
+
+def test_indexer_precheck_table_probe_failure_does_not_log_secret(
+    mock_cursor: MagicMock,
+    teradata_indexer: TeradataIndexer,
+    mock_get_cursor: MagicMock,
+    caplog,
+):
+    """The table-probe log site (driver-error branch) must not leak driver text."""
+    mock_cursor.execute.side_effect = [
+        None,  # SELECT 1 succeeds
+        _FakeTeradataDriverError(f"some driver error {_LEAKY_SECRET}"),
+    ]
+
+    with (
+        caplog.at_level(logging.DEBUG, logger="unstructured_ingest"),
+        pytest.raises(SourceConnectionError),
+    ):
+        teradata_indexer.precheck()
+
+    assert "SUPERSECRET123" not in caplog.text
+    assert "db.internal" not in caplog.text
+
+
+def test_uploader_get_table_columns_failure_does_not_log_secret(
+    mock_cursor: MagicMock,
+    teradata_uploader: TeradataUploader,
+    mock_get_cursor: MagicMock,
+    caplog,
+):
+    """The get_table_columns log site (driver-error branch) must not leak driver text."""
+    mock_cursor.execute.side_effect = _FakeTeradataDriverError(
+        f"[Error 3807] Object 'test_table' does not exist {_LEAKY_SECRET}"
+    )
+    teradata_uploader._columns = None
+
+    with (
+        caplog.at_level(logging.DEBUG, logger="unstructured_ingest"),
+        pytest.raises(UserError),
+    ):
+        teradata_uploader.get_table_columns()
+
+    assert "SUPERSECRET123" not in caplog.text
+    assert "db.internal" not in caplog.text
+
+
+def test_uploader_create_destination_failure_does_not_log_secret(
+    mock_cursor: MagicMock,
+    teradata_uploader: TeradataUploader,
+    mock_get_cursor: MagicMock,
+    caplog,
+):
+    """The create_destination log site (CREATE TABLE driver-error branch) must not leak."""
+    # SELECT DATABASE -> current_db; table-exists probe -> None (missing); CREATE -> raises.
+    mock_cursor.fetchone.side_effect = [("test_db",), None]
+    mock_cursor.execute.side_effect = [
+        None,
+        None,
+        _FakeTeradataDriverError(f"[Error 3523] no CREATE privilege {_LEAKY_SECRET}"),
+    ]
+
+    with (
+        caplog.at_level(logging.DEBUG, logger="unstructured_ingest"),
+        pytest.raises(UserError),
+    ):
+        teradata_uploader.create_destination()
+
+    assert "SUPERSECRET123" not in caplog.text
+    assert "db.internal" not in caplog.text
+
+
+def test_uploader_delete_by_record_id_failure_does_not_log_secret(
+    mocker: MockerFixture,
+    mock_cursor: MagicMock,
+    teradata_uploader: TeradataUploader,
+    mock_get_cursor: MagicMock,
+    caplog,
+):
+    """The delete_by_record_id log site (driver-error branch) must not leak driver text."""
+    mocker.patch.object(teradata_uploader, "_get_db_column_name", return_value="record_id")
+    mock_cursor.execute.side_effect = _FakeTeradataDriverError(
+        f"[Error 3807] Object 'test_table' does not exist {_LEAKY_SECRET}"
+    )
+
+    file_data = FileData(
+        identifier="test_file.txt",
+        connector_type="local",
+        source_identifiers=SourceIdentifiers(
+            filename="test_file.txt", fullpath="/path/to/test_file.txt"
+        ),
+    )
+
+    with (
+        caplog.at_level(logging.DEBUG, logger="unstructured_ingest"),
+        pytest.raises(UserError),
+    ):
+        teradata_uploader.delete_by_record_id(file_data)
+
+    assert "SUPERSECRET123" not in caplog.text
+    assert "db.internal" not in caplog.text
+
+
+def test_uploader_insert_batch_failure_does_not_log_secret(
+    mocker: MockerFixture,
+    mock_cursor: MagicMock,
+    teradata_uploader: TeradataUploader,
+    mock_get_cursor: MagicMock,
+    caplog,
+):
+    """The insert-batch log site (executemany driver-error branch) must not leak driver text."""
+    df = pd.DataFrame({"id": [1], "text": ["hi"], "record_id": ["f1"]})
+    teradata_uploader._columns = ["id", "text", "record_id"]
+    mocker.patch.object(teradata_uploader, "_fit_to_schema", return_value=df)
+    mocker.patch.object(teradata_uploader, "can_delete", return_value=False)
+    mock_cursor.executemany.side_effect = _FakeTeradataDriverError(
+        f"[Error 3523] no INSERT privilege {_LEAKY_SECRET}"
+    )
+
+    file_data = FileData(
+        identifier="test_file.txt",
+        connector_type="local",
+        source_identifiers=SourceIdentifiers(
+            filename="test_file.txt", fullpath="/path/to/test_file.txt"
+        ),
+    )
+
+    with (
+        caplog.at_level(logging.DEBUG, logger="unstructured_ingest"),
+        pytest.raises(UserError),
+    ):
+        teradata_uploader.upload_dataframe(df, file_data)
+
+    assert "SUPERSECRET123" not in caplog.text
+    assert "db.internal" not in caplog.text

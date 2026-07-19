@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import errno
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -10,7 +11,7 @@ from dateutil import parser
 from pydantic import Field, Secret
 
 from unstructured_ingest.data_types.file_data import FileDataSourceMetadata
-from unstructured_ingest.error import ProviderError, UserError, ValueError
+from unstructured_ingest.error import ProviderError, UserError, ValueError, safe_error_summary
 from unstructured_ingest.logger import logger
 from unstructured_ingest.processes.connector_registry import (
     DestinationRegistryEntry,
@@ -98,7 +99,17 @@ class GcsAccessConfig(FsspecAccessConfig):
             return
 
         # Case: path to token
-        if Path(self.service_account_key).is_file():
+        try:
+            is_token_file = Path(self.service_account_key).is_file()
+        except OSError as os_err:
+            if os_err.errno == errno.ENAMETOOLONG:
+                # A value too long to be a filename is likely raw key material;
+                # never echo it back (the OSError would include the full "filename").
+                raise ValueError("Invalid auth token value") from None
+            # Any other OSError (e.g. permission denied) is a genuine filesystem
+            # failure on a real path; surface it instead of masking it.
+            raise
+        if is_token_file:
             self.token = self.service_account_key
             return
 
@@ -127,12 +138,12 @@ class GcsConnectionConfig(FsspecConnectionConfig):
         if isinstance(e, ValueError) and "Bad Request" in str(e):
             raise UserError(e)
         if isinstance(e, HttpError) and (http_error_code := e.code):
-            message = e.message or e
+            message = safe_error_summary(e)
             if 400 <= http_error_code < 500:
                 raise UserError(message)
             if http_error_code >= 500:
                 raise ProviderError(message)
-        logger.error(f"({type(e)} from gcs): {e}", exc_info=True)
+        logger.error(f"({safe_error_summary(e)} from gcs)")
         return e
 
 

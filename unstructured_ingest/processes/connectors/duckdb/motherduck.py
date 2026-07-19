@@ -7,7 +7,11 @@ from pydantic import Field, Secret
 
 from unstructured_ingest.__version__ import __version__ as unstructured_io_ingest_version
 from unstructured_ingest.data_types.file_data import FileData
-from unstructured_ingest.error import DestinationConnectionError
+from unstructured_ingest.error import (
+    DestinationConnectionError,
+    UnstructuredIngestError,
+    safe_error_summary,
+)
 from unstructured_ingest.interfaces import (
     AccessConfig,
     ConnectionConfig,
@@ -100,9 +104,15 @@ class MotherDuckUploader(Uploader):
         try:
             with self.connection_config.get_cursor() as cursor:
                 cursor.execute("SELECT 1;")
+        except (ImportError, UnstructuredIngestError):
+            # Preserve dependency-install guidance and connector-authored typed
+            # errors; only unexpected exceptions are redacted below.
+            raise
         except Exception as e:
-            logger.error(f"failed to validate connection: {e}", exc_info=True)
-            raise DestinationConnectionError(f"failed to validate connection: {e}")
+            logger.error(f"failed to validate connection: {safe_error_summary(e)}")
+            raise DestinationConnectionError(
+                f"failed to validate connection: {safe_error_summary(e)}"
+            ) from None
 
     def upload_dataframe(self, df: "DataFrame") -> None:
         logger.debug(f"uploading {len(df)} entries to {self.connection_config.database} ")

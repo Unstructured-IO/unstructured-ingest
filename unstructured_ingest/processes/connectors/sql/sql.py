@@ -18,7 +18,12 @@ from unstructured_ingest.data_types.file_data import (
     FileDataSourceMetadata,
     SourceIdentifiers,
 )
-from unstructured_ingest.error import DestinationConnectionError, SourceConnectionError
+from unstructured_ingest.error import (
+    DestinationConnectionError,
+    SourceConnectionError,
+    UnstructuredIngestError,
+    safe_error_summary,
+)
 from unstructured_ingest.interfaces import (
     AccessConfig,
     ConnectionConfig,
@@ -119,9 +124,15 @@ class SQLIndexer(Indexer, ABC):
         try:
             with self.get_cursor() as cursor:
                 cursor.execute("SELECT 1;")
+        except (ImportError, UnstructuredIngestError):
+            # Preserve dependency-install guidance and connector-authored typed
+            # errors; only unexpected exceptions are redacted below.
+            raise
         except Exception as e:
-            logger.error(f"failed to validate connection: {e}", exc_info=True)
-            raise SourceConnectionError(f"failed to validate connection: {e}")
+            logger.error(f"failed to validate connection: {safe_error_summary(e)}")
+            raise SourceConnectionError(
+                f"failed to validate connection: {safe_error_summary(e)}"
+            ) from None
 
     def run(self, **kwargs: Any) -> Generator[SqlBatchFileData, None, None]:
         ids = self._get_doc_ids()
@@ -343,9 +354,15 @@ class SQLUploader(Uploader):
         try:
             with self.get_cursor() as cursor:
                 cursor.execute("SELECT 1;")
+        except (ImportError, UnstructuredIngestError):
+            # Preserve dependency-install guidance and connector-authored typed
+            # errors; only unexpected exceptions are redacted below.
+            raise
         except Exception as e:
-            logger.error(f"failed to validate connection: {e}", exc_info=True)
-            raise DestinationConnectionError(f"failed to validate connection: {e}")
+            logger.error(f"failed to validate connection: {safe_error_summary(e)}")
+            raise DestinationConnectionError(
+                f"failed to validate connection: {safe_error_summary(e)}"
+            ) from None
 
     @contextmanager
     def get_cursor(self) -> Generator[Any, None, None]:

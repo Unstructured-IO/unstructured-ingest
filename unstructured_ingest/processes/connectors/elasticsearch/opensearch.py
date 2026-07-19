@@ -17,6 +17,7 @@ from unstructured_ingest.data_types.file_data import (
 from unstructured_ingest.error import (
     DestinationConnectionError,
     SourceConnectionError,
+    safe_error_summary,
 )
 from unstructured_ingest.interfaces import (
     AccessConfig,
@@ -299,8 +300,10 @@ class OpenSearchIndexer(ElasticsearchIndexer):
                     # Also respects AWS FGAC by checking only the specific index
                     await client.indices.get_alias(index=self.index_config.index_name)
             except Exception as e:
-                logger.error(f"failed to validate connection: {e}", exc_info=True)
-                raise SourceConnectionError(f"failed to validate connection: {e}")
+                logger.error(f"failed to validate connection: {safe_error_summary(e)}")
+                raise SourceConnectionError(
+                    f"failed to validate connection: {safe_error_summary(e)}"
+                ) from None
 
         _run_coroutine(_async_precheck)
 
@@ -487,8 +490,10 @@ class OpenSearchUploader(ElasticsearchUploader):
                     # Also respects AWS FGAC by checking only the specific index
                     await client.indices.get_alias(index=self.upload_config.index_name)
             except Exception as e:
-                logger.error(f"failed to validate connection: {e}", exc_info=True)
-                raise DestinationConnectionError(f"failed to validate connection: {e}")
+                logger.error(f"failed to validate connection: {safe_error_summary(e)}")
+                raise DestinationConnectionError(
+                    f"failed to validate connection: {safe_error_summary(e)}"
+                ) from None
 
         _run_coroutine(_async_precheck)
 

@@ -1,8 +1,87 @@
-## [1.6.31]
+## [1.7.11]
 
 ### Enhancements
 
 - **feat: annotate connectors with location capability markers.** `RegistryEntry` now carries opt-in capability markers (`location_shape`, `location_identity`, `supports_recursion`, and `emits_record_version`) plus per-field `x-runtime-eligible` schema hints, so consumers can identify a connector's target location shape, the settings paths that identify that location, and its recursion/record-version semantics. Markers default to unannotated (`location_shape=None`) so a connector without them is never mistaken for an explicit declaration and consumers fall back to their existing defaults. Markers are applied across the fsspec, SQL, search-index, and API-folder connector families.
+
+## [1.7.10]
+
+### Fixes
+
+- **fix(google-drive): record the drive id in each file's record locator.** The indexer used an annotation statement (`record_locator["drive_id"]: object_id`) instead of an assignment, so `drive_id` was silently never written into `record_locator`. Changed to a real assignment so downstream consumers can resolve which drive a file came from.
+
+## [1.7.9]
+
+### Fixes
+
+- **test(teradata): extend the log-redaction regression suite to all seven logger.error sites.** Adds secret-leak tests for the `create_destination`, `delete_by_record_id`, and insert-batch (`executemany`) driver-error branches, which previously had no coverage — each plants a credential in the driver exception and asserts it never reaches the logs.
+
+## [1.7.8]
+
+### Fixes
+
+- **fix(security): redact provider exceptions from Teradata error logs and user-fault responses.** The seven `logger.error(..., exc_info=True)` sites route through `safe_error_summary` with `exc_info` dropped; `_raise_classified_teradata_error` no longer interpolates the raw driver message into the user-fault `UserError` (`Teradata reported: {exc}`) — it surfaces only the numeric code + fixed descriptor — and both classified raises use `from None`, so the driver text (host/user/password) can't reach the response or resurface via traceback logging.
+
+## [1.7.7]
+
+### Fixes
+
+- **fix(milvus): align nonexistent-db precheck test with the wrapped error message.** `test_precheck_fails_on_nonexisting_db` now asserts on the `"failed to precheck Milvus"` message raised by the uploader's precheck wrapper instead of the raw upstream `"database not found"` text, so the test no longer breaks when the underlying Milvus client error string changes.
+
+## [1.7.6]
+
+### Fixes
+
+- **fix(security): redact raw exceptions from Salesforce/Chroma non-precheck raises.** Salesforce private-key parse failures and Chroma upsert failures route the caught exception through `safe_error_summary` and re-raise `from None`, so key material / driver text no longer surfaces in the raised error or its chained traceback.
+
+## [1.7.5]
+
+### Fixes
+
+- **fix(security): redact provider text from fsspec/watsonx wrap_error classified branches.** Dropbox/Box/Azure/GCS/watsonx `wrap_error` route classified-branch messages through `safe_error_summary` instead of raw provider text (`e.body`/`e.message`/`e.reason`/full request URL); watsonx strips the URL query string from logs and now classifies HTTP 500 as `ProviderError` (was `> 500`).
+
+## [1.7.4]
+
+### Enhancements
+
+- **feat(PLU-441): ready the GitHub source connector for Foundation.** Adds OAuth support (`oauth_token`/`refresh_token` alongside the existing PAT, refresh handled upstream per PLU-381) and emits the git blob SHA as `metadata.version` for incremental change detection. Indexing fetches the repo once per run instead of twice per file, falls back to a per-directory walk when GitHub truncates the recursive tree, and skips empty files, directories, and submodules. Fixes downloads failing with `FileNotFoundError` on nested paths. GitHub API errors are classified consistently (auth → `UserAuthError`, throttle → `RateLimitError`, 5xx → `ProviderError`), and transient throttles / 5xx / network errors are retried with exponential backoff that honors GitHub's `Retry-After` (`max_retries`, default 10).
+
+## [1.7.3]
+
+### Fixes
+
+- **fix(security): redact provider exceptions from missed connector error sinks.** VastDB/DuckDB `precheck` overrides and the Databricks/Zendesk/S3 unhandled-exception logs no longer interpolate raw exceptions or dump `exc_info` tracebacks; the Zendesk/S3/Databricks `wrap_error` classified branches route returned messages through `safe_error_summary`; Zendesk now classifies HTTP 500 as `ProviderError`.
+
+## [1.7.2]
+
+### Fixes
+
+- **fix(security): redact MotherDuck token from precheck connection errors.** `MotherDuckUploader.precheck` now routes caught exceptions through `safe_error_summary` and drops `exc_info`, so a bad-token `OperationalError` no longer leaks `md:?motherduck_token=<token>` into logs or the API response.
+
+## [1.7.1]
+
+### Fixes
+
+- **docs(security): document that `safe_error_summary`'s allowlist rests on attribute names.** Adds a comment in `error.py` recording that `_MACHINE_CODE_RE` is a shape filter, not a secret detector, so the guarantee depends on keeping `_SAFE_ERROR_ATTRS` limited to fields that never carry free text. Comment-only; no runtime change.
+
+## [1.7.0]
+
+### Enhancements
+
+- **feat(sftp): verify SFTP server host key.** `SftpConnectionConfig` gains an optional `host_public_key` field. It accepts a base64 blob, an OpenSSH `.pub` line, or an ssh-keyscan/known_hosts line; the key algorithm (`ssh-ed25519` / `ssh-rsa`) is auto-detected from the key itself, so no key-type input is required. When set, the connector pins the expected host key and uses paramiko `RejectPolicy` to verify the server identity, rejecting a mismatched/unknown key instead of fsspec's default `AutoAddPolicy` (which silently trusts any key). An unparsable or unsupported key fails fast at config validation; a well-formed but wrong key surfaces as a host-key mismatch on the first connect (precheck). When `host_public_key` is omitted, connections behave as before but now log a warning that the server identity is unverified. Username/password remains the client authentication method in both cases.
+
+## [1.6.32]
+
+### Enhancements
+
+- **feat: Slack indexer emits records newest-first within each channel.** `SlackIndexer.run` sorts each channel's records (conversation-day packages and file attachments) by `metadata.version` descending before yielding, so the most recent content is indexed first.
+
+## [1.6.31]
+
+### Fixes
+
+- **fix(security): redact credential-bearing exception details from connector error logging.** Connector precheck, upload, and path-validation error paths — and the central `UnstructuredIngestError.wrap` decorator — interpolated caught exception text into logged and raised messages, which could echo credentials (tokens, passwords, DSNs, service-account JSON). These messages now carry a sanitized summary via the new `safe_error_summary()` helper: the exception type name plus allowlisted machine-readable fields (integer HTTP statuses, SDK error-code enums, opaque request/correlation IDs — e.g. `SlackApiError(status_code=401, error=invalid_auth)`), never free-form exception text. `exc_info` frame dumps were removed from credential-bearing paths (a rendered traceback's terminal line re-embeds `str(e)`). The GCS connector also no longer echoes raw service-account JSON via `OSError: File name too long` when key material is passed where a filename is expected. Exception classes and control flow are unchanged; only log and error-message payloads were sanitized.
+- **fix(security): preserve connector-authored guidance and harden the redaction.** Connector prechecks re-raise dependency-install hints (`requires_dependencies`) and connector-authored typed errors (missing index/database/collection, SCRAM-SHA-1 remediation, OAuth error codes, corpus-name mismatch) instead of flattening them to a bare type name. Every redacted re-raise now suppresses the provider exception chain (`from None`) so its text cannot resurface through traceback logging. The GCS service-account guard is narrowed to the too-long-filename case (`ENAMETOOLONG`) so a genuine filesystem error on a real path is no longer masked as "Invalid auth token value". Elasticsearch bulk-upload failure logs now allowlist safe fields (`_index`, `_id`, `status`, `error.type`) instead of only stripping the uploaded document, so document content in `error.reason` is no longer logged.
 
 ## [1.6.30]
 
