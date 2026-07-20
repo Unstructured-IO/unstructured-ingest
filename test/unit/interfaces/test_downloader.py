@@ -69,6 +69,28 @@ def test_downloaded_file_atime_matches_remote_created_time(downloaded_file: Path
     assert downloaded_file.stat().st_atime == REMOTE_MODIFIED - 86400
 
 
+def test_downloaded_file_atime_matches_an_epoch_zero_remote_created_time(downloaded_file: Path):
+    downloader = DummyDownloader()
+    file_data = make_file_data(date_modified="2023-11-14T22:13:20Z", date_created="0")
+
+    downloader.generate_download_response(file_data=file_data, download_path=downloaded_file)
+
+    assert downloaded_file.stat().st_atime == 0
+
+
+@pytest.mark.parametrize("date_modified", ["NaN", "inf", "-inf"])
+def test_downloaded_file_keeps_its_own_mtime_for_non_finite_remote_times(
+    downloaded_file: Path, date_modified: str
+):
+    downloader = DummyDownloader()
+    original_mtime = downloaded_file.stat().st_mtime
+    file_data = make_file_data(date_modified=date_modified)
+
+    downloader.generate_download_response(file_data=file_data, download_path=downloaded_file)
+
+    assert downloaded_file.stat().st_mtime == original_mtime
+
+
 def test_downloaded_file_keeps_its_own_mtime_when_remote_time_is_unparseable(
     downloaded_file: Path,
 ):

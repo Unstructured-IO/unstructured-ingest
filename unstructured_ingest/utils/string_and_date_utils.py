@@ -1,4 +1,5 @@
 import json
+import math
 import re
 from datetime import datetime, timezone
 from typing import Any, Optional, Union
@@ -77,14 +78,17 @@ def fix_unescaped_unicode(text: str, encoding: str = "utf-8") -> str:
 def parse_timestamp(value: Optional[str]) -> Optional[float]:
     """Epoch seconds for an epoch-like or ISO-8601 value, or None if it isn't either.
 
-    ISO-8601 values without an offset are interpreted as UTC.
+    ISO-8601 values without an offset are interpreted as UTC. Non-finite values such as "NaN" and
+    "inf" are rejected: they are not usable timestamps.
     """
     if value is None:
         return None
     try:
-        return float(value)
+        epoch_seconds = float(value)
     except ValueError:
         pass
+    else:
+        return epoch_seconds if math.isfinite(epoch_seconds) else None
     try:
         parsed = datetime.fromisoformat(value)
     except ValueError:

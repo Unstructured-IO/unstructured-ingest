@@ -51,7 +51,8 @@ class Downloader(BaseProcess, BaseConnector, ABC):
         date_modified = parse_timestamp(file_data.metadata.date_modified)
         if date_modified is not None:
             date_created = parse_timestamp(file_data.metadata.date_created)
-            os.utime(download_path, times=(date_created or date_modified, date_modified))
+            access_time = date_created if date_created is not None else date_modified
+            os.utime(download_path, times=(access_time, date_modified))
         file_data.local_download_path = str(download_path.resolve())
         return DownloadResponse(file_data=file_data, path=download_path)
 

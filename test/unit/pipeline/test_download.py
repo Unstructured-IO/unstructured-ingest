@@ -23,6 +23,9 @@ from unstructured_ingest.utils.string_and_date_utils import parse_timestamp
         ("Monday", None),
         ("not a date", None),
         ("", None),
+        ("NaN", None),
+        ("inf", None),
+        ("-inf", None),
     ],
 )
 def test_parse_timestamp_handles_epoch_and_iso_values(value, expected):
