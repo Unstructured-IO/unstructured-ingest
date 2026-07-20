@@ -1,3 +1,9 @@
+## [1.7.11]
+
+### Fixes
+
+- **Preserve NDJSON records after format detection.** The fallback parser now rewinds the input stream before reading line-delimited JSON, preventing valid records from being skipped after the detection pass.
+
 ## [1.7.10]
 
 ### Fixes
