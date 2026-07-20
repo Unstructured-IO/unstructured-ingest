@@ -8,28 +8,6 @@ import pytest
 from unstructured_ingest.data_types.file_data import FileData, SourceIdentifiers
 from unstructured_ingest.interfaces import ProcessorConfig
 from unstructured_ingest.pipeline.steps.download import DownloadStep
-from unstructured_ingest.utils.string_and_date_utils import parse_timestamp
-
-
-@pytest.mark.parametrize(
-    ("value", "expected"),
-    [
-        ("1700000000", 1700000000.0),
-        ("1700000000.5", 1700000000.5),
-        ("2023-11-14T22:13:20Z", 1700000000.0),
-        ("2023-11-14T17:13:20-05:00", 1700000000.0),
-        ("2023-11-14T22:13:20", 1700000000.0),
-        (None, None),
-        ("Monday", None),
-        ("not a date", None),
-        ("", None),
-        ("NaN", None),
-        ("inf", None),
-        ("-inf", None),
-    ],
-)
-def test_parse_timestamp_handles_epoch_and_iso_values(value, expected):
-    assert parse_timestamp(value) == expected
 
 
 def make_step(download_path: Path) -> DownloadStep:
@@ -92,16 +70,3 @@ def test_should_not_download_when_date_modified_is_unparseable(local_file, tmp_p
 
     assert step.should_download(file_data=file_data, file_data_path=str(file_data_path)) is False
     assert file_data.reprocess is False
-
-
-def test_local_timezone_does_not_shift_iso_timestamps(monkeypatch):
-    before = parse_timestamp("2023-11-14T22:13:20")
-    monkeypatch.setenv("TZ", "Asia/Tokyo")
-    if hasattr(os, "tzset"):
-        os.tzset()
-    try:
-        assert parse_timestamp("2023-11-14T22:13:20") == before
-    finally:
-        monkeypatch.undo()
-        if hasattr(os, "tzset"):
-            os.tzset()

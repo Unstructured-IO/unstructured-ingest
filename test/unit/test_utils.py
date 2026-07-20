@@ -1,5 +1,6 @@
 import base64
 import json
+import os
 import zlib
 from datetime import datetime
 from typing import Any
@@ -18,6 +19,7 @@ from unstructured_ingest.utils.string_and_date_utils import (
     ensure_isoformat_datetime,
     fix_unescaped_unicode,
     json_to_dict,
+    parse_timestamp,
     truncate_string_bytes,
 )
 
@@ -217,3 +219,37 @@ def test_format_and_truncate_orig_elements():
     assert format_and_truncate_orig_elements(
         {"text": "Hello, world!", "metadata": {"orig_elements": b64_deflated_bytes.decode("utf-8")}}
     ) == [{"metadata": {"page": 1}}]
+
+
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [
+        ("1700000000", 1700000000.0),
+        ("1700000000.5", 1700000000.5),
+        ("2023-11-14T22:13:20Z", 1700000000.0),
+        ("2023-11-14T17:13:20-05:00", 1700000000.0),
+        ("2023-11-14T22:13:20", 1700000000.0),
+        (None, None),
+        ("Monday", None),
+        ("not a date", None),
+        ("", None),
+        ("NaN", None),
+        ("inf", None),
+        ("-inf", None),
+    ],
+)
+def test_parse_timestamp_handles_epoch_and_iso_values(value, expected):
+    assert parse_timestamp(value) == expected
+
+
+def test_local_timezone_does_not_shift_iso_timestamps(monkeypatch):
+    before = parse_timestamp("2023-11-14T22:13:20")
+    monkeypatch.setenv("TZ", "Asia/Tokyo")
+    if hasattr(os, "tzset"):
+        os.tzset()
+    try:
+        assert parse_timestamp("2023-11-14T22:13:20") == before
+    finally:
+        monkeypatch.undo()
+        if hasattr(os, "tzset"):
+            os.tzset()

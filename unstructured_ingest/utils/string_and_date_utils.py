@@ -80,6 +80,9 @@ def parse_timestamp(value: Optional[str]) -> Optional[float]:
 
     ISO-8601 values without an offset are interpreted as UTC. Non-finite values such as "NaN" and
     "inf" are rejected: they are not usable timestamps.
+
+    Parsing is strict by design. ``dateutil.parser`` coerces values like "Monday" into a real
+    date, which would make unusable metadata look like a valid timestamp.
     """
     if value is None:
         return None
