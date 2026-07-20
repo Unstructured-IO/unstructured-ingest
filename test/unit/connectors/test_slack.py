@@ -1,8 +1,11 @@
 import hashlib
 from datetime import datetime, timezone
-from unittest.mock import Mock
+from io import BytesIO
+from unittest.mock import Mock, call
+from urllib.error import HTTPError
 
 import pytest
+from pydantic import Secret
 
 from unstructured_ingest.data_types.file_data import (
     FileData,
@@ -13,13 +16,17 @@ from unstructured_ingest.error import SourceConnectionError
 from unstructured_ingest.error import ValueError as IngestValueError
 from unstructured_ingest.processes.connectors.slack import (
     PRIVATE_FILE_DOWNLOAD_TIMEOUT_SECONDS,
+    SLACK_RATE_LIMIT_MAX_RETRIES,
     SlackAccessConfig,
+    SlackConnectionConfig,
     SlackDownloader,
     SlackIndexer,
     SlackIndexerConfig,
     _channel_history_error_msg,
     _channel_join_error_msg,
     _NoRedirectHandler,
+    _slack_async_retry_handlers,
+    _slack_sync_retry_handlers,
     _token_kind,
 )
 
@@ -345,6 +352,152 @@ def _make_slack_api_error(error_code: str):
     response = Mock()
     response.get.return_value = error_code
     return SlackApiError(message=error_code, response=response)
+
+
+def _make_rate_limit_http_error() -> HTTPError:
+    from email.message import Message
+
+    headers = Message()
+    headers.add_header("Retry-After", "3")
+    return HTTPError(
+        url="https://slack.com/api/conversations.join",
+        code=429,
+        msg="Too Many Requests",
+        hdrs=headers,
+        fp=BytesIO(b'{"ok":false,"error":"rate_limited"}'),
+    )
+
+
+def _raise_rate_limit_http_error(*_args, **_kwargs) -> HTTPError:
+    raise _make_rate_limit_http_error()
+
+
+def test_slack_sync_retry_handlers_include_connection_and_rate_limit_handlers():
+    from slack_sdk.http_retry import ConnectionErrorRetryHandler, RateLimitErrorRetryHandler
+
+    handlers = _slack_sync_retry_handlers()
+
+    assert len(handlers) == 2
+    assert isinstance(handlers[0], ConnectionErrorRetryHandler)
+    assert isinstance(handlers[1], RateLimitErrorRetryHandler)
+    assert handlers[1].max_retry_count == SLACK_RATE_LIMIT_MAX_RETRIES
+
+
+def test_slack_async_retry_handlers_include_connection_and_rate_limit_handlers():
+    from slack_sdk.http_retry.builtin_async_handlers import (
+        AsyncConnectionErrorRetryHandler,
+        AsyncRateLimitErrorRetryHandler,
+    )
+
+    handlers = _slack_async_retry_handlers()
+
+    assert len(handlers) == 2
+    assert isinstance(handlers[0], AsyncConnectionErrorRetryHandler)
+    assert isinstance(handlers[1], AsyncRateLimitErrorRetryHandler)
+    assert handlers[1].max_retry_count == SLACK_RATE_LIMIT_MAX_RETRIES
+
+
+def test_slack_connection_config_get_client_configures_retry_handlers():
+    from slack_sdk.http_retry import ConnectionErrorRetryHandler, RateLimitErrorRetryHandler
+
+    config = SlackConnectionConfig(access_config=Secret(SlackAccessConfig(token=BOT_TOKEN)))
+    client = config.get_client()
+
+    assert len(client.retry_handlers) == 2
+    assert isinstance(client.retry_handlers[0], ConnectionErrorRetryHandler)
+    assert isinstance(client.retry_handlers[1], RateLimitErrorRetryHandler)
+    assert client.retry_handlers[1].max_retry_count == SLACK_RATE_LIMIT_MAX_RETRIES
+
+
+def test_slack_connection_config_get_async_client_configures_retry_handlers():
+    from slack_sdk.http_retry.builtin_async_handlers import (
+        AsyncConnectionErrorRetryHandler,
+        AsyncRateLimitErrorRetryHandler,
+    )
+
+    config = SlackConnectionConfig(access_config=Secret(SlackAccessConfig(token=BOT_TOKEN)))
+    client = config.get_async_client()
+
+    assert len(client.retry_handlers) == 2
+    assert isinstance(client.retry_handlers[0], AsyncConnectionErrorRetryHandler)
+    assert isinstance(client.retry_handlers[1], AsyncRateLimitErrorRetryHandler)
+    assert client.retry_handlers[1].max_retry_count == SLACK_RATE_LIMIT_MAX_RETRIES
+
+
+def test_slack_sync_client_honors_retry_after_with_jitter_until_retries_exhausted(mocker):
+    from slack_sdk.errors import SlackApiError
+
+    sleep = mocker.patch("slack_sdk.http_retry.builtin_handlers.time.sleep")
+    mocker.patch("slack_sdk.http_retry.builtin_handlers.random.random", return_value=0.25)
+    mocker.patch(
+        "slack_sdk.web.base_client.BaseClient._perform_urllib_http_request_internal",
+        side_effect=_raise_rate_limit_http_error,
+    )
+
+    config = SlackConnectionConfig(access_config=Secret(SlackAccessConfig(token=BOT_TOKEN)))
+    client = config.get_client()
+
+    with pytest.raises(SlackApiError):
+        client.conversations_join(channel="C1")
+
+    assert sleep.call_args_list == [call(3.25)] * SLACK_RATE_LIMIT_MAX_RETRIES
+
+
+@pytest.mark.asyncio
+async def test_slack_async_client_honors_retry_after_with_jitter_until_retries_exhausted(mocker):
+    from slack_sdk.errors import SlackApiError
+
+    sleep = mocker.patch("slack_sdk.http_retry.builtin_async_handlers.asyncio.sleep")
+    mocker.patch("slack_sdk.http_retry.builtin_async_handlers.random.random", return_value=0.25)
+
+    class MockResponse:
+        status = 429
+        headers = {"Retry-After": "3"}
+        content_type = "application/json"
+
+        async def json(self):
+            return {"ok": False, "error": "rate_limited"}
+
+        async def text(self):
+            return '{"ok": false, "error": "rate_limited"}'
+
+        async def read(self):
+            return b'{"ok": false, "error": "rate_limited"}'
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *args):
+            return None
+
+    session = mocker.Mock()
+    session.closed = False
+    session.request = mocker.Mock(return_value=MockResponse())
+    session.close = mocker.AsyncMock()
+
+    config = SlackConnectionConfig(access_config=Secret(SlackAccessConfig(token=BOT_TOKEN)))
+    client = config.get_async_client()
+    client.session = session
+    connection_config = mocker.Mock()
+    connection_config.get_async_client.return_value = client
+    downloader = SlackDownloader(connection_config=connection_config)
+    file_data = FileData(
+        identifier="pkg-1",
+        connector_type="slack",
+        source_identifiers=SourceIdentifiers(filename="abc.xml", fullpath="abc.xml"),
+        metadata=FileDataSourceMetadata(
+            record_locator={
+                "channel": CHANNEL,
+                "oldest": "1.0",
+                "latest": "2.0",
+            }
+        ),
+    )
+
+    with pytest.raises(SlackApiError):
+        await downloader._download_conversation(file_data, Mock())
+
+    assert sleep.call_args_list == [call(3.25)] * SLACK_RATE_LIMIT_MAX_RETRIES
 
 
 def test_validate_channels_bot_succeeds_when_all_joins_succeed():

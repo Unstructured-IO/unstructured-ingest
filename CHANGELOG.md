@@ -1,8 +1,14 @@
-## [1.7.11]
+## [1.7.12]
 
 ### Fixes
 
 - **Close Zendesk and Notion HTTP clients after connector operations.** Connector prechecks, indexing, downloads, context-manager entry failures and exits, and constructor-failure paths now release their underlying HTTP connection pools.
+
+## [1.7.11]
+
+### Fixes
+
+- **fix(FS-2139): centralize bounded Slack API rate-limit retries in SDK client configuration.** Sync and async Slack clients now use the Slack SDK's connection and rate-limit retry handlers configured once in `SlackConnectionConfig`, replacing custom call-site retry loops across indexer join/history and downloader history/replies/files calls.
 
 ## [1.7.10]
 

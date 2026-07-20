@@ -151,7 +151,10 @@ test = [
     "beautifulsoup4",
     "pandas",
     # Connector specific deps
-    "slack_sdk",
+    "backoff",
+    "httpx",
+    "notion-client",
+    "slack_sdk[optional]",
     "cryptography",
     "fsspec",
     "vertexai",
