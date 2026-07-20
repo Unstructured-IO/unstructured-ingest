@@ -17,7 +17,7 @@ from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.utils.string_and_date_utils import fix_unescaped_unicode
 
 if TYPE_CHECKING:
-    from httpx import AsyncClient, Client
+    from httpx import AsyncClient
 
 
 class Attachment(BaseModel):
@@ -186,29 +186,16 @@ class ZendeskClient:
     email: str
     max_page_size: int = 100
     _async_client: "AsyncClient" = field(init=False, default=None)
-    _client: "Client" = field(init=False, default=None)
     _base_url: str = field(init=False, default=None)
 
     async def __aenter__(self) -> "ZendeskClient":
         import httpx
 
-        try:
-            self._async_client = httpx.AsyncClient(auth=self._auth())
-        except Exception:
-            self.close()
-            raise
+        self._async_client = httpx.AsyncClient(auth=self._auth())
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
-        try:
-            if self._async_client is not None:
-                await self._async_client.aclose()
-                self._async_client = None
-        finally:
-            self.close()
-
-    def close(self) -> None:
-        self._client.close()
+        await self._async_client.aclose()
 
     def _auth(self) -> tuple[str, str]:
         return f"{self.email}/token", self.token
@@ -217,16 +204,15 @@ class ZendeskClient:
     def __post_init__(self):
         import httpx
 
-        self._client = httpx.Client(auth=self._auth())
         self._base_url = f"https://{self.subdomain}.zendesk.com/api/v2"
 
         # Run check
         try:
             url_to_check = f"{self._base_url}/groups.json"
-            resp = self._client.head(url_to_check)
-            resp.raise_for_status()
+            with httpx.Client(auth=self._auth()) as client:
+                resp = client.head(url_to_check)
+                resp.raise_for_status()
         except Exception as e:
-            self._client.close()
             raise self.wrap_error(e=e)
 
     @requires_dependencies(["httpx"], extras="zendesk")

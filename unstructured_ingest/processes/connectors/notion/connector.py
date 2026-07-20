@@ -1,4 +1,4 @@
-from contextlib import closing
+from contextlib import contextmanager
 from dataclasses import dataclass
 from time import time
 from typing import TYPE_CHECKING, Any, AsyncGenerator, Generator, Optional
@@ -43,16 +43,21 @@ class NotionAccessConfig(AccessConfig):
 class NotionConnectionConfig(ConnectionConfig):
     access_config: Secret[NotionAccessConfig]
 
+    @contextmanager
     @requires_dependencies(["notion_client"], extras="notion")
-    def get_client(self) -> "Client":
+    def get_client(self) -> Generator["Client", None, None]:
         from unstructured_ingest.processes.connectors.notion.client import Client
 
-        return Client(
+        client = Client(
             notion_version=NOTION_API_VERSION,
             auth=self.access_config.get_secret_value().notion_api_key,
             logger=logger,
             log_level=logger.level,
         )
+        try:
+            yield client
+        finally:
+            client.close()
 
 
 class NotionIndexerConfig(IndexerConfig):
@@ -86,7 +91,7 @@ class NotionIndexer(Indexer):
     def precheck(self) -> None:
         """Check the connection to the Notion API."""
         try:
-            with closing(self.connection_config.get_client()) as client:
+            with self.connection_config.get_client() as client:
                 # Perform a simple request to verify connection
                 request = client._build_request("HEAD", "users")
                 response = client.client.send(request)
@@ -103,7 +108,7 @@ class NotionIndexer(Indexer):
             ) from None
 
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
-        with closing(self.connection_config.get_client()) as client:
+        with self.connection_config.get_client() as client:
             processed_pages: set[str] = set()
             processed_databases: set[str] = set()
 
@@ -285,23 +290,22 @@ class NotionDownloader(Downloader):
     connector_type: str = CONNECTOR_TYPE
 
     def run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
-        with closing(self.connection_config.get_client()) as client:
-            record_locator = file_data.metadata.record_locator
+        record_locator = file_data.metadata.record_locator
+        if "page_id" not in record_locator and "database_id" not in record_locator:
+            raise ValueError("Invalid record_locator in file_data")
 
+        with self.connection_config.get_client() as client:
             if "page_id" in record_locator:
                 return self.download_page(
                     client=client,
                     page_id=record_locator["page_id"],
                     file_data=file_data,
                 )
-            elif "database_id" in record_locator:
-                return self.download_database(
-                    client=client,
-                    database_id=record_locator["database_id"],
-                    file_data=file_data,
-                )
-            else:
-                raise ValueError("Invalid record_locator in file_data")
+            return self.download_database(
+                client=client,
+                database_id=record_locator["database_id"],
+                file_data=file_data,
+            )
 
     def download_page(self, client, page_id: str, file_data: FileData) -> DownloadResponse:
         from unstructured_ingest.processes.connectors.notion.helpers import extract_page_html

@@ -1,5 +1,3 @@
-from unittest.mock import MagicMock, patch
-
 import pytest
 from pydantic import Secret
 from pytest_mock import MockerFixture
@@ -24,13 +22,17 @@ def test_downloader_closes_the_client_connection_pool(connection_config, mocker:
         connection_config=connection_config,
         download_config=NotionDownloaderConfig(),
     )
-    file_data = MagicMock()
+    file_data = mocker.MagicMock()
     file_data.metadata.record_locator = {"page_id": "page-id"}
 
-    get_client = mocker.spy(NotionConnectionConfig, "get_client")
+    clients = []
+    mocker.patch.object(
+        NotionDownloader,
+        "download_page",
+        side_effect=lambda client, page_id, file_data: clients.append(client) or "response",
+    )
 
-    with patch.object(NotionDownloader, "download_page", return_value="response"):
-        assert downloader.run(file_data=file_data) == "response"
+    assert downloader.run(file_data=file_data) == "response"
 
-    get_client.assert_called_once()
-    assert get_client.spy_return.client.is_closed
+    assert len(clients) == 1
+    assert clients[0].client.is_closed

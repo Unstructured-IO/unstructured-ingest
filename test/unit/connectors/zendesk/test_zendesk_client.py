@@ -79,61 +79,43 @@ def _track_instances(mocker: MockerFixture, cls: type) -> list:
     return instances
 
 
-def test_constructor_opens_only_a_sync_client_that_close_releases(mocker: MockerFixture):
-    async_clients = _track_instances(mocker, httpx.AsyncClient)
-    client = _client(mocker)
-    sync_client = client._client
-
-    assert async_clients == []
-
-    client.close()
-
-    assert sync_client.is_closed
-
-
-@pytest.mark.asyncio
-async def test_async_context_closes_both_http_clients(mocker: MockerFixture):
-    client = _client(mocker)
-    sync_client = client._client
-
-    async with client:
-        async_client = client._async_client
-        assert not async_client.is_closed
-
-    assert async_client.is_closed
-    assert sync_client.is_closed
-
-
-@pytest.mark.asyncio
-async def test_async_context_entry_failure_closes_sync_client(mocker: MockerFixture):
-    client = _client(mocker)
-    sync_client = client._client
-    mocker.patch("httpx.AsyncClient.__init__", side_effect=RuntimeError("cannot open"))
-
-    with pytest.raises(RuntimeError):
-        async with client:
-            pass
-
-    assert sync_client.is_closed
-
-
-def test_constructor_closes_sync_client_when_precheck_fails(mocker: MockerFixture):
-    mocker.patch("httpx.Client.head", side_effect=RuntimeError("connection failed"))
+def test_constructor_closes_the_client_used_for_its_connection_check(mocker: MockerFixture):
+    mocker.patch("httpx.Client.head", return_value=mocker.MagicMock())
     sync_clients = _track_instances(mocker, httpx.Client)
     async_clients = _track_instances(mocker, httpx.AsyncClient)
 
-    with pytest.raises(UnstructuredIngestError):
-        ZendeskClient(token="tok", subdomain="sub", email="user@example.com")
+    ZendeskClient(token="tok", subdomain="sub", email="user@example.com")
 
     assert len(sync_clients) == 1
     assert sync_clients[0].is_closed
     assert async_clients == []
 
 
+def test_constructor_closes_its_client_when_the_connection_check_fails(mocker: MockerFixture):
+    mocker.patch("httpx.Client.head", side_effect=RuntimeError("connection failed"))
+    sync_clients = _track_instances(mocker, httpx.Client)
+
+    with pytest.raises(UnstructuredIngestError):
+        ZendeskClient(token="tok", subdomain="sub", email="user@example.com")
+
+    assert len(sync_clients) == 1
+    assert sync_clients[0].is_closed
+
+
+@pytest.mark.asyncio
+async def test_async_context_closes_the_async_client(mocker: MockerFixture):
+    client = _client(mocker)
+
+    async with client:
+        async_client = client._async_client
+        assert not async_client.is_closed
+
+    assert async_client.is_closed
+
+
 def test_precheck_leaves_no_open_clients(mocker: MockerFixture):
     mocker.patch("httpx.Client.head", return_value=mocker.MagicMock())
     sync_clients = _track_instances(mocker, httpx.Client)
-    async_clients = _track_instances(mocker, httpx.AsyncClient)
 
     indexer = ZendeskIndexer(
         connection_config=ZendeskConnectionConfig(
@@ -147,4 +129,3 @@ def test_precheck_leaves_no_open_clients(mocker: MockerFixture):
 
     assert len(sync_clients) == 1
     assert sync_clients[0].is_closed
-    assert async_clients == []
