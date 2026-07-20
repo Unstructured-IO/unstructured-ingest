@@ -2,7 +2,7 @@
 
 ### Fixes
 
-- **Close Zendesk and Notion HTTP clients after connector operations.** Connector prechecks, indexing, downloads, context-manager exits, and constructor-failure paths now release their underlying HTTP connection pools.
+- **Close Zendesk and Notion HTTP clients after connector operations.** Connector prechecks, indexing, downloads, context-manager entry failures and exits, and constructor-failure paths now release their underlying HTTP connection pools.
 
 ## [1.7.10]
 

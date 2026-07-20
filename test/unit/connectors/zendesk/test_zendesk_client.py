@@ -100,6 +100,19 @@ async def test_async_context_closes_both_http_clients(mocker: MockerFixture):
     assert sync_client.is_closed
 
 
+@pytest.mark.asyncio
+async def test_async_context_entry_failure_closes_sync_client(mocker: MockerFixture):
+    client = _client(mocker)
+    sync_client = client._client
+    mocker.patch("httpx.AsyncClient.__init__", side_effect=RuntimeError("cannot open"))
+
+    with pytest.raises(RuntimeError):
+        async with client:
+            pass
+
+    assert sync_client.is_closed
+
+
 def test_close_releases_sync_client(mocker: MockerFixture):
     client = _client(mocker)
     sync_client = client._client

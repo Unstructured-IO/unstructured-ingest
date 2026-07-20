@@ -193,7 +193,11 @@ class ZendeskClient:
     async def __aenter__(self) -> "ZendeskClient":
         import httpx
 
-        self._async_client = httpx.AsyncClient(auth=self._auth())
+        try:
+            self._async_client = httpx.AsyncClient(auth=self._auth())
+        except Exception:
+            self.close()
+            raise
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
