@@ -1,3 +1,9 @@
+## [1.7.11]
+
+### Fixes
+
+- **Refresh cached downloads when the source is newer.** Download freshness checks now compare local and remote modification times in the correct direction and accept both epoch and ISO-formatted source timestamps.
+
 ## [1.7.10]
 
 ### Fixes

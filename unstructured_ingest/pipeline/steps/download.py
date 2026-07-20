@@ -3,6 +3,7 @@ import hashlib
 import json
 import shutil
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable, Optional, TypedDict, TypeVar
 
@@ -45,12 +46,21 @@ class DownloadStep(PipelineStep):
         )
 
     @staticmethod
-    def is_float(value: str):
+    def get_timestamp(value: Optional[str]) -> Optional[float]:
+        """Epoch seconds for an epoch-like or ISO-8601 value, or None if it isn't either."""
+        if value is None:
+            return None
         try:
-            float(value)
-            return True
+            return float(value)
+        except (TypeError, ValueError):
+            pass
+        try:
+            parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
         except ValueError:
-            return False
+            return None
+        if parsed.tzinfo is None:
+            parsed = parsed.replace(tzinfo=timezone.utc)
+        return parsed.timestamp()
 
     def should_download(self, file_data: FileData, file_data_path: str) -> bool:
         if self.context.re_download:
@@ -58,11 +68,11 @@ class DownloadStep(PipelineStep):
         download_path = self.process.get_download_path(file_data=file_data)
         if not download_path or not download_path.exists():
             return True
+        remote_modified = self.get_timestamp(file_data.metadata.date_modified)
         if (
             download_path.is_file()
-            and file_data.metadata.date_modified
-            and self.is_float(file_data.metadata.date_modified)
-            and download_path.stat().st_mtime > float(file_data.metadata.date_modified)
+            and remote_modified is not None
+            and download_path.stat().st_mtime < remote_modified
         ):
             # Also update file data to mark this to reprocess since this won't change the filename
             file_data.reprocess = True
