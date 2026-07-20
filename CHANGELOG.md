@@ -1,3 +1,9 @@
+## [1.7.12]
+
+### Fixes
+
+- **fix(stager): preserve single-record NDJSON partition output.** Blob-storage staging now reads `.ndjson` inputs with an NDJSON-aware streaming reader instead of treating them as top-level JSON arrays, preventing single-record partition output from being silently dropped. Adds regression coverage for single- and multi-record inputs and updates the Google Drive expected output with the `drive_id` field introduced in 1.7.10.
+
 ## [1.7.11]
 
 ### Fixes
