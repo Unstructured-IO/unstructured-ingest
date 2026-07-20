@@ -11,6 +11,7 @@ from unstructured_ingest.interfaces import Downloader, download_responses
 from unstructured_ingest.logger import logger
 from unstructured_ingest.pipeline.interfaces import PipelineStep
 from unstructured_ingest.utils.pydantic_models import serialize_base_model_json
+from unstructured_ingest.utils.string_and_date_utils import parse_timestamp
 
 DownloaderT = TypeVar("DownloaderT", bound=Downloader)
 
@@ -44,25 +45,17 @@ class DownloadStep(PipelineStep):
             f"connection configs: {connection_config}"
         )
 
-    @staticmethod
-    def is_float(value: str):
-        try:
-            float(value)
-            return True
-        except ValueError:
-            return False
-
     def should_download(self, file_data: FileData, file_data_path: str) -> bool:
         if self.context.re_download:
             return True
         download_path = self.process.get_download_path(file_data=file_data)
         if not download_path or not download_path.exists():
             return True
+        remote_modified = parse_timestamp(file_data.metadata.date_modified)
         if (
             download_path.is_file()
-            and file_data.metadata.date_modified
-            and self.is_float(file_data.metadata.date_modified)
-            and download_path.stat().st_mtime > float(file_data.metadata.date_modified)
+            and remote_modified is not None
+            and download_path.stat().st_mtime < remote_modified
         ):
             # Also update file data to mark this to reprocess since this won't change the filename
             file_data.reprocess = True
