@@ -1,8 +1,21 @@
+## [1.7.13]
+
+### Fixes
+
+- **Preserve NDJSON records after format detection.** The fallback parser now rewinds the input stream before reading line-delimited JSON, preventing valid records from being skipped after the detection pass.
+- **fix(security): apply tar extraction filters on supported runtimes.** Tar extraction now detects the existing `tarfile.tar_filter` capability instead of gating it on the Python minor version, so supported Python 3.11 maintenance releases receive the same filtering already used on Python 3.12+. Older patch releases retain the existing warning-and-extract behavior.
+
+## [1.7.12]
+
+### Fixes
+
+- **fix(stager): preserve single-record NDJSON partition output.** Blob-storage staging now reads `.ndjson` inputs with an NDJSON-aware streaming reader instead of treating them as top-level JSON arrays, preventing single-record partition output from being silently dropped. Adds regression coverage for single- and multi-record inputs and updates the Google Drive expected output with the `drive_id` field introduced in 1.7.10.
+
 ## [1.7.11]
 
 ### Fixes
 
-- **fix(security): apply tar extraction filters on supported runtimes.** Tar extraction now detects the existing `tarfile.tar_filter` capability instead of gating it on the Python minor version, so supported Python 3.11 maintenance releases receive the same filtering already used on Python 3.12+. Older patch releases retain the existing warning-and-extract behavior.
+- **fix(FS-2139): centralize bounded Slack API rate-limit retries in SDK client configuration.** Sync and async Slack clients now use the Slack SDK's connection and rate-limit retry handlers configured once in `SlackConnectionConfig`, replacing custom call-site retry loops across indexer join/history and downloader history/replies/files calls.
 
 ## [1.7.10]
 
