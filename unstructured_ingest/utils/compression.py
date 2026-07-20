@@ -1,5 +1,4 @@
 import os
-import sys
 import tarfile
 import zipfile
 from pathlib import Path
@@ -57,15 +56,15 @@ def uncompress_tar_file(tar_filename: str, path: Optional[str] = None) -> str:
     logger.info(f"extracting tar {tar_filename} -> {path}")
     # NOTE: "r:*" mode opens both compressed (e.g ".tar.gz") and uncompressed ".tar" archives
     with tarfile.open(tar_filename, "r:*") as tfile:
-        # NOTE(robinson): Mitigate against malicious content being extracted from the tar file.
-        # This was added in Python 3.12
-        # Ref: https://docs.python.org/3/library/tarfile.html#extraction-filters
-        if sys.version_info >= (3, 12):
+        # Extraction filters are available in Python 3.12 and in maintained Python 3.11
+        # patch releases. Detect the capability so every supported runtime that provides
+        # the existing mitigation uses it.
+        if hasattr(tarfile, "tar_filter"):
             tfile.extraction_filter = tarfile.tar_filter
         else:
             logger.warning(
-                "Extraction filtering for tar files is available for Python 3.12 and above. "
-                "Consider upgrading your Python version to improve security. "
+                "Extraction filtering for tar files is unavailable in this Python patch "
+                "release. Consider upgrading to Python 3.11.4 or later to improve security. "
                 "See https://docs.python.org/3/library/tarfile.html#extraction-filters"
             )
         tfile.extractall(path=path)
