@@ -4,6 +4,7 @@
 
 - **Refresh cached downloads when the source is newer.** Download freshness checks now compare local and remote modification times in the correct direction and accept both epoch and ISO-formatted source timestamps.
 - **Stamp downloaded files with the source modification time.** Downloaded files take their modification time from the source whenever it is an epoch or ISO-formatted timestamp, even when the source creation time is missing or unparseable, so freshness checks compare against the remote time rather than the download time.
+- **Report Databricks Volumes modification times in epoch seconds.** The Databricks SDK reports modification times in milliseconds; they are now converted to seconds so freshness checks no longer treat every indexed file as newer than its local copy.
 
 ## [1.7.10]
 

@@ -151,7 +151,13 @@ class DatabricksVolumesIndexer(Indexer, ABC):
                         "path": file_info.path,
                     },
                     metadata=FileDataSourceMetadata(
-                        url=file_info.path, date_modified=str(file_info.modification_time)
+                        url=file_info.path,
+                        # The Databricks SDK reports this in milliseconds.
+                        date_modified=(
+                            str(file_info.modification_time / 1000)
+                            if file_info.modification_time is not None
+                            else None
+                        ),
                     ),
                     display_name=source_identifiers.fullpath,
                 )
