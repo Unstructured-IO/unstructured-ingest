@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field
 from unstructured_ingest.data_types.file_data import FileData
 from unstructured_ingest.interfaces.connector import BaseConnector
 from unstructured_ingest.interfaces.process import BaseProcess
+from unstructured_ingest.utils.string_and_date_utils import parse_timestamp
 
 
 class DownloaderConfig(BaseModel):
@@ -44,26 +45,13 @@ class Downloader(BaseProcess, BaseConnector, ABC):
         rel_path = rel_path[1:] if rel_path.startswith("/") else rel_path
         return self.download_dir / Path(rel_path)
 
-    @staticmethod
-    def is_float(value: str):
-        try:
-            float(value)
-            return True
-        except ValueError:
-            return False
-
     def generate_download_response(
         self, file_data: FileData, download_path: Path
     ) -> DownloadResponse:
-        if (
-            file_data.metadata.date_modified
-            and self.is_float(file_data.metadata.date_modified)
-            and file_data.metadata.date_created
-            and self.is_float(file_data.metadata.date_created)
-        ):
-            date_modified = float(file_data.metadata.date_modified)
-            date_created = float(file_data.metadata.date_created)
-            os.utime(download_path, times=(date_created, date_modified))
+        date_modified = parse_timestamp(file_data.metadata.date_modified)
+        if date_modified is not None:
+            date_created = parse_timestamp(file_data.metadata.date_created)
+            os.utime(download_path, times=(date_created or date_modified, date_modified))
         file_data.local_download_path = str(download_path.resolve())
         return DownloadResponse(file_data=file_data, path=download_path)
 

@@ -8,6 +8,7 @@ import pytest
 from unstructured_ingest.data_types.file_data import FileData, SourceIdentifiers
 from unstructured_ingest.interfaces import ProcessorConfig
 from unstructured_ingest.pipeline.steps.download import DownloadStep
+from unstructured_ingest.utils.string_and_date_utils import parse_timestamp
 
 
 @pytest.mark.parametrize(
@@ -24,8 +25,8 @@ from unstructured_ingest.pipeline.steps.download import DownloadStep
         ("", None),
     ],
 )
-def test_get_timestamp_parses_epoch_and_iso_values(value, expected):
-    assert DownloadStep.get_timestamp(value) == expected
+def test_parse_timestamp_handles_epoch_and_iso_values(value, expected):
+    assert parse_timestamp(value) == expected
 
 
 def make_step(download_path: Path) -> DownloadStep:
@@ -93,18 +94,18 @@ def test_should_not_download_when_date_modified_is_unparseable(local_file, tmp_p
 
 
 def test_naive_iso_timestamp_is_treated_as_utc():
-    naive = DownloadStep.get_timestamp("2023-11-14T22:13:20")
-    explicit_utc = DownloadStep.get_timestamp("2023-11-14T22:13:20+00:00")
+    naive = parse_timestamp("2023-11-14T22:13:20")
+    explicit_utc = parse_timestamp("2023-11-14T22:13:20+00:00")
     assert naive == explicit_utc
 
 
 def test_local_timezone_does_not_shift_iso_timestamps(monkeypatch):
-    before = DownloadStep.get_timestamp("2023-11-14T22:13:20")
+    before = parse_timestamp("2023-11-14T22:13:20")
     monkeypatch.setenv("TZ", "Asia/Tokyo")
     if hasattr(os, "tzset"):
         os.tzset()
     try:
-        assert DownloadStep.get_timestamp("2023-11-14T22:13:20") == before
+        assert parse_timestamp("2023-11-14T22:13:20") == before
     finally:
         monkeypatch.undo()
         if hasattr(os, "tzset"):

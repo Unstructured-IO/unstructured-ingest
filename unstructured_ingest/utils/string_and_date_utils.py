@@ -1,7 +1,7 @@
 import json
 import re
-from datetime import datetime
-from typing import Any, Union
+from datetime import datetime, timezone
+from typing import Any, Optional, Union
 
 from dateutil import parser
 
@@ -72,3 +72,23 @@ def fix_unescaped_unicode(text: str, encoding: str = "utf-8") -> str:
         # Return original text if encoding fails
         logger.warning(f"Failed to fix unescaped Unicode sequences: {e}", exc_info=True)
         return text
+
+
+def parse_timestamp(value: Optional[str]) -> Optional[float]:
+    """Epoch seconds for an epoch-like or ISO-8601 value, or None if it isn't either.
+
+    ISO-8601 values without an offset are interpreted as UTC.
+    """
+    if value is None:
+        return None
+    try:
+        return float(value)
+    except ValueError:
+        pass
+    try:
+        parsed = datetime.fromisoformat(value)
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed.timestamp()

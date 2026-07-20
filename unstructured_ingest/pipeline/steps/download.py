@@ -3,7 +3,6 @@ import hashlib
 import json
 import shutil
 from dataclasses import dataclass
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable, Optional, TypedDict, TypeVar
 
@@ -12,6 +11,7 @@ from unstructured_ingest.interfaces import Downloader, download_responses
 from unstructured_ingest.logger import logger
 from unstructured_ingest.pipeline.interfaces import PipelineStep
 from unstructured_ingest.utils.pydantic_models import serialize_base_model_json
+from unstructured_ingest.utils.string_and_date_utils import parse_timestamp
 
 DownloaderT = TypeVar("DownloaderT", bound=Downloader)
 
@@ -45,30 +45,13 @@ class DownloadStep(PipelineStep):
             f"connection configs: {connection_config}"
         )
 
-    @staticmethod
-    def get_timestamp(value: Optional[str]) -> Optional[float]:
-        """Epoch seconds for an epoch-like or ISO-8601 value, or None if it isn't either."""
-        if value is None:
-            return None
-        try:
-            return float(value)
-        except (TypeError, ValueError):
-            pass
-        try:
-            parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
-        except ValueError:
-            return None
-        if parsed.tzinfo is None:
-            parsed = parsed.replace(tzinfo=timezone.utc)
-        return parsed.timestamp()
-
     def should_download(self, file_data: FileData, file_data_path: str) -> bool:
         if self.context.re_download:
             return True
         download_path = self.process.get_download_path(file_data=file_data)
         if not download_path or not download_path.exists():
             return True
-        remote_modified = self.get_timestamp(file_data.metadata.date_modified)
+        remote_modified = parse_timestamp(file_data.metadata.date_modified)
         if (
             download_path.is_file()
             and remote_modified is not None
