@@ -79,12 +79,16 @@ def _track_instances(mocker: MockerFixture, cls: type) -> list:
     return instances
 
 
-def test_constructor_does_not_open_an_async_client(mocker: MockerFixture):
+def test_constructor_opens_only_a_sync_client_that_close_releases(mocker: MockerFixture):
     async_clients = _track_instances(mocker, httpx.AsyncClient)
     client = _client(mocker)
+    sync_client = client._client
 
     assert async_clients == []
+
     client.close()
+
+    assert sync_client.is_closed
 
 
 @pytest.mark.asyncio
@@ -109,15 +113,6 @@ async def test_async_context_entry_failure_closes_sync_client(mocker: MockerFixt
     with pytest.raises(RuntimeError):
         async with client:
             pass
-
-    assert sync_client.is_closed
-
-
-def test_close_releases_sync_client(mocker: MockerFixture):
-    client = _client(mocker)
-    sync_client = client._client
-
-    client.close()
 
     assert sync_client.is_closed
 

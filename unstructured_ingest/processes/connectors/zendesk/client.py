@@ -189,7 +189,6 @@ class ZendeskClient:
     _client: "Client" = field(init=False, default=None)
     _base_url: str = field(init=False, default=None)
 
-    @requires_dependencies(["httpx"], extras="zendesk")
     async def __aenter__(self) -> "ZendeskClient":
         import httpx
 
@@ -209,8 +208,7 @@ class ZendeskClient:
             self.close()
 
     def close(self) -> None:
-        if self._client is not None:
-            self._client.close()
+        self._client.close()
 
     def _auth(self) -> tuple[str, str]:
         return f"{self.email}/token", self.token
