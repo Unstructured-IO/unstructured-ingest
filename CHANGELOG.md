@@ -3,6 +3,7 @@
 ### Fixes
 
 - **Preserve NDJSON records after format detection.** The fallback parser now rewinds the input stream before reading line-delimited JSON, preventing valid records from being skipped after the detection pass.
+- **fix(security): apply tar extraction filters on supported runtimes.** Tar extraction now detects the existing `tarfile.tar_filter` capability instead of gating it on the Python minor version, so supported Python 3.11 maintenance releases receive the same filtering already used on Python 3.12+. Older patch releases retain the existing warning-and-extract behavior.
 
 ## [1.7.12]
 
