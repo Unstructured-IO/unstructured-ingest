@@ -151,7 +151,7 @@ test = [
     "beautifulsoup4",
     "pandas",
     # Connector specific deps
-    "slack_sdk",
+    "slack_sdk[optional]",
     "cryptography",
     "fsspec",
     "vertexai",
