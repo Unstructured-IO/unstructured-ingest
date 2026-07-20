@@ -14,6 +14,7 @@ from unstructured_ingest.error import (
     DestinationConnectionError,
     SourceConnectionError,
     UserError,
+    safe_error_summary,
 )
 from unstructured_ingest.logger import logger
 from unstructured_ingest.processes.connector_registry import (
@@ -113,9 +114,10 @@ def _raise_classified_teradata_error(
 
     Classification rules:
       * Server-side codes listed in ``_USER_FAULT_TERADATA_CODES`` → ``UserError``
-        (status_code 422, with the raw TD message preserved via
-        ``"Teradata reported: …"``). Applies to BOTH source and destination
-        directions — this means indexer callers historically catching
+        (status_code 422) carrying only the numeric code and the fixed
+        descriptor from the map — never the raw driver message, which embeds
+        host/user/password. Applies to BOTH source and destination directions
+        — this means indexer callers historically catching
         ``SourceConnectionError`` will now see ``UserError`` for codes in the
         map (e.g. 3523 no-privilege on the source-table probe).
       * Anything else → ``DestinationConnectionError`` / ``SourceConnectionError``
@@ -124,10 +126,13 @@ def _raise_classified_teradata_error(
         per-site message shapes (e.g. the indexer's
         ``"table 'X' not found or not accessible"``).
 
-    Always raises; never returns. Original exception is chained via ``from exc``
-    so the full driver traceback remains available in logs.
+    Always raises; never returns. The source exception is NOT chained
+    (``from None``) so its raw text can't resurface through traceback logging;
+    the full driver text is still emitted (redacted) at the connector's own
+    log sites before this is called.
 
-    :param exc: the original driver exception; chained via ``from exc``.
+    :param exc: the original driver exception; used only to extract the numeric
+        error code, never surfaced verbatim.
     :param host: server hostname (used by _summarize_error for fallback message).
     :param table: target table name (formatted into UserError message if given).
     :param direction: 'source' or 'destination'. Validated at runtime.
@@ -142,17 +147,20 @@ def _raise_classified_teradata_error(
     if code in _USER_FAULT_TERADATA_CODES:
         descriptor = _USER_FAULT_TERADATA_CODES[code]
         target = f" for '{table}'" if table else ""
+        # code + descriptor are safe (int + fixed map value); the raw driver
+        # message is NOT interpolated and the chain is suppressed so the
+        # Go-driver text (which embeds host/user/password) can't reach the
+        # response surface or resurface via traceback logging.
         raise UserError(
-            f"Teradata error {code} ({descriptor}){target}. "
-            f"Teradata reported: {exc}"
-        ) from exc
+            f"Teradata error {code} ({descriptor}){target}."
+        ) from None
 
     conn_error_cls = (
         DestinationConnectionError if direction == "destination" else SourceConnectionError
     )
     raise conn_error_cls(
         _summarize_error(host, exc, context=fallback_context)
-    ) from exc
+    ) from None
 
 
 def _summarize_error(host: str, raw: Exception, context: str = "") -> str:
@@ -308,7 +316,7 @@ class TeradataIndexer(SQLIndexer):
             with self.get_cursor() as cursor:
                 cursor.execute("SELECT 1")
         except Exception as e:
-            logger.error(f"failed to validate connection: {e}", exc_info=True)
+            logger.error(f"failed to validate connection: {safe_error_summary(e)}")
             raise SourceConnectionError(_summarize_error(self.connection_config.host, e))
 
         table_name = self.index_config.table_name
@@ -317,8 +325,7 @@ class TeradataIndexer(SQLIndexer):
                 cursor.execute(f'SELECT TOP 1 * FROM "{table_name}"')
         except Exception as e:
             logger.error(
-                f"Table '{table_name}' not found or not accessible: {e}",
-                exc_info=True,
+                f"Table '{table_name}' not found or not accessible: {safe_error_summary(e)}",
             )
             if not _is_teradata_driver_error(e):
                 raise
@@ -515,8 +522,7 @@ class TeradataUploader(SQLUploader):
             if not _is_teradata_driver_error(e):
                 raise
             logger.error(
-                f"failed to create destination table '{table_name}': {e}",
-                exc_info=True,
+                f"failed to create destination table '{table_name}': {safe_error_summary(e)}",
             )
             _raise_classified_teradata_error(
                 e, host=self.connection_config.host, table=table_name
@@ -528,7 +534,7 @@ class TeradataUploader(SQLUploader):
             with self.get_cursor() as cursor:
                 cursor.execute("SELECT 1")
         except Exception as e:
-            logger.error(f"failed to validate connection: {e}", exc_info=True)
+            logger.error(f"failed to validate connection: {safe_error_summary(e)}")
             raise DestinationConnectionError(_summarize_error(self.connection_config.host, e))
 
     def get_table_columns(self) -> list[str]:
@@ -542,8 +548,7 @@ class TeradataUploader(SQLUploader):
                 if not _is_teradata_driver_error(e):
                     raise
                 logger.error(
-                    f"failed to read schema for table '{table_name}': {e}",
-                    exc_info=True,
+                    f"failed to read schema for table '{table_name}': {safe_error_summary(e)}",
                 )
                 _raise_classified_teradata_error(
                     e, host=self.connection_config.host, table=table_name
@@ -581,8 +586,7 @@ class TeradataUploader(SQLUploader):
                 raise
             logger.error(
                 f"failed to delete record_id={file_data.identifier} from "
-                f"'{self.upload_config.table_name}': {e}",
-                exc_info=True,
+                f"'{self.upload_config.table_name}': {safe_error_summary(e)}",
             )
             _raise_classified_teradata_error(
                 e,
@@ -645,8 +649,8 @@ class TeradataUploader(SQLUploader):
                 if not _is_teradata_driver_error(e):
                     raise
                 logger.error(
-                    f"failed to insert batch into '{self.upload_config.table_name}': {e}",
-                    exc_info=True,
+                    f"failed to insert batch into '{self.upload_config.table_name}': "
+                    f"{safe_error_summary(e)}",
                 )
                 _raise_classified_teradata_error(
                     e,

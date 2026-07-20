@@ -1,8 +1,26 @@
-## [1.7.8]
+## [1.7.11]
 
 ### Fixes
 
 - **fix(FS-2139): centralize bounded Slack API rate-limit retries in SDK client configuration.** Sync and async Slack clients now use the Slack SDK's connection and rate-limit retry handlers configured once in `SlackConnectionConfig`, replacing custom call-site retry loops across indexer join/history and downloader history/replies/files calls.
+
+## [1.7.10]
+
+### Fixes
+
+- **fix(google-drive): record the drive id in each file's record locator.** The indexer used an annotation statement (`record_locator["drive_id"]: object_id`) instead of an assignment, so `drive_id` was silently never written into `record_locator`. Changed to a real assignment so downstream consumers can resolve which drive a file came from.
+
+## [1.7.9]
+
+### Fixes
+
+- **test(teradata): extend the log-redaction regression suite to all seven logger.error sites.** Adds secret-leak tests for the `create_destination`, `delete_by_record_id`, and insert-batch (`executemany`) driver-error branches, which previously had no coverage — each plants a credential in the driver exception and asserts it never reaches the logs.
+
+## [1.7.8]
+
+### Fixes
+
+- **fix(security): redact provider exceptions from Teradata error logs and user-fault responses.** The seven `logger.error(..., exc_info=True)` sites route through `safe_error_summary` with `exc_info` dropped; `_raise_classified_teradata_error` no longer interpolates the raw driver message into the user-fault `UserError` (`Teradata reported: {exc}`) — it surfaces only the numeric code + fixed descriptor — and both classified raises use `from None`, so the driver text (host/user/password) can't reach the response or resurface via traceback logging.
 
 ## [1.7.7]
 
