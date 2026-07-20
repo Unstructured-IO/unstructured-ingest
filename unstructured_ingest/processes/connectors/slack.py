@@ -45,6 +45,30 @@ PRIVATE_FILE_DOWNLOAD_TIMEOUT_SECONDS = 60
 SLACK_PRIVATE_FILE_HOST = "files.slack.com"
 
 CONNECTOR_TYPE = "slack"
+# The SDK excludes the initial request from max_retry_count, so 9 means 10 total attempts.
+# Its 429 handlers honor Slack's Retry-After header and add 0–1 seconds of jitter.
+SLACK_RATE_LIMIT_MAX_RETRIES = 9
+
+
+def _slack_sync_retry_handlers():
+    from slack_sdk.http_retry import ConnectionErrorRetryHandler, RateLimitErrorRetryHandler
+
+    return [
+        ConnectionErrorRetryHandler(),
+        RateLimitErrorRetryHandler(max_retry_count=SLACK_RATE_LIMIT_MAX_RETRIES),
+    ]
+
+
+def _slack_async_retry_handlers():
+    from slack_sdk.http_retry.builtin_async_handlers import (
+        AsyncConnectionErrorRetryHandler,
+        AsyncRateLimitErrorRetryHandler,
+    )
+
+    return [
+        AsyncConnectionErrorRetryHandler(),
+        AsyncRateLimitErrorRetryHandler(max_retry_count=SLACK_RATE_LIMIT_MAX_RETRIES),
+    ]
 
 
 def _token_kind(token: str) -> Literal["user", "bot"]:
@@ -185,14 +209,20 @@ class SlackConnectionConfig(ConnectionConfig):
     def get_client(self) -> "WebClient":
         from slack_sdk import WebClient
 
-        return WebClient(token=self.access_config.get_secret_value().token)
+        return WebClient(
+            token=self.access_config.get_secret_value().token,
+            retry_handlers=_slack_sync_retry_handlers(),
+        )
 
     @requires_dependencies(["slack_sdk"], extras="slack")
     @SourceConnectionError.wrap
     def get_async_client(self) -> "AsyncWebClient":
         from slack_sdk.web.async_client import AsyncWebClient
 
-        return AsyncWebClient(token=self.access_config.get_secret_value().token)
+        return AsyncWebClient(
+            token=self.access_config.get_secret_value().token,
+            retry_handlers=_slack_async_retry_handlers(),
+        )
 
 
 class SlackIndexerConfig(IndexerConfig):

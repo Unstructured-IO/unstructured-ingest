@@ -1,10 +1,24 @@
+## [1.7.13]
+
+### Fixes
+
+- **Preserve NDJSON records after format detection.** The fallback parser now rewinds the input stream before reading line-delimited JSON, preventing valid records from being skipped after the detection pass.
+- **fix(security): apply tar extraction filters on supported runtimes.** Tar extraction now detects the existing `tarfile.tar_filter` capability instead of gating it on the Python minor version, so supported Python 3.11 maintenance releases receive the same filtering already used on Python 3.12+. Older patch releases retain the existing warning-and-extract behavior.
+- **Refresh cached downloads when the source is newer.** Download freshness checks now compare local and remote modification times in the correct direction and accept both epoch and ISO-formatted source timestamps.
+- **Stamp downloaded files with the source modification time.** Downloaded files take their modification time from the source whenever it is an epoch or ISO-formatted timestamp, even when the source creation time is missing or unparseable, so freshness checks compare against the remote time rather than the download time.
+- **Report Databricks Volumes modification times in epoch seconds.** The Databricks SDK reports modification times in milliseconds; they are now converted to seconds so freshness checks no longer treat every indexed file as newer than its local copy.
+
+## [1.7.12]
+
+### Fixes
+
+- **fix(stager): preserve single-record NDJSON partition output.** Blob-storage staging now reads `.ndjson` inputs with an NDJSON-aware streaming reader instead of treating them as top-level JSON arrays, preventing single-record partition output from being silently dropped. Adds regression coverage for single- and multi-record inputs and updates the Google Drive expected output with the `drive_id` field introduced in 1.7.10.
+
 ## [1.7.11]
 
 ### Fixes
 
-- **Refresh cached downloads when the source is newer.** Download freshness checks now compare local and remote modification times in the correct direction and accept both epoch and ISO-formatted source timestamps.
-- **Stamp downloaded files with the source modification time.** Downloaded files take their modification time from the source whenever it is an epoch or ISO-formatted timestamp, even when the source creation time is missing or unparseable, so freshness checks compare against the remote time rather than the download time.
-- **Report Databricks Volumes modification times in epoch seconds.** The Databricks SDK reports modification times in milliseconds; they are now converted to seconds so freshness checks no longer treat every indexed file as newer than its local copy.
+- **fix(FS-2139): centralize bounded Slack API rate-limit retries in SDK client configuration.** Sync and async Slack clients now use the Slack SDK's connection and rate-limit retry handlers configured once in `SlackConnectionConfig`, replacing custom call-site retry loops across indexer join/history and downloader history/replies/files calls.
 
 ## [1.7.10]
 
