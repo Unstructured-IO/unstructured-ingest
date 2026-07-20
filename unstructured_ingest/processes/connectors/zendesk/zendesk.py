@@ -76,7 +76,7 @@ class ZendeskIndexer(Indexer):
 
     def precheck(self) -> None:
         """Validates connection to Zendesk API."""
-        self.connection_config.get_client()
+        self.connection_config.get_client().close()
 
     def is_async(self) -> bool:
         return True

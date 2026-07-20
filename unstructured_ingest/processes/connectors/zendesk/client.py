@@ -189,19 +189,33 @@ class ZendeskClient:
     _client: "Client" = field(init=False, default=None)
     _base_url: str = field(init=False, default=None)
 
+    @requires_dependencies(["httpx"], extras="zendesk")
     async def __aenter__(self) -> "ZendeskClient":
+        import httpx
+
+        self._async_client = httpx.AsyncClient(auth=self._auth())
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
-        await self._async_client.aclose()
+        try:
+            if self._async_client is not None:
+                await self._async_client.aclose()
+                self._async_client = None
+        finally:
+            self.close()
+
+    def close(self) -> None:
+        if self._client is not None:
+            self._client.close()
+
+    def _auth(self) -> tuple[str, str]:
+        return f"{self.email}/token", self.token
 
     @requires_dependencies(["httpx"], extras="zendesk")
     def __post_init__(self):
         import httpx
 
-        auth = f"{self.email}/token", self.token
-        self._client = httpx.Client(auth=auth)
-        self._async_client = httpx.AsyncClient(auth=auth)
+        self._client = httpx.Client(auth=self._auth())
         self._base_url = f"https://{self.subdomain}.zendesk.com/api/v2"
 
         # Run check
@@ -210,6 +224,7 @@ class ZendeskClient:
             resp = self._client.head(url_to_check)
             resp.raise_for_status()
         except Exception as e:
+            self._client.close()
             raise self.wrap_error(e=e)
 
     @requires_dependencies(["httpx"], extras="zendesk")
