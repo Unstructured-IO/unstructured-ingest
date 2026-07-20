@@ -1,3 +1,9 @@
+## [1.7.11]
+
+### Fixes
+
+- **fix(FS-2139): centralize bounded Slack API rate-limit retries in SDK client configuration.** Sync and async Slack clients now use the Slack SDK's connection and rate-limit retry handlers configured once in `SlackConnectionConfig`, replacing custom call-site retry loops across indexer join/history and downloader history/replies/files calls.
+
 ## [1.7.10]
 
 ### Fixes
