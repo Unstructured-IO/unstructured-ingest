@@ -1,4 +1,5 @@
 import time
+from pathlib import Path
 from unittest.mock import MagicMock
 
 import pandas as pd
@@ -177,6 +178,27 @@ def test_ibm_watsonx_connection_config_iceberg_url_account_scoped(
     assert account_scoped_connection_config.iceberg_url == expected_url
 
 
+def test_ibm_watsonx_connection_config_iceberg_url_empty_account_id_is_instance_scoped(
+    mocker: MockerFixture,
+    access_config: IbmWatsonxAccessConfig,
+):
+    # Regression guard: an empty-string account_id is falsy and must fall back to the
+    # legacy instance-scoped path (do not "fix" `if self.account_id` to `is not None`).
+    connection_config = IbmWatsonxConnectionConfig(
+        access_config=Secret(access_config),
+        iceberg_endpoint="test_iceberg_endpoint/",
+        object_storage_endpoint="test_object_storage_endpoint/",
+        object_storage_region="test_region",
+        catalog="test_catalog",
+        account_id="",
+        max_retries_connection=2,
+    )
+    mocker.patch.object(IbmWatsonxConnectionConfig, "bearer_token", new="test_bearer_token")
+
+    assert connection_config.iceberg_url == "https://test_iceberg_endpoint/mds/iceberg"
+    assert "header.AccountId" not in connection_config.get_catalog_config()
+
+
 def test_ibm_watsonx_connection_config_get_catalog_config_no_account_id(
     mocker: MockerFixture,
     connection_config: IbmWatsonxConnectionConfig,
@@ -295,6 +317,36 @@ def test_ibm_watsonx_connection_config_get_catalog_success(
             "s3.secret-access-key": "test_secret_access_key",
             "s3.region": "test_region",
             "header.X-Iceberg-Access-Delegation": None,
+        }
+    )
+
+
+def test_ibm_watsonx_connection_config_get_catalog_account_scoped_success(
+    mocker: MockerFixture, account_scoped_connection_config: IbmWatsonxConnectionConfig
+):
+    # End-to-end: the account-scoped URI and AccountId header must reach load_catalog.
+    mocker.patch.object(
+        IbmWatsonxConnectionConfig,
+        "bearer_token",
+        new="test_bearer_token",
+    )
+    mock_load_catalog = mocker.patch("pyiceberg.catalog.load_catalog")
+
+    with account_scoped_connection_config.get_catalog() as catalog:
+        assert catalog is not None
+    mock_load_catalog.assert_called_once_with(
+        **{
+            "name": "test_catalog",
+            "type": "rest",
+            "uri": "https://test_iceberg_endpoint/api/v1/iceberg",
+            "token": "test_bearer_token",
+            "warehouse": "test_catalog",
+            "s3.endpoint": "https://test_object_storage_endpoint",
+            "s3.access-key-id": "test_access_key_id",
+            "s3.secret-access-key": "test_secret_access_key",
+            "s3.region": "test_region",
+            "header.X-Iceberg-Access-Delegation": None,
+            "header.AccountId": "test_account_id",
         }
     )
 
@@ -709,3 +761,97 @@ def test_ibm_watsonx_wrap_error_strips_query_string_from_logs(
     assert _SECRET not in caplog.text
     assert "token=" not in caplog.text
     assert "https://watsonx.example.com/data" in caplog.text
+
+
+def test_ibm_watsonx_uploader_config_table_identifier(
+    uploader_config: IbmWatsonxUploaderConfig,
+):
+    """table_identifier returns the (namespace, table) tuple pyiceberg expects."""
+    assert uploader_config.table_identifier == ("test_namespace", "test_table")
+
+
+def test_ibm_watsonx_generate_bearer_token_success(
+    mocker: MockerFixture,
+    connection_config: IbmWatsonxConnectionConfig,
+):
+    """Happy path: a valid JSON token response is returned verbatim."""
+    token_payload = {"access_token": "test_token", "expiration": 9999999999}
+    mock_response = mocker.MagicMock()
+    mock_response.raise_for_status.return_value = None
+    mock_response.json.return_value = token_payload
+    mock_post = mocker.patch("httpx.post", return_value=mock_response)
+
+    result = connection_config.generate_bearer_token()
+
+    assert result == token_payload
+    mock_post.assert_called_once()
+
+
+def test_ibm_watsonx_generate_bearer_token_http_error_is_wrapped(
+    mocker: MockerFixture,
+    connection_config: IbmWatsonxConnectionConfig,
+):
+    """A 401 from the IAM endpoint is classified as a UserAuthError via wrap_error."""
+    mocker.patch("httpx.post", side_effect=_http_status_error(401))
+
+    with pytest.raises(UserAuthError):
+        connection_config.generate_bearer_token()
+
+
+def test_ibm_watsonx_uploader_df_to_arrow_table_all_null_column(
+    mocker: MockerFixture,
+    uploader: IbmWatsonxUploader,
+):
+    """An all-null column survives arrow conversion as a null-typed column.
+
+    Documents the behavior the connector comment warns about: pyarrow cannot infer a
+    type for an all-null column, so it becomes pa.null(); Iceberg (not arrow) is what
+    rejects it later during schema matching.
+    """
+    import pyarrow as pa
+
+    df = pd.DataFrame({"present": [1, 2, 3], "all_null": [None, None, None]})
+    mocker.patch.object(IbmWatsonxUploader, "_fit_to_schema", return_value=df)
+
+    result = uploader._df_to_arrow_table(df)
+
+    assert "all_null" in result.column_names
+    assert result.schema.field("all_null").type == pa.null()
+
+
+def test_ibm_watsonx_uploader_run_data(
+    mocker: MockerFixture,
+    uploader: IbmWatsonxUploader,
+    file_data: FileData,
+):
+    """run_data builds a DataFrame from the records and delegates to upload_dataframe."""
+    mock_upload_dataframe = mocker.patch.object(IbmWatsonxUploader, "upload_dataframe")
+    data = [{"col": "a"}, {"col": "b"}]
+
+    uploader.run_data(data=data, file_data=file_data)
+
+    mock_upload_dataframe.assert_called_once()
+    _, kwargs = mock_upload_dataframe.call_args
+    assert kwargs["file_data"] is file_data
+    passed_df = kwargs["df"]
+    assert list(passed_df["col"]) == ["a", "b"]
+
+
+def test_ibm_watsonx_uploader_run(
+    mocker: MockerFixture,
+    uploader: IbmWatsonxUploader,
+    file_data: FileData,
+    test_df: pd.DataFrame,
+):
+    """run reads the staged file via get_data_df and delegates to upload_dataframe."""
+    mock_get_data_df = mocker.patch(
+        "unstructured_ingest.processes.connectors.ibm_watsonx.ibm_watsonx_s3.get_data_df",
+        return_value=test_df,
+    )
+    mock_upload_dataframe = mocker.patch.object(IbmWatsonxUploader, "upload_dataframe")
+    path = Path("/tmp/staged.ndjson")
+
+    uploader.run(path=path, file_data=file_data)
+
+    mock_get_data_df.assert_called_once_with(path=path)
+    mock_upload_dataframe.assert_called_once_with(df=test_df, file_data=file_data)
