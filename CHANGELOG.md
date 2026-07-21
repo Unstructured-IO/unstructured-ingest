@@ -1,3 +1,9 @@
+## [1.7.14]
+
+### Fixes
+
+- **fix(ibm-watsonx-s3): support account-scoped (SaaS) Iceberg REST endpoint.** Adds an optional `account_id` to the IBM watsonx.data connection config. When set, the connector targets the account-scoped Iceberg REST path (`/api/v1/iceberg`) and sends the required `AccountId` header; when unset, it keeps the legacy instance-scoped behavior (`/mds/iceberg`).
+
 ## [1.7.13]
 
 ### Fixes

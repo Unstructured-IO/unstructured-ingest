@@ -44,6 +44,9 @@ CONNECTOR_TYPE = "ibm_watsonx_s3"
 
 DEFAULT_IBM_CLOUD_AUTH_URL = "https://iam.cloud.ibm.com/identity/token"
 DEFAULT_ICEBERG_URI_PATH = "/mds/iceberg"
+# Account-scoped (SaaS) Iceberg REST base path. IBM is deprecating the legacy
+# instance-scoped /mds/iceberg path in favor of this one.
+ACCOUNT_SCOPED_ICEBERG_URI_PATH = "/api/v1/iceberg"
 DEFAULT_ICEBERG_CATALOG_TYPE = "rest"
 
 
@@ -59,6 +62,15 @@ class IbmWatsonxConnectionConfig(ConnectionConfig):
     object_storage_endpoint: str = Field(description="Cloud Object Storage public endpoint")
     object_storage_region: str = Field(description="Cloud Object Storage region")
     catalog: str = Field(description="Catalog name")
+    account_id: Optional[str] = Field(
+        default=None,
+        description=(
+            "IBM Cloud account ID for account-scoped (SaaS) watsonx.data instances. "
+            "When set, the connector targets the account-scoped Iceberg REST endpoint "
+            "(/api/v1/iceberg) and sends the required AccountId header. When unset, the "
+            "connector keeps the legacy instance-scoped behavior (/mds/iceberg)."
+        ),
+    )
     max_retries_connection: int = Field(
         default=10,
         description="Maximum number of retries in case of a connection error (RESTError)",
@@ -70,7 +82,8 @@ class IbmWatsonxConnectionConfig(ConnectionConfig):
 
     @property
     def iceberg_url(self) -> str:
-        return f"https://{self.iceberg_endpoint.strip('/')}{DEFAULT_ICEBERG_URI_PATH}"
+        path = ACCOUNT_SCOPED_ICEBERG_URI_PATH if self.account_id else DEFAULT_ICEBERG_URI_PATH
+        return f"https://{self.iceberg_endpoint.strip('/')}{path}"
 
     @property
     def object_storage_url(self) -> str:
@@ -145,7 +158,7 @@ class IbmWatsonxConnectionConfig(ConnectionConfig):
             raise self.wrap_error(e)
 
     def get_catalog_config(self) -> dict[str, Any]:
-        return {
+        config = {
             "name": self.catalog,
             "type": DEFAULT_ICEBERG_CATALOG_TYPE,
             "uri": self.iceberg_url,
@@ -160,6 +173,11 @@ class IbmWatsonxConnectionConfig(ConnectionConfig):
             # in order to use user-provided S3 credentials.
             "header.X-Iceberg-Access-Delegation": None,
         }
+        # Account-scoped (SaaS) MDS requires the account ID as a request header.
+        # It must be the `AccountId` header; the query-parameter form is rejected.
+        if self.account_id:
+            config["header.AccountId"] = self.account_id
+        return config
 
     @requires_dependencies(["pyiceberg"], extras="ibm-watsonx-s3")
     @contextmanager
