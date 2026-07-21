@@ -51,6 +51,21 @@ def connection_config(access_config: IbmWatsonxAccessConfig):
 
 
 @pytest.fixture
+def account_scoped_connection_config(access_config: IbmWatsonxAccessConfig):
+    # account_id set -> account-scoped (SaaS) behavior. The value is the IBM Cloud
+    # account ID (the "a/<...>" segment of the instance CRN), not the instance GUID.
+    return IbmWatsonxConnectionConfig(
+        access_config=Secret(access_config),
+        iceberg_endpoint="test_iceberg_endpoint/",
+        object_storage_endpoint="test_object_storage_endpoint/",
+        object_storage_region="test_region",
+        catalog="test_catalog",
+        account_id="test_account_id",
+        max_retries_connection=2,
+    )
+
+
+@pytest.fixture
 def uploader_config():
     return IbmWatsonxUploaderConfig(
         namespace="test_namespace",
@@ -145,6 +160,42 @@ def test_ibm_watsonx_connection_config_iceberg_url(
     )
     expected_url = "https://test_iceberg_endpoint/mds/iceberg"
     assert connection_config.iceberg_url == expected_url
+
+
+def test_ibm_watsonx_connection_config_account_id_defaults_to_none(
+    connection_config: IbmWatsonxConnectionConfig,
+):
+    # Backward-compat: without account_id the connector stays instance-scoped.
+    assert connection_config.account_id is None
+
+
+def test_ibm_watsonx_connection_config_iceberg_url_account_scoped(
+    account_scoped_connection_config: IbmWatsonxConnectionConfig,
+):
+    # When account_id is set, use the account-scoped /api/v1/iceberg path.
+    expected_url = "https://test_iceberg_endpoint/api/v1/iceberg"
+    assert account_scoped_connection_config.iceberg_url == expected_url
+
+
+def test_ibm_watsonx_connection_config_get_catalog_config_no_account_id(
+    mocker: MockerFixture,
+    connection_config: IbmWatsonxConnectionConfig,
+):
+    # Instance-scoped config must not send the AccountId header.
+    mocker.patch.object(IbmWatsonxConnectionConfig, "bearer_token", new="test_bearer_token")
+    config = connection_config.get_catalog_config()
+    assert "header.AccountId" not in config
+
+
+def test_ibm_watsonx_connection_config_get_catalog_config_account_scoped(
+    mocker: MockerFixture,
+    account_scoped_connection_config: IbmWatsonxConnectionConfig,
+):
+    # Account-scoped config sends the AccountId header and targets /api/v1/iceberg.
+    mocker.patch.object(IbmWatsonxConnectionConfig, "bearer_token", new="test_bearer_token")
+    config = account_scoped_connection_config.get_catalog_config()
+    assert config["header.AccountId"] == "test_account_id"
+    assert config["uri"] == "https://test_iceberg_endpoint/api/v1/iceberg"
 
 
 def test_ibm_watsonx_connection_config_object_storage_url(
