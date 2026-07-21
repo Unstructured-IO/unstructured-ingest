@@ -1,3 +1,8 @@
+## [1.7.14]
+
+### Fixes
+- **Correctly classify refreshed slack tokens** Slack token is prefixed with 'xoxe.' when obtained via a refresh, slack source now accounts for it when classifying provided token.
+
 ## [1.7.13]
 
 ### Fixes
