@@ -44,6 +44,7 @@ from unstructured_ingest.processes.utils.blob_storage import (
     BlobStoreUploadStager,
     BlobStoreUploadStagerConfig,
 )
+from unstructured_ingest.utils.acl import compute_permissions_version
 from unstructured_ingest.utils.dep_check import requires_dependencies
 
 if TYPE_CHECKING:
@@ -341,6 +342,9 @@ class OnedriveIndexer(Indexer):
         )
         if raw_permissions:
             file_data.metadata.permissions_data = self.extract_permissions(raw_permissions)
+            file_data.metadata.permissions_version = compute_permissions_version(
+                file_data.metadata.permissions_data
+            )
         return file_data
 
     async def drive_item_to_file_data(
