@@ -73,6 +73,7 @@ def _slack_async_retry_handlers():
 
 def _token_kind(token: str) -> Literal["user", "bot"]:
     """Returns 'user' for xoxp- tokens, 'bot' for all others."""
+    token = token.removeprefix("xoxe.")
     return "user" if token.startswith("xoxp-") else "bot"
 
 

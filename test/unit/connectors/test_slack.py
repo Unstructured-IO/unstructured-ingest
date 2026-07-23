@@ -39,14 +39,17 @@ USER_TOKEN = "xoxp-user"
 
 def test_token_kind_user_prefix():
     assert _token_kind("xoxp-12345") == "user"
+    assert _token_kind("xoxe.xoxp-12345") == "user", "Refreshed variant incorrectly classified"
 
 
 def test_token_kind_bot_prefix():
     assert _token_kind("xoxb-12345") == "bot"
+    assert _token_kind("xoxe.xoxb-12345") == "bot", "Refreshed variant incorrectly classified"
 
 
 def test_token_kind_unknown_prefix_is_bot():
     assert _token_kind("xoxa-12345") == "bot"
+    assert _token_kind("xoxe.xoxa-12345") == "bot"
 
 
 def _ts(day: datetime, *, hours: int = 0, minutes: int = 0, micro: int = 0) -> str:
