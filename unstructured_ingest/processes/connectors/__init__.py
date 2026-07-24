@@ -65,6 +65,8 @@ from .sharepoint import CONNECTOR_TYPE as SHAREPOINT_CONNECTOR_TYPE
 from .sharepoint import sharepoint_source_entry
 from .slack import CONNECTOR_TYPE as SLACK_CONNECTOR_TYPE
 from .slack import slack_source_entry
+from .valkey import CONNECTOR_TYPE as VALKEY_CONNECTOR_TYPE
+from .valkey import valkey_destination_entry
 from .vectara import CONNECTOR_TYPE as VECTARA_CONNECTOR_TYPE
 from .vectara import vectara_destination_entry
 from .zendesk.zendesk import CONNECTOR_TYPE as ZENDESK_CONNECTOR_TYPE
@@ -122,6 +124,7 @@ add_source_entry(source_type=CONFLUENCE_CONNECTOR_TYPE, entry=confluence_source_
 
 add_source_entry(source_type=DISCORD_CONNECTOR_TYPE, entry=discord_source_entry)
 add_destination_entry(destination_type=REDIS_CONNECTOR_TYPE, entry=redis_destination_entry)
+add_destination_entry(destination_type=VALKEY_CONNECTOR_TYPE, entry=valkey_destination_entry)
 
 add_source_entry(source_type=JIRA_CONNECTOR_TYPE, entry=jira_source_entry)
 
