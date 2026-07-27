@@ -454,11 +454,11 @@ class SQLUploader(Uploader):
                 # errors; only unexpected exceptions are redacted below.
                 raise
             except Exception as e:
-                # A destination that is reachable at precheck() can still drop
-                # mid-upload (e.g. a customer's ngrok/SSH tunnel to a private DB
-                # going down). Surface it as the same typed connection error
-                # precheck() raises so the platform classifies it 4xx/user rather
-                # than a bare driver exception that reads as a 500/platform fault.
+                # A destination reachable at precheck() can still become
+                # unreachable mid-upload (e.g. a network tunnel or the DB
+                # endpoint going down). Surface it as the same typed connection
+                # error precheck() raises so the platform classifies it 4xx/user
+                # rather than a bare driver exception that reads as 500/platform.
                 logger.error(f"failed to upload batch: {safe_error_summary(e)}")
                 raise DestinationConnectionError(
                     f"failed to upload batch: {safe_error_summary(e)}"
