@@ -442,17 +442,27 @@ class SQLUploader(Uploader):
             f" with batch size {self.upload_config.batch_size}"
         )
         for rows in split_dataframe(df=df, chunk_size=self.upload_config.batch_size):
-            with self.get_cursor() as cursor:
-                values = self.prepare_data(columns, tuple(rows.itertuples(index=False, name=None)))
-                # For debugging purposes:
-                # for val in values:
-                #     try:
-                #         cursor.execute(stmt, val)
-                #     except Exception as e:
-                #         print(f"Error: {e}")
-                #         print(f"failed to write {len(columns)}, {len(val)}: {stmt} -> {val}")
-                logger.debug(f"running query: {stmt}")
-                cursor.executemany(stmt, values)
+            try:
+                with self.get_cursor() as cursor:
+                    values = self.prepare_data(
+                        columns, tuple(rows.itertuples(index=False, name=None))
+                    )
+                    logger.debug(f"running query: {stmt}")
+                    cursor.executemany(stmt, values)
+            except (ImportError, UnstructuredIngestError):
+                # Preserve dependency-install guidance and connector-authored typed
+                # errors; only unexpected exceptions are redacted below.
+                raise
+            except Exception as e:
+                # A destination that is reachable at precheck() can still drop
+                # mid-upload (e.g. a customer's ngrok/SSH tunnel to a private DB
+                # going down). Surface it as the same typed connection error
+                # precheck() raises so the platform classifies it 4xx/user rather
+                # than a bare driver exception that reads as a 500/platform fault.
+                logger.error(f"failed to upload batch: {safe_error_summary(e)}")
+                raise DestinationConnectionError(
+                    f"failed to upload batch: {safe_error_summary(e)}"
+                ) from None
 
     def get_table_columns(self) -> list[str]:
         if self._columns is None:
