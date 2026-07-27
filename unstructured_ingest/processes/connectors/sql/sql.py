@@ -418,41 +418,53 @@ class SQLUploader(Uploader):
     def upload_dataframe(self, df: "DataFrame", file_data: FileData) -> None:
         import numpy as np
 
-        if self.can_delete():
-            self.delete_by_record_id(file_data=file_data)
-        else:
-            logger.warning(
-                f"table doesn't contain expected "
-                f"record id column "
-                f"{self.upload_config.record_id_key}, skipping delete"
-            )
-        df = self._fit_to_schema(df=df)
-        df.replace({np.nan: None}, inplace=True)
+        # A destination reachable at precheck() can still become unreachable
+        # mid-upload (e.g. a network tunnel or the DB endpoint going down). Every
+        # DB interaction below can trip on that: the schema probe (via
+        # can_delete()/_fit_to_schema() -> get_table_columns()), the DELETE, and
+        # the INSERT batches. Wrap the whole workflow so any such failure surfaces
+        # as the same typed connection error precheck() raises (4xx/user) instead
+        # of a bare driver exception that reads as 500/platform.
+        try:
+            if self.can_delete():
+                self.delete_by_record_id(file_data=file_data)
+            else:
+                logger.warning(
+                    f"table doesn't contain expected "
+                    f"record id column "
+                    f"{self.upload_config.record_id_key}, skipping delete"
+                )
+            df = self._fit_to_schema(df=df)
+            df.replace({np.nan: None}, inplace=True)
 
-        columns = list(df.columns)
-        stmt = "INSERT INTO {table_name} ({columns}) VALUES({values})".format(
-            table_name=self.upload_config.table_name,
-            columns=",".join(columns),
-            values=",".join([self.values_delimiter for _ in columns]),
-        )
-        logger.info(
-            f"writing a total of {len(df)} elements via"
-            f" document batches to destination"
-            f" table named {self.upload_config.table_name}"
-            f" with batch size {self.upload_config.batch_size}"
-        )
-        for rows in split_dataframe(df=df, chunk_size=self.upload_config.batch_size):
-            with self.get_cursor() as cursor:
-                values = self.prepare_data(columns, tuple(rows.itertuples(index=False, name=None)))
-                # For debugging purposes:
-                # for val in values:
-                #     try:
-                #         cursor.execute(stmt, val)
-                #     except Exception as e:
-                #         print(f"Error: {e}")
-                #         print(f"failed to write {len(columns)}, {len(val)}: {stmt} -> {val}")
-                logger.debug(f"running query: {stmt}")
-                cursor.executemany(stmt, values)
+            columns = list(df.columns)
+            stmt = "INSERT INTO {table_name} ({columns}) VALUES({values})".format(
+                table_name=self.upload_config.table_name,
+                columns=",".join(columns),
+                values=",".join([self.values_delimiter for _ in columns]),
+            )
+            logger.info(
+                f"writing a total of {len(df)} elements via"
+                f" document batches to destination"
+                f" table named {self.upload_config.table_name}"
+                f" with batch size {self.upload_config.batch_size}"
+            )
+            for rows in split_dataframe(df=df, chunk_size=self.upload_config.batch_size):
+                with self.get_cursor() as cursor:
+                    values = self.prepare_data(
+                        columns, tuple(rows.itertuples(index=False, name=None))
+                    )
+                    logger.debug(f"running query: {stmt}")
+                    cursor.executemany(stmt, values)
+        except (ImportError, UnstructuredIngestError):
+            # Preserve dependency-install guidance and connector-authored typed
+            # errors; only unexpected exceptions are redacted below.
+            raise
+        except Exception as e:
+            logger.error(f"failed to upload: {safe_error_summary(e)}")
+            raise DestinationConnectionError(
+                f"failed to upload: {safe_error_summary(e)}"
+            ) from None
 
     def get_table_columns(self) -> list[str]:
         if self._columns is None:

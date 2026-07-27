@@ -7,6 +7,7 @@ import pytest
 from pytest_mock import MockerFixture
 
 from unstructured_ingest.data_types.file_data import BatchItem, FileData, SourceIdentifiers
+from unstructured_ingest.error import DestinationConnectionError, UserError
 from unstructured_ingest.interfaces import DownloadResponse
 from unstructured_ingest.processes.connectors.sql.sql import (
     SqlAdditionalMetadata,
@@ -242,6 +243,104 @@ class TestCanDelete:
         mocker.patch.object(mock_uploader, "get_table_columns", return_value=["id", "text"])
         mock_uploader.upload_config.record_id_key = "record_id"
         assert mock_uploader.can_delete() is False
+
+
+class TestUploadDataframeConnectionErrors:
+    """A destination reachable at precheck() can still drop mid-upload (e.g. a
+    customer's tunnel to a private DB going down). The write path must surface
+    that as DestinationConnectionError (status_code 400 / user fault) rather
+    than letting a raw driver exception read as a 500 / platform fault."""
+
+    def _prepare(self, mocker: MockerFixture, uploader: SQLUploader) -> None:
+        mocker.patch.object(uploader, "can_delete", return_value=False)
+        mocker.patch.object(uploader, "_fit_to_schema", side_effect=lambda df: df)
+        uploader.upload_config.table_name = "elements"
+        uploader.upload_config.batch_size = 50
+        uploader.upload_config.record_id_key = "record_id"
+
+    def _cursor_raising(self, exc: Exception) -> MagicMock:
+        cm = MagicMock()
+        cm.__enter__.side_effect = exc
+        return cm
+
+    def _file_data(self) -> FileData:
+        return FileData(
+            identifier="rec1",
+            connector_type="test",
+            source_identifiers=SourceIdentifiers(filename="rec1.json", fullpath="rec1.json"),
+        )
+
+    def test_raw_driver_error_wrapped_as_destination_connection_error(
+        self, mocker: MockerFixture, mock_uploader: SQLUploader
+    ):
+        self._prepare(mocker, mock_uploader)
+        mocker.patch.object(
+            mock_uploader,
+            "get_cursor",
+            return_value=self._cursor_raising(OSError("connection refused")),
+        )
+
+        with pytest.raises(DestinationConnectionError) as exc_info:
+            mock_uploader.upload_dataframe(
+                df=pd.DataFrame({"col1": [1, 2]}),
+                file_data=self._file_data(),
+            )
+        # 400 is what routes the failure to the 4xx/user bucket downstream.
+        assert exc_info.value.status_code == 400
+
+    def test_typed_ingest_error_passes_through_unwrapped(
+        self, mocker: MockerFixture, mock_uploader: SQLUploader
+    ):
+        self._prepare(mocker, mock_uploader)
+        mocker.patch.object(
+            mock_uploader,
+            "get_cursor",
+            return_value=self._cursor_raising(UserError("bad input")),
+        )
+
+        # Connector-authored typed errors keep their own taxonomy/status_code.
+        with pytest.raises(UserError):
+            mock_uploader.upload_dataframe(
+                df=pd.DataFrame({"col1": [1, 2]}),
+                file_data=self._file_data(),
+            )
+
+    def test_schema_probe_failure_wrapped(
+        self, mocker: MockerFixture, mock_uploader: SQLUploader
+    ):
+        # can_delete()/_fit_to_schema() hit the DB (schema probe) before any
+        # INSERT batch; a connection drop there must be wrapped too.
+        mock_uploader.upload_config.table_name = "elements"
+        mock_uploader.upload_config.batch_size = 50
+        mock_uploader.upload_config.record_id_key = "record_id"
+        mocker.patch.object(
+            mock_uploader, "get_table_columns", side_effect=OSError("connection refused")
+        )
+
+        with pytest.raises(DestinationConnectionError) as exc_info:
+            mock_uploader.upload_dataframe(
+                df=pd.DataFrame({"col1": [1, 2]}),
+                file_data=self._file_data(),
+            )
+        assert exc_info.value.status_code == 400
+
+    def test_delete_failure_wrapped(self, mocker: MockerFixture, mock_uploader: SQLUploader):
+        # The pre-INSERT DELETE also hits the DB; a connection drop there must
+        # be wrapped too.
+        mock_uploader.upload_config.table_name = "elements"
+        mock_uploader.upload_config.batch_size = 50
+        mock_uploader.upload_config.record_id_key = "record_id"
+        mocker.patch.object(mock_uploader, "can_delete", return_value=True)
+        mocker.patch.object(
+            mock_uploader, "delete_by_record_id", side_effect=OSError("connection refused")
+        )
+
+        with pytest.raises(DestinationConnectionError) as exc_info:
+            mock_uploader.upload_dataframe(
+                df=pd.DataFrame({"col1": [1, 2]}),
+                file_data=self._file_data(),
+            )
+        assert exc_info.value.status_code == 400
 
 
 class TestResolveColumnName:

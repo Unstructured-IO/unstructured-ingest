@@ -1,3 +1,9 @@
+## [1.7.16]
+
+### Fixes
+
+- **fix(PLU-526): classify SQL/postgres mid-upload connection failures as user errors.** The SQL uploader only wrapped connection failures in `precheck()`; a destination reachable at precheck could still drop during the write loop (e.g. a customer's tunnel to a private Postgres going down), letting the raw driver exception surface as a 500/platform fault. `SQLUploader.upload_dataframe` now re-raises such failures as `DestinationConnectionError` (matching `precheck()`), so they are classified as 4xx/user faults instead.
+
 ## [1.7.15]
 
 ### Fixes
