@@ -305,6 +305,43 @@ class TestUploadDataframeConnectionErrors:
                 file_data=self._file_data(),
             )
 
+    def test_schema_probe_failure_wrapped(
+        self, mocker: MockerFixture, mock_uploader: SQLUploader
+    ):
+        # can_delete()/_fit_to_schema() hit the DB (schema probe) before any
+        # INSERT batch; a connection drop there must be wrapped too.
+        mock_uploader.upload_config.table_name = "elements"
+        mock_uploader.upload_config.batch_size = 50
+        mock_uploader.upload_config.record_id_key = "record_id"
+        mocker.patch.object(
+            mock_uploader, "get_table_columns", side_effect=OSError("connection refused")
+        )
+
+        with pytest.raises(DestinationConnectionError) as exc_info:
+            mock_uploader.upload_dataframe(
+                df=pd.DataFrame({"col1": [1, 2]}),
+                file_data=self._file_data(),
+            )
+        assert exc_info.value.status_code == 400
+
+    def test_delete_failure_wrapped(self, mocker: MockerFixture, mock_uploader: SQLUploader):
+        # The pre-INSERT DELETE also hits the DB; a connection drop there must
+        # be wrapped too.
+        mock_uploader.upload_config.table_name = "elements"
+        mock_uploader.upload_config.batch_size = 50
+        mock_uploader.upload_config.record_id_key = "record_id"
+        mocker.patch.object(mock_uploader, "can_delete", return_value=True)
+        mocker.patch.object(
+            mock_uploader, "delete_by_record_id", side_effect=OSError("connection refused")
+        )
+
+        with pytest.raises(DestinationConnectionError) as exc_info:
+            mock_uploader.upload_dataframe(
+                df=pd.DataFrame({"col1": [1, 2]}),
+                file_data=self._file_data(),
+            )
+        assert exc_info.value.status_code == 400
+
 
 class TestResolveColumnName:
     def test_exact_match(self):
