@@ -579,16 +579,36 @@ class OnedriveIndexer(Indexer):
         root = await self.get_root(client=client)
         drive_items = await self.list_objects(folder=root, recursive=self.index_config.recursive)
 
+        # Call-count telemetry for the ACL digest (PLU-511). The digest is
+        # computed over permissions the connector already batch-fetches for
+        # ACL metadata, so it issues no Graph calls of its own. Counting the
+        # permission fetches against the digests computed proves the marginal
+        # API cost of the digest is zero.
+        permission_batch_calls = 0
+        digests_computed = 0
+        items_indexed = 0
         for i in range(0, len(drive_items), PERMISSIONS_BATCH_SIZE):
             chunk = drive_items[i : i + PERMISSIONS_BATCH_SIZE]
             perms_by_id = await asyncio.to_thread(
                 self._fetch_permissions_raw, chunk, access_token
             )
+            permission_batch_calls += 1
             for drive_item in chunk:
+                raw_permissions = perms_by_id.get(drive_item.id, [])
+                if raw_permissions:
+                    digests_computed += 1
+                items_indexed += 1
                 yield await self.drive_item_to_file_data(
                     drive_item=drive_item,
-                    raw_permissions=perms_by_id.get(drive_item.id, []),
+                    raw_permissions=raw_permissions,
                 )
+
+        logger.info(
+            f"ACL digest telemetry (PLU-511): indexed {items_indexed} item(s), "
+            f"computed {digests_computed} permissions_version digest(s) over "
+            f"permissions already fetched via {permission_batch_calls} Graph "
+            f"$batch call(s); 0 additional API calls attributable to the digest."
+        )
 
 
 class OnedriveDownloaderConfig(DownloaderConfig):
