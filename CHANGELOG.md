@@ -1,3 +1,9 @@
+## [1.7.17]
+
+### Enhancements
+
+- **feat(PLU-511): add ACL digest (`permissions_version`) for OneDrive/SharePoint.** Compute a stable SHA-256 digest over a record's `permissions_data` at index time and expose it on `FileDataSourceMetadata.permissions_version`, so an ACL-only change (content unchanged) can trigger reprocessing under incremental. OneDrive/SharePoint emit it over the permissions they already batch-fetch, so there are no additional Graph calls; a call-count telemetry line is logged per index run.
+
 ## [1.7.16]
 
 ### Fixes
