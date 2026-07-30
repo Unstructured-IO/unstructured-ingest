@@ -67,3 +67,18 @@ def test_denied_permissions_affect_digest():
     assert compute_permissions_version(base, denied_permissions_data=None) != (
         compute_permissions_version(base, denied_permissions_data=[{"read": {"deny_users": ["x"]}}])
     )
+
+
+def test_denied_only_permissions_have_digest():
+    # None allows + non-None denies is a distinct code path (the early-return
+    # guard requires BOTH args None). It must still yield a stable, non-None
+    # digest computed from the deny side alone.
+    digest = compute_permissions_version(
+        None, denied_permissions_data=[{"read": {"deny_users": ["x"]}}]
+    )
+    assert digest is not None
+    assert digest != compute_permissions_version(None, denied_permissions_data=None)
+    # And a deny-side change moves it.
+    assert digest != compute_permissions_version(
+        None, denied_permissions_data=[{"read": {"deny_users": ["y"]}}]
+    )
