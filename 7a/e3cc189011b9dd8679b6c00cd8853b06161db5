@@ -1,0 +1,53 @@
+unstructured_ingest/processes/connectors/couchbase.py
+  s_4ece04c2966b57::t_7ad3d56158b2be 227-229
+test/unit/connectors/fsspec/test_gcs.py
+  s_4ece04c2966b57::t_95b653a0902672 51-65
+unstructured_ingest/processes/connectors/jira.py
+  s_4ece04c2966b57::t_bc887ef943027c 485-487
+unstructured_ingest/processes/connectors/fsspec/gcs.py
+  s_4ece04c2966b57::t_f8ae5be6b0a321 134
+test/unit/connectors/test_couchbase.py
+  s_4ece04c2966b57::t_503bc158b77eef 176-180
+  s_4ece04c2966b57::t_8b389fb64a225b 16-17,21-22,25-27
+  s_4ece04c2966b57::t_75f3c9943f82eb 169-175,181-191
+  s_7ba9477229805e::t_5418d91d3c5e08 28
+test/unit/connectors/ibm_watsonx/test_ibm_watsonx_s3.py
+  s_4ece04c2966b57::t_18ef303a89e9f1 764-803
+  s_7520621c4125ab::t_16796b43643a43 712
+unstructured_ingest/processes/connectors/confluence.py
+  s_4ece04c2966b57::t_593d0313e3af26 640-642
+unstructured_ingest/processes/connectors/ibm_watsonx/ibm_watsonx_s3.py
+  s_4ece04c2966b57::t_13a5c432dd5c75 339,348,380
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.19",
+  "base_commit_sha": "7ae3cc189011b9dd8679b6c00cd8853b06161db5",
+  "prompts": {},
+  "sessions": {
+    "s_4ece04c2966b57": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a255c3c4-7793-40fc-bc81-405fb84acb8f",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulkarayan <pk@unstructured.io>"
+    },
+    "s_7520621c4125ab": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "agent-a279c65c471c251de",
+        "model": "unknown"
+      },
+      "human_author": "paulkarayan <pk@unstructured.io>"
+    },
+    "s_7ba9477229805e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b4a905c2-5317-4a5a-8d3e-954d2c3172b5",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulkarayan <pk@unstructured.io>"
+    }
+  }
+}
