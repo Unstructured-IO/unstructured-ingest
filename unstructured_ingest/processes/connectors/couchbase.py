@@ -226,7 +226,7 @@ class CouchbaseIndexer(Indexer):
                 if attempts == max_attempts:
                     raise SourceConnectionError(
                         f"failed to get document ids: {safe_error_summary(e)}"
-                    )
+                    ) from None
 
     def run(self, **kwargs: Any) -> Generator[CouchbaseBatchFileData, None, None]:
         ids = self._get_doc_ids()

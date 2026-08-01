@@ -639,7 +639,7 @@ class ConfluenceDownloader(Downloader):
             logger.exception(f"Failed to retrieve page with ID {doc_id}: {e}")
             raise SourceConnectionError(
                 f"Failed to retrieve page with ID {doc_id}: {safe_error_summary(e)}"
-            )
+            ) from None
 
         if not page:
             raise ValueError(f"Page with ID {doc_id} does not exist.")

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import builtins
 import errno
 from contextlib import contextmanager
 from dataclasses import dataclass, field
@@ -130,31 +131,41 @@ class GcsConnectionConfig(FsspecConnectionConfig):
         # https://github.com/fsspec/gcsfs/blob/main/gcsfs/retry.py#L79
         from gcsfs.retry import HttpError
 
+        # Static guidance strings: the raw exception text can embed the object
+        # path or credentials, and safe_error_summary drops the actionable
+        # signal (it lives in the free text, not an allowlisted attribute), so
+        # state the meaning explicitly instead of echoing str(e). `from None`
+        # severs the original cause so it cannot resurface via __context__ if
+        # the raised error is later logged with a traceback.
+        forbidden_message = (
+            "Access to the GCS resource was forbidden. Check that the service "
+            "account has permission for the requested bucket and object."
+        )
+        bad_request_message = (
+            "The GCS request was rejected as a bad request. Check the bucket "
+            "name and the service account credentials."
+        )
+
         if isinstance(e, FileNotFoundError):
-            raise UserError(f"File not found: {safe_error_summary(e)}")
+            raise UserError(f"File not found: {safe_error_summary(e)}") from None
         if isinstance(e, OSError) and "Forbidden" in str(e):
-            # Static message: the raw OSError text can embed the object path or
-            # credentials. safe_error_summary would drop the "Forbidden" signal
-            # (it lives in the free text, not an allowlisted attribute), so state
-            # the actionable meaning explicitly instead.
-            raise UserError(
-                "Access to the GCS resource was forbidden. Check that the service "
-                "account has permission for the requested bucket and object."
-            )
-        if isinstance(e, ValueError) and "Bad Request" in str(e):
-            # Static message: same rationale as the Forbidden branch above -- the
-            # "Bad Request" signal is only in the raw text, which may include the
-            # object path or credentials.
-            raise UserError(
-                "The GCS request was rejected as a bad request. Check the bucket "
-                "name and the service account credentials."
-            )
+            raise UserError(forbidden_message) from None
+        # gcsfs raises a *builtin* ValueError("Bad Request: ...") for 400s whose
+        # response body contains "invalid" (see gcsfs validate_response), not our
+        # error.ValueError -- the gcs.py:14 import shadows the builtin. Match the
+        # builtin so a real bad request actually reaches this branch.
+        if isinstance(e, builtins.ValueError) and "Bad Request" in str(e):
+            raise UserError(bad_request_message) from None
         if isinstance(e, HttpError) and (http_error_code := e.code):
-            message = safe_error_summary(e)
-            if 400 <= http_error_code < 500:
-                raise UserError(message)
+            # A generic 400 (no "invalid" in the body) arrives as HttpError, so
+            # give it the same actionable bad-request guidance rather than a bare
+            # summary.
+            if http_error_code == 400:
+                raise UserError(bad_request_message) from None
+            if 400 < http_error_code < 500:
+                raise UserError(safe_error_summary(e)) from None
             if http_error_code >= 500:
-                raise ProviderError(message)
+                raise ProviderError(safe_error_summary(e)) from None
         logger.error(f"({safe_error_summary(e)} from gcs)")
         return e
 
