@@ -6,6 +6,7 @@ import pytest
 from pydantic import Secret
 
 from unstructured_ingest.error import ProviderError, UserError
+from unstructured_ingest.error import ValueError as IngestValueError
 from unstructured_ingest.processes.connectors.fsspec.gcs import (
     GcsAccessConfig,
     GcsConnectionConfig,
@@ -63,3 +64,37 @@ def test_gcs_wrap_error_file_not_found_redacts_message(
     message = str(exc_info.value)
     assert _SECRET not in message
     assert "File not found" in message
+
+
+def test_gcs_wrap_error_forbidden_uses_static_message(
+    connection_config: GcsConnectionConfig,
+):
+    pytest.importorskip("gcsfs")
+
+    error = OSError(f"Forbidden: gs://bucket/{_SECRET}")
+
+    with pytest.raises(UserError) as exc_info:
+        connection_config.wrap_error(error)
+
+    message = str(exc_info.value)
+    assert _SECRET not in message
+    # Actionable signal survives without the raw text.
+    assert "forbidden" in message.lower()
+
+
+def test_gcs_wrap_error_bad_request_uses_static_message(
+    connection_config: GcsConnectionConfig,
+):
+    pytest.importorskip("gcsfs")
+
+    # gcs.wrap_error matches the connector's own error.ValueError (the import at
+    # gcs.py:14 shadows the builtin), so the branch only fires for that type.
+    error = IngestValueError(f"Bad Request: gs://bucket/{_SECRET}")
+
+    with pytest.raises(UserError) as exc_info:
+        connection_config.wrap_error(error)
+
+    message = str(exc_info.value)
+    assert _SECRET not in message
+    # Actionable signal survives without the raw text.
+    assert "bad request" in message.lower()

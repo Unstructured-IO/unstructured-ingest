@@ -133,9 +133,22 @@ class GcsConnectionConfig(FsspecConnectionConfig):
         if isinstance(e, FileNotFoundError):
             raise UserError(f"File not found: {safe_error_summary(e)}")
         if isinstance(e, OSError) and "Forbidden" in str(e):
-            raise UserError(e)
+            # Static message: the raw OSError text can embed the object path or
+            # credentials. safe_error_summary would drop the "Forbidden" signal
+            # (it lives in the free text, not an allowlisted attribute), so state
+            # the actionable meaning explicitly instead.
+            raise UserError(
+                "Access to the GCS resource was forbidden. Check that the service "
+                "account has permission for the requested bucket and object."
+            )
         if isinstance(e, ValueError) and "Bad Request" in str(e):
-            raise UserError(e)
+            # Static message: same rationale as the Forbidden branch above -- the
+            # "Bad Request" signal is only in the raw text, which may include the
+            # object path or credentials.
+            raise UserError(
+                "The GCS request was rejected as a bad request. Check the bucket "
+                "name and the service account credentials."
+            )
         if isinstance(e, HttpError) and (http_error_code := e.code):
             message = safe_error_summary(e)
             if 400 <= http_error_code < 500:

@@ -332,16 +332,20 @@ class IbmWatsonxUploader(SQLUploader):
             except CommitFailedException as e:
                 table.refresh()
                 logger.debug(e)
-                raise IcebergCommitFailedException(str(e))
+                # Defense-in-depth: this is caught by the outer `except Exception`
+                # (:348) and re-wrapped through safe_error_summary before it can
+                # reach the customer, but redact here too so the message never
+                # carries raw exception text regardless of how it is later handled.
+                raise IcebergCommitFailedException(safe_error_summary(e))
             except RESTError as e:
-                raise DestinationConnectionError(str(e))
+                raise DestinationConnectionError(safe_error_summary(e))
             except Exception as e:
                 raise ProviderError(f"Failed to upload data to table: {safe_error_summary(e)}")
 
         try:
             return _upload_data_table(table, data_table, file_data)
         except RESTError as e:
-            raise DestinationConnectionError(str(e))
+            raise DestinationConnectionError(safe_error_summary(e))
         except ProviderError:
             raise
         except Exception as e:

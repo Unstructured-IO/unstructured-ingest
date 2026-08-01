@@ -9,7 +9,13 @@ from pyiceberg.exceptions import CommitFailedException, RESTError
 from pytest_mock import MockerFixture
 
 from unstructured_ingest.data_types.file_data import FileData, SourceIdentifiers
-from unstructured_ingest.error import ProviderError, UserAuthError, UserError
+from unstructured_ingest.error import (
+    DestinationConnectionError,
+    IcebergCommitFailedException,
+    ProviderError,
+    UserAuthError,
+    UserError,
+)
 from unstructured_ingest.processes.connectors.ibm_watsonx import IBM_WATSONX_S3_CONNECTOR_TYPE
 from unstructured_ingest.processes.connectors.ibm_watsonx.ibm_watsonx_s3 import (
     IbmWatsonxAccessConfig,
@@ -799,6 +805,66 @@ def test_ibm_watsonx_upload_dataframe_exception_redacts_secret(
         uploader.upload_dataframe(test_df, file_data)
 
     assert _SECRET not in str(excinfo.value)
+
+
+def test_ibm_watsonx_upload_data_table_rest_error_redacts_secret(
+    uploader: IbmWatsonxUploader,
+    mock_table: MagicMock,
+    mock_transaction: MagicMock,
+    mock_data_table: MagicMock,
+    mock_delete: MagicMock,
+    file_data: FileData,
+):
+    """A pyiceberg RESTError (may carry the catalog URL / connection detail) is
+    redacted: the inner RESTError handler wraps it in DestinationConnectionError via
+    safe_error_summary, and the raw text never reaches the raised message."""
+    mock_transaction.append.side_effect = RESTError(
+        f"catalog https://admin:{_SECRET}@iceberg.example.com/v1 unreachable"
+    )
+
+    with pytest.raises(ProviderError) as excinfo:
+        uploader.upload_data_table(mock_table, mock_data_table, file_data)
+
+    assert _SECRET not in str(excinfo.value)
+    # The inner RESTError branch ran and was redacted before the outer re-wrap.
+    context = excinfo.value.__context__
+    assert isinstance(context, DestinationConnectionError)
+    assert _SECRET not in str(context)
+
+
+def test_ibm_watsonx_upload_data_table_commit_failed_redacts_secret(
+    uploader: IbmWatsonxUploader,
+    mock_table: MagicMock,
+    mock_transaction: MagicMock,
+    mock_data_table: MagicMock,
+    mock_delete: MagicMock,
+    file_data: FileData,
+):
+    """Defense-in-depth: the IcebergCommitFailedException raised on a commit
+    conflict is redacted at its own raise site, not only when the outer handler
+    re-wraps it."""
+    # max_retries=2 (the config minimum) keeps the tenacity retry loop short.
+    fast_uploader = IbmWatsonxUploader(
+        connection_config=uploader.connection_config,
+        upload_config=IbmWatsonxUploaderConfig(
+            namespace="test_namespace",
+            table="test_table",
+            record_id_key="test_record_id_key",
+            max_retries=2,
+        ),
+    )
+    mock_transaction.append.side_effect = CommitFailedException(
+        f"commit conflict token={_SECRET}"
+    )
+
+    with pytest.raises(ProviderError) as excinfo:
+        fast_uploader.upload_data_table(mock_table, mock_data_table, file_data)
+
+    assert _SECRET not in str(excinfo.value)
+    # The IcebergCommitFailedException message itself carries no raw text.
+    context = excinfo.value.__context__
+    assert isinstance(context, IcebergCommitFailedException)
+    assert _SECRET not in str(context)
 
 
 def test_ibm_watsonx_uploader_config_table_identifier(
