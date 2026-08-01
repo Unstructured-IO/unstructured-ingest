@@ -13,10 +13,18 @@ sys.modules.setdefault("couchbase.auth", mock_couchbase.auth)
 sys.modules.setdefault("couchbase.cluster", mock_couchbase.cluster)
 sys.modules.setdefault("couchbase.options", mock_couchbase.options)
 
+from unstructured_ingest.error import SourceConnectionError  # noqa: E402
+from unstructured_ingest.processes.connectors import couchbase as couchbase_module  # noqa: E402
 from unstructured_ingest.processes.connectors.couchbase import (  # noqa: E402
     CouchbaseAccessConfig,
     CouchbaseConnectionConfig,
+    CouchbaseIndexer,
+    CouchbaseIndexerConfig,
 )
+
+# A credential-bearing connection string of the kind a couchbase SDK error can
+# embed; it must never reach the raised SourceConnectionError message.
+_SECRET = "couchbase://admin:hunter2@db.internal"
 
 
 @pytest.fixture
@@ -158,3 +166,26 @@ def test_wait_until_ready_default_when_no_bootstrap_timeout(base_kwargs):
         pass
 
     mock_cluster.wait_until_ready.assert_called_once_with(timedelta(seconds=10))
+
+
+def test_get_doc_ids_error_redacts_secret(base_kwargs, monkeypatch):
+    """A failing query surfaces a SourceConnectionError with no raw exception text."""
+    # Avoid the real 3s-per-attempt backoff.
+    monkeypatch.setattr(couchbase_module.time, "sleep", lambda *_: None)
+
+    # get_client (fully mocked) yields this cluster; make its query() raise a
+    # credential-bearing exception.
+    mock_cluster = mock_couchbase.cluster.Cluster.connect.return_value
+    mock_cluster.query.side_effect = Exception(f"query failed: {_SECRET}")
+
+    config = CouchbaseConnectionConfig(**base_kwargs)
+    indexer = CouchbaseIndexer(connection_config=config, index_config=CouchbaseIndexerConfig())
+
+    with pytest.raises(SourceConnectionError) as excinfo:
+        indexer._get_doc_ids()
+
+    message = str(excinfo.value)
+    assert _SECRET not in message
+    assert "hunter2" not in message
+    # The sanitized summary still names the exception type for troubleshooting.
+    assert "Exception" in message

@@ -131,7 +131,7 @@ class GcsConnectionConfig(FsspecConnectionConfig):
         from gcsfs.retry import HttpError
 
         if isinstance(e, FileNotFoundError):
-            raise UserError(f"File not found: {e}")
+            raise UserError(f"File not found: {safe_error_summary(e)}")
         if isinstance(e, OSError) and "Forbidden" in str(e):
             raise UserError(e)
         if isinstance(e, ValueError) and "Bad Request" in str(e):

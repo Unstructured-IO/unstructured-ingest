@@ -48,3 +48,18 @@ def test_gcs_wrap_error_server_error_redacts_message(
         connection_config.wrap_error(error)
 
     assert _SECRET not in str(exc_info.value)
+
+
+def test_gcs_wrap_error_file_not_found_redacts_message(
+    connection_config: GcsConnectionConfig,
+):
+    pytest.importorskip("gcsfs")
+
+    error = FileNotFoundError(f"gs://bucket/{_SECRET}")
+
+    with pytest.raises(UserError) as exc_info:
+        connection_config.wrap_error(error)
+
+    message = str(exc_info.value)
+    assert _SECRET not in message
+    assert "File not found" in message

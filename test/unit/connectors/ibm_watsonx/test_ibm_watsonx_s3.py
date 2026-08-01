@@ -709,9 +709,7 @@ def _http_status_error(status_code: int):
     """Build an httpx.HTTPStatusError whose request URL and message carry a secret."""
     import httpx
 
-    request = httpx.Request(
-        "GET", f"https://watsonx.example.com/data?token={_SECRET}&other=1"
-    )
+    request = httpx.Request("GET", f"https://watsonx.example.com/data?token={_SECRET}&other=1")
     response = httpx.Response(status_code, request=request)
     return httpx.HTTPStatusError(f"boom {_SECRET}", request=request, response=response)
 
@@ -761,6 +759,46 @@ def test_ibm_watsonx_wrap_error_strips_query_string_from_logs(
     assert _SECRET not in caplog.text
     assert "token=" not in caplog.text
     assert "https://watsonx.example.com/data" in caplog.text
+
+
+def test_ibm_watsonx_upload_data_table_exception_redacts_secret(
+    uploader: IbmWatsonxUploader,
+    mock_table: MagicMock,
+    mock_transaction: MagicMock,
+    mock_data_table: MagicMock,
+    mock_delete: MagicMock,
+    file_data: FileData,
+):
+    """The ProviderError from the upload path carries no raw exception text."""
+    mock_transaction.append.side_effect = Exception(f"connect failed dsn={_SECRET}")
+
+    with pytest.raises(ProviderError) as excinfo:
+        uploader.upload_data_table(mock_table, mock_data_table, file_data)
+
+    assert _SECRET not in str(excinfo.value)
+    assert "Exception" in str(excinfo.value)
+
+
+def test_ibm_watsonx_upload_dataframe_exception_redacts_secret(
+    mocker: MockerFixture,
+    uploader: IbmWatsonxUploader,
+    test_df: pd.DataFrame,
+    mock_get_table: MagicMock,
+    mock_data_table: MagicMock,
+    file_data: FileData,
+):
+    """The outer upload_dataframe ProviderError also redacts raw exception text."""
+    mocker.patch.object(IbmWatsonxUploader, "_df_to_arrow_table", return_value=mock_data_table)
+    mocker.patch.object(
+        IbmWatsonxUploader,
+        "upload_data_table",
+        side_effect=Exception(f"connect failed dsn={_SECRET}"),
+    )
+
+    with pytest.raises(ProviderError) as excinfo:
+        uploader.upload_dataframe(test_df, file_data)
+
+    assert _SECRET not in str(excinfo.value)
 
 
 def test_ibm_watsonx_uploader_config_table_identifier(

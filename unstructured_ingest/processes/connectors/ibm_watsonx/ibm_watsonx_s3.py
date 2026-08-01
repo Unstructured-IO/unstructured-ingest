@@ -336,7 +336,7 @@ class IbmWatsonxUploader(SQLUploader):
             except RESTError as e:
                 raise DestinationConnectionError(str(e))
             except Exception as e:
-                raise ProviderError(f"Failed to upload data to table: {e}")
+                raise ProviderError(f"Failed to upload data to table: {safe_error_summary(e)}")
 
         try:
             return _upload_data_table(table, data_table, file_data)
@@ -345,7 +345,7 @@ class IbmWatsonxUploader(SQLUploader):
         except ProviderError:
             raise
         except Exception as e:
-            raise ProviderError(f"Failed to upload data to table: {e}")
+            raise ProviderError(f"Failed to upload data to table: {safe_error_summary(e)}")
 
     @requires_dependencies(["pyiceberg", "tenacity"], extras="ibm-watsonx-s3")
     def upload_dataframe(self, df: "DataFrame", file_data: FileData) -> None:
@@ -377,7 +377,7 @@ class IbmWatsonxUploader(SQLUploader):
         except ProviderError:
             raise
         except Exception as e:
-            raise ProviderError(f"Failed to upload data to table: {e}")
+            raise ProviderError(f"Failed to upload data to table: {safe_error_summary(e)}")
 
     @requires_dependencies(["pandas"], extras="ibm-watsonx-s3")
     def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
