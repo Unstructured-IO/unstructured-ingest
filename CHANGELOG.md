@@ -1,10 +1,8 @@
-## [1.7.17]
+## [1.8.0]
 
 ### Enhancements
 
-- **feat(PLU-511): add ACL digest (`permissions_version`) for OneDrive/SharePoint.** Compute a stable SHA-256 digest over a record's `permissions_data` at index time and expose it on `FileDataSourceMetadata.permissions_version`, so an ACL-only change (content unchanged) can trigger reprocessing under incremental. OneDrive/SharePoint emit it over the permissions they already batch-fetch, so there are no additional Graph calls; a call-count telemetry line is logged per index run.
-- **fix(PLU-511): distinguish a failed permission fetch from genuine revocation.** The batch permission fetch now maps an unavailable fetch (error sub-response / exhausted retries) to `None` and a genuine empty result (200 with no permissions) to `[]`. Only `None` skips the digest; an empty list flows through to a stable digest so full access revocation is detected instead of being conflated with a fetch error.
-- **fix(PLU-511): SharePoint ACL-digest telemetry + None-default parity.** `SharepointIndexer.run_async` overrides OneDrive's, so it emitted no ACL-digest telemetry and still defaulted a missing permission entry to `[]` (which could fabricate a revocation). Both `run_async` paths now share an `_AclDigestTelemetry` helper (so they can't drift), and SharePoint defaults a missing entry to `None` per the fetch-vs-revocation contract.
+- **feat(PLU-511): ACL digest (`permissions_version`) for OneDrive/SharePoint incremental reprocessing.** Add a `permissions_version` field on `FileDataSourceMetadata` and a new `unstructured_ingest/utils/acl` module that computes a stable SHA-256 digest over a record's permissions at index time, so an ACL-only change (content unchanged) can trigger reprocessing under incremental. OneDrive and SharePoint emit it over the permissions they already batch-fetch, so there are no additional Graph calls. An unavailable permission fetch (error sub-response, exhausted retries, null/malformed body) is kept distinct from a genuinely empty permission set: only the latter (all access revoked) produces a digest, so a fetch failure is never mistaken for a revocation.
 
 ## [1.7.16]
 

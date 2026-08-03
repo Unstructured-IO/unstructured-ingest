@@ -177,9 +177,15 @@ class TestExtractPermissions:
         indexer._extract_identity_ids_from_raw = OnedriveIndexer._extract_identity_ids_from_raw
         return indexer
 
-    def test_empty_permissions_returns_empty_dict_list(self, indexer):
+    def test_empty_permissions_returns_normalized_all_empty_triple(self, indexer):
+        # A revoked/empty permission set normalizes to the same all-empty triple
+        # as permissions whose roles map to no operation, so both hash equally.
         result = indexer.extract_permissions([])
-        assert result == [{}]
+        assert result == [
+            {"read": {"users": [], "groups": []}},
+            {"update": {"users": [], "groups": []}},
+            {"delete": {"users": [], "groups": []}},
+        ]
 
     def test_owner_role_maps_to_all_operations(self, indexer):
         result = indexer.extract_permissions(
@@ -362,13 +368,19 @@ class TestDriveItemToFileDataSync:
         assert file_data.metadata.permissions_data is None
 
     def test_permissions_captured_when_empty_list_passed(self):
-        # Empty list is a genuine "all access revoked" state (distinct from a
-        # failed fetch, which is now None): it produces permissions_data plus a
-        # stable digest so revocation is detected (S9).
+        # An empty list is a genuine "all access revoked" state (distinct from a
+        # failed fetch, which is None): it produces the normalized all-empty
+        # triple plus a stable digest so revocation is detected. Pinning the
+        # exact shape guards against representation drift that would look like an
+        # ACL change.
         indexer = _make_indexer()
         drive_item = _make_drive_item()
         file_data = indexer.drive_item_to_file_data_sync(drive_item, raw_permissions=[])
-        assert file_data.metadata.permissions_data is not None
+        assert file_data.metadata.permissions_data == [
+            {"read": {"users": [], "groups": []}},
+            {"update": {"users": [], "groups": []}},
+            {"delete": {"users": [], "groups": []}},
+        ]
         assert file_data.metadata.permissions_version is not None
 
     def test_permissions_none_when_fetch_unavailable(self):
@@ -470,6 +482,26 @@ class TestFetchPermissionsRaw:
         with patch("requests.post", return_value=body):
             result = indexer._fetch_permissions_raw(items, access_token="tok")
         assert result == {"item-f.docx": []}
+
+    def test_per_item_null_body_degrades_to_none(self):
+        # A 200 with a null body must not crash the index run; it degrades to
+        # None (unavailable), not [] (which would be a fabricated revocation).
+        indexer = _make_indexer()
+        items = [_make_drive_item("f.docx")]
+        body = _batch_response(responses=[{"id": "0", "status": 200, "body": None}])
+        with patch("requests.post", return_value=body):
+            result = indexer._fetch_permissions_raw(items, access_token="tok")
+        assert result == {"item-f.docx": None}
+
+    def test_per_item_200_missing_value_key_degrades_to_none(self):
+        # A 200 body with no "value" key is malformed/unavailable -> None, not a
+        # fabricated revocation.
+        indexer = _make_indexer()
+        items = [_make_drive_item("f.docx")]
+        body = _batch_response(responses=[{"id": "0", "status": 200, "body": {}}])
+        with patch("requests.post", return_value=body):
+            result = indexer._fetch_permissions_raw(items, access_token="tok")
+        assert result == {"item-f.docx": None}
 
     def test_envelope_401_raises_user_auth_error(self):
         indexer = _make_indexer()

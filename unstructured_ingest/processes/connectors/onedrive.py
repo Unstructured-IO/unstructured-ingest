@@ -457,8 +457,11 @@ class OnedriveIndexer(Indexer):
         """Normalize raw Graph permission dicts to the read/update/delete schema
         shared with Google Drive and Confluence connectors."""
         if not raw_permissions:
+            # A revoked/empty permission set normalizes to the same all-empty
+            # read/update/delete triple as permissions whose roles map to no
+            # operation, so both produce the same digest and drifting between the
+            # two representations doesn't look like an ACL change.
             logger.debug("no permissions found")
-            return [{}]
 
         normalized: dict[str, dict[str, set[str]]] = {
             "read": {"users": set(), "groups": set()},
@@ -518,7 +521,11 @@ class OnedriveIndexer(Indexer):
             di = drive_items[idx]
             status = sub.get("status")
             if status == 200:
-                by_id[di.id] = sub.get("body", {}).get("value", [])
+                # A present-but-empty value list is a genuine "no permissions"
+                # (revoked) state and stays []. A null/absent body or a missing
+                # value key is malformed/unavailable and degrades to None (skip
+                # the digest) rather than a fabricated revocation.
+                by_id[di.id] = (sub.get("body") or {}).get("value")
             elif status in (401, 403):
                 logger.error(f"forbidden fetching permissions for {di.name} (status {status})")
             elif status == 404:
