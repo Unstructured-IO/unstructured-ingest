@@ -12,7 +12,6 @@ from unstructured_ingest.processes.connectors.onedrive import (
     OnedriveConnectionConfig,
     OnedriveIndexer,
     OnedriveIndexerConfig,
-    _AclDigestTelemetry,
 )
 
 
@@ -648,26 +647,3 @@ class TestRoleMapping:
         write_ops = set(MICROSOFT_ROLE_MAPPING["write"])
         owner_ops = set(MICROSOFT_ROLE_MAPPING["owner"])
         assert write_ops.issubset(owner_ops)
-
-
-class TestAclDigestTelemetry:
-    """PLU-511: the shared counter used by both OneDrive and SharePoint run_async."""
-
-    def test_digest_counted_for_permissions_and_revocation(self):
-        t = _AclDigestTelemetry()
-        t.record_batch()
-        t.record_item([{"read": {"users": ["a"], "groups": []}}])  # has perms -> digest
-        t.record_item([])  # genuine empty (revoked) -> still a digest
-        t.record_item(None)  # fetch unavailable -> no digest
-        assert t.permission_batch_calls == 1
-        assert t.items_indexed == 3
-        assert t.digests_computed == 2
-
-    def test_only_batch_calls_are_counted(self):
-        # record_batch is the only ACL-attributable call; nothing else increments it.
-        t = _AclDigestTelemetry()
-        for _ in range(5):
-            t.record_item(None)
-        assert t.permission_batch_calls == 0
-        assert t.digests_computed == 0
-        assert t.items_indexed == 5
