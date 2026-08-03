@@ -33,6 +33,7 @@ from unstructured_ingest.processes.connectors.onedrive import (
     OnedriveDownloaderConfig,
     OnedriveIndexer,
     OnedriveIndexerConfig,
+    _AclDigestTelemetry,
 )
 from unstructured_ingest.utils.dep_check import requires_dependencies
 
@@ -327,12 +328,22 @@ class SharepointIndexer(OnedriveIndexer):
             self._get_target_drive_item, site_drive_item, path
         )
 
+        # Shared ACL-digest telemetry (PLU-511); same helper OneDrive uses, so
+        # SharePoint reports the digest's marginal API cost identically. Only the
+        # _fetch_permissions_raw batch call is counted (record_batch), not the
+        # site/drive-resolution calls above. None = fetch unavailable (skip
+        # digest); [] = revoked (real digest).
+        telemetry = _AclDigestTelemetry()
+
         async def _flush(chunk: list[DriveItem]) -> AsyncIterator[FileData]:
             perms_by_id = await asyncio.to_thread(self._fetch_permissions_raw, chunk, access_token)
+            telemetry.record_batch()
             for di in chunk:
+                raw_permissions = perms_by_id.get(di.id)
+                telemetry.record_item(raw_permissions)
                 yield await self.drive_item_to_file_data(
                     drive_item=di,
-                    raw_permissions=perms_by_id.get(di.id, []),
+                    raw_permissions=raw_permissions,
                 )
 
         try:
@@ -353,6 +364,8 @@ class SharepointIndexer(OnedriveIndexer):
         if chunk:
             async for fd in _flush(chunk):
                 yield fd
+
+        telemetry.log(self.connector_type)
 
 
 class SharepointDownloaderConfig(OnedriveDownloaderConfig):

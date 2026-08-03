@@ -81,6 +81,44 @@ class _RetriableBatchError(Exception):
     """Marker exception for transient Graph $batch failures (network, 429, 503)."""
 
 
+@dataclass
+class _AclDigestTelemetry:
+    """PLU-511 call-count telemetry, shared by the OneDrive and SharePoint
+    ``run_async`` paths so they report the digest's marginal API cost the same
+    way and can't drift apart. Only ``_fetch_permissions_raw`` batch calls are
+    counted (record_batch); site/drive-resolution calls are not, since they are
+    not attributable to the digest.
+    """
+
+    permission_batch_calls: int = 0
+    digests_computed: int = 0
+    items_indexed: int = 0
+
+    def record_batch(self) -> None:
+        """One Graph $batch permission fetch (the only ACL-attributable call)."""
+        self.permission_batch_calls += 1
+
+    def record_item(self, raw_permissions: Optional[list[dict[str, Any]]]) -> None:
+        """Account one indexed item. A digest is computed unless the permission
+        fetch was unavailable (None); an empty list is a real (revoked) digest."""
+        self.items_indexed += 1
+        if raw_permissions is not None:
+            self.digests_computed += 1
+
+    def log(self, connector_type: str) -> None:
+        # Report the counts as the evidence themselves; the digest is computed
+        # over permissions already fetched for ACL metadata and issues no Graph
+        # calls of its own (it hashes already-fetched data), so its marginal API
+        # cost is zero by construction rather than by a separately measured value.
+        logger.info(
+            f"ACL digest telemetry (PLU-511) [{connector_type}]: indexed "
+            f"{self.items_indexed} item(s), computed {self.digests_computed} "
+            f"permissions_version digest(s) over permissions already fetched via "
+            f"{self.permission_batch_calls} Graph $batch call(s); the digest hashes "
+            f"already-fetched data and makes no Graph calls of its own."
+        )
+
+
 class OnedriveAccessConfig(AccessConfig):
     client_cred: Optional[str] = Field(default=None, description="Microsoft App client secret")
     password: Optional[str] = Field(description="Service account password", default=None)
@@ -343,6 +381,11 @@ class OnedriveIndexer(Indexer):
         # None means the permission fetch was unavailable this run (error / no
         # sub-response); leave the ACL fields unset. An empty list is a real
         # state (all access revoked) and flows through to a stable digest (S9).
+        #
+        # NOTE: the digest inherits permissions_data's coverage. SharePoint
+        # siteGroup grants are excluded (see _extract_identity_ids_from_raw /
+        # PLU-370), so site-group-mediated ACL changes don't move the digest.
+        # Known limitation.
         if raw_permissions is not None:
             file_data.metadata.permissions_data = self.extract_permissions(raw_permissions)
             file_data.metadata.permissions_version = compute_permissions_version(
@@ -587,35 +630,24 @@ class OnedriveIndexer(Indexer):
         root = await self.get_root(client=client)
         drive_items = await self.list_objects(folder=root, recursive=self.index_config.recursive)
 
-        # Call-count telemetry for the ACL digest (PLU-511). The digest is
-        # computed over permissions the connector already batch-fetches for
-        # ACL metadata, so it issues no Graph calls of its own. Counting the
-        # permission fetches against the digests computed proves the marginal
-        # API cost of the digest is zero.
-        permission_batch_calls = 0
-        digests_computed = 0
-        items_indexed = 0
+        # Call-count telemetry for the ACL digest (PLU-511); shared with the
+        # SharePoint indexer via _AclDigestTelemetry so both paths report it
+        # identically. None = fetch unavailable (skip digest); [] = revoked
+        # (real digest).
+        telemetry = _AclDigestTelemetry()
         for i in range(0, len(drive_items), PERMISSIONS_BATCH_SIZE):
             chunk = drive_items[i : i + PERMISSIONS_BATCH_SIZE]
             perms_by_id = await asyncio.to_thread(self._fetch_permissions_raw, chunk, access_token)
-            permission_batch_calls += 1
+            telemetry.record_batch()
             for drive_item in chunk:
                 raw_permissions = perms_by_id.get(drive_item.id)
-                # None = fetch unavailable (no digest); [] = revoked (real digest).
-                if raw_permissions is not None:
-                    digests_computed += 1
-                items_indexed += 1
+                telemetry.record_item(raw_permissions)
                 yield await self.drive_item_to_file_data(
                     drive_item=drive_item,
                     raw_permissions=raw_permissions,
                 )
 
-        logger.info(
-            f"ACL digest telemetry (PLU-511): indexed {items_indexed} item(s), "
-            f"computed {digests_computed} permissions_version digest(s) over "
-            f"permissions already fetched via {permission_batch_calls} Graph "
-            f"$batch call(s); 0 additional API calls attributable to the digest."
-        )
+        telemetry.log(self.connector_type)
 
 
 class OnedriveDownloaderConfig(DownloaderConfig):
