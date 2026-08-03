@@ -1,0 +1,29 @@
+unstructured_ingest/processes/connectors/confluence.py
+  s_8ffa0fb1fcf745::t_a2b138b7e8a772 639
+unstructured_ingest/processes/connectors/fsspec/gcs.py
+  s_8ffa0fb1fcf745::t_078929ac4fd53f 138-140
+CHANGELOG.md
+  s_8ffa0fb1fcf745::t_b943f33c4c09ae 5
+unstructured_ingest/processes/connectors/ibm_watsonx/ibm_watsonx_s3.py
+  s_8ffa0fb1fcf745::t_7e50b8ead3de03 334
+unstructured_ingest/processes/connectors/jira.py
+  s_8ffa0fb1fcf745::t_996047629b1987 484
+test/unit/connectors/test_couchbase.py
+  s_8ffa0fb1fcf745::t_859cdc179c91a0 190-192
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "32bd0d908e428fda3dc37aa6cf15581f9f37ba28",
+  "prompts": {},
+  "sessions": {
+    "s_8ffa0fb1fcf745": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "3444e059-cf5c-4c9f-aac3-92f618b0fd90",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulkarayan <pk@unstructured.io>"
+    }
+  }
+}
