@@ -1,10 +1,10 @@
 """Helpers for deriving a stable ACL digest from a record's permissions.
 
-PLU-511: the digest is compared alongside the content version token so that an
-ACL-only change at the source (content unchanged) still triggers a reprocess
-under incremental. It must be deterministic: the same permissions in a different
-order must produce the same digest, or reordering causes false-positive
-reprocesses (see acceptance-test scenario S5).
+The digest is compared alongside the content version token so that an ACL-only
+change at the source (content unchanged) still triggers a reprocess under
+incremental. It must be deterministic: the same permissions in a different order
+must produce the same digest, or reordering would cause false-positive
+reprocesses.
 """
 
 import hashlib

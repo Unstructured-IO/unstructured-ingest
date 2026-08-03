@@ -342,12 +342,11 @@ class OnedriveIndexer(Indexer):
         )
         # None means the permission fetch was unavailable this run (error / no
         # sub-response); leave the ACL fields unset. An empty list is a real
-        # state (all access revoked) and flows through to a stable digest (S9).
+        # state (all access revoked) and flows through to a stable digest.
         #
         # NOTE: the digest inherits permissions_data's coverage. SharePoint
-        # siteGroup grants are excluded (see _extract_identity_ids_from_raw /
-        # PLU-370), so site-group-mediated ACL changes don't move the digest.
-        # Known limitation.
+        # siteGroup grants are excluded (see _extract_identity_ids_from_raw), so
+        # site-group-mediated ACL changes don't move the digest. Known limitation.
         if raw_permissions is not None:
             file_data.metadata.permissions_data = self.extract_permissions(raw_permissions)
             file_data.metadata.permissions_version = compute_permissions_version(
@@ -464,8 +463,8 @@ class OnedriveIndexer(Indexer):
         A value of None means permissions were not successfully fetched for that
         item (error sub-response, or missing). An empty list means the item
         genuinely has no permissions (all access revoked). Keeping the two
-        distinct lets the digest capture revocation (S9) without mistaking a
-        fetch error for one.
+        distinct lets the digest capture revocation without mistaking a fetch
+        error for one.
         """
         by_id: dict[str, Optional[list[dict[str, Any]]]] = {di.id: None for di in drive_items}
         for sub in payload.get("responses", []):

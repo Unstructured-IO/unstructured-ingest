@@ -671,10 +671,10 @@ class TestSharepointInheritsPermissionMachinery:
 
 
 def test_flush_missing_permission_entry_defaults_to_none():
-    """PLU-511: SharepointIndexer._flush must pass raw_permissions=None for a
-    drive item missing from the permission-fetch result (fetch unavailable ->
-    skip digest), not [] (which would fabricate a revocation). A present entry
-    still flows through unchanged. Mirrors OneDrive's perms_by_id.get(id) default.
+    """SharepointIndexer._flush must pass raw_permissions=None for a drive item
+    missing from the permission-fetch result (fetch unavailable -> skip digest),
+    not [] (which would fabricate a revocation). A present entry still flows
+    through unchanged. Mirrors OneDrive's perms_by_id.get(id) default.
     """
     conn = Mock(spec=SharepointConnectionConfig)
     conn.site = "https://test.sharepoint.com/sites/test"

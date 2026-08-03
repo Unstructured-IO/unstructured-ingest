@@ -1,4 +1,4 @@
-"""PLU-511: ACL digest determinism and behavior (acceptance-test scenario S5)."""
+"""ACL digest determinism and behavior."""
 
 from unstructured_ingest.utils.acl import compute_permissions_version
 
@@ -30,7 +30,7 @@ def test_same_permissions_same_digest():
 
 
 def test_reordered_users_same_digest():
-    # S5: same permissions, different order -> identical digest, no false positive.
+    # Same permissions, different order -> identical digest, no false positive.
     assert compute_permissions_version(_perms(["a", "b"])) == compute_permissions_version(
         _perms(["b", "a"])
     )
@@ -50,14 +50,14 @@ def test_reordered_operations_same_digest():
 
 
 def test_real_change_changes_digest():
-    # S2/S9: a genuine ACL change must move the digest.
+    # A genuine ACL change must move the digest.
     assert compute_permissions_version(_perms(["a"])) != compute_permissions_version(
         _perms(["a", "c"])
     )
 
 
 def test_revocation_changes_digest():
-    # S9: going from granted to fully revoked (empty) must change the digest.
+    # Going from granted to fully revoked (empty) must change the digest.
     assert compute_permissions_version(_perms(["a", "b"])) != compute_permissions_version([])
 
 
