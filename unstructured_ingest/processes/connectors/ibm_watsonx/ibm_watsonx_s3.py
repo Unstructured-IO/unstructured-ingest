@@ -331,7 +331,7 @@ class IbmWatsonxUploader(SQLUploader):
                     transaction.append(data_table)
             except CommitFailedException as e:
                 table.refresh()
-                logger.debug(e)
+                logger.debug(safe_error_summary(e))
                 # Defense-in-depth: this is caught by the outer `except Exception`
                 # (:348) and re-wrapped through safe_error_summary before it can
                 # reach the customer, but redact here too so the message never

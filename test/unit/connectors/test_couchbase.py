@@ -187,5 +187,8 @@ def test_get_doc_ids_error_redacts_secret(base_kwargs, monkeypatch):
     message = str(excinfo.value)
     assert _SECRET not in message
     assert "hunter2" not in message
+    # The non-secret free text of the exception is stripped too, not just the
+    # known credential -- only the exception type survives.
+    assert "query failed" not in message
     # The sanitized summary still names the exception type for troubleshooting.
     assert "Exception" in message

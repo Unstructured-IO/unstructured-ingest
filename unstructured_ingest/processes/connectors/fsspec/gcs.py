@@ -135,8 +135,9 @@ class GcsConnectionConfig(FsspecConnectionConfig):
         # path or credentials, and safe_error_summary drops the actionable
         # signal (it lives in the free text, not an allowlisted attribute), so
         # state the meaning explicitly instead of echoing str(e). `from None`
-        # severs the original cause so it cannot resurface via __context__ if
-        # the raised error is later logged with a traceback.
+        # sets __suppress_context__ so the original is omitted from standard
+        # traceback rendering; it is still attached as __context__, so any
+        # custom exception serialization must redact it separately.
         forbidden_message = (
             "Access to the GCS resource was forbidden. Check that the service "
             "account has permission for the requested bucket and object."
