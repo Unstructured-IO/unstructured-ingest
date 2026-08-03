@@ -1,4 +1,5 @@
-from unittest.mock import Mock, patch
+import asyncio
+from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 from pydantic import Secret
@@ -667,3 +668,55 @@ class TestSharepointInheritsPermissionMachinery:
         assert mock_post.call_args[0][0] == "https://graph.microsoft.com/v1.0/$batch"
         assert mock_post.call_args[1]["headers"]["Authorization"] == "Bearer tok"
         assert result["item-a.docx"][0]["grantedToV2"]["user"]["id"] == "u-1"
+
+
+def test_flush_missing_permission_entry_defaults_to_none():
+    """PLU-511: SharepointIndexer._flush must pass raw_permissions=None for a
+    drive item missing from the permission-fetch result (fetch unavailable ->
+    skip digest), not [] (which would fabricate a revocation). A present entry
+    still flows through unchanged. Mirrors OneDrive's perms_by_id.get(id) default.
+    """
+    conn = Mock(spec=SharepointConnectionConfig)
+    conn.site = "https://test.sharepoint.com/sites/test"
+    conn.get_token.return_value = {"access_token": "tok"}
+    conn.get_client.return_value = Mock()
+    conn._get_drive_item.return_value = Mock()
+
+    idx_config = Mock(spec=SharepointIndexerConfig)
+    idx_config.path = ""
+    idx_config.recursive = False
+
+    indexer = SharepointIndexer(connection_config=conn, index_config=idx_config)
+
+    di_present = Mock()
+    di_present.id = "present"
+    di_missing = Mock()
+    di_missing.id = "missing"
+
+    captured: dict = {}
+
+    async def _capture(drive_item, raw_permissions=None):
+        captured[drive_item.id] = raw_permissions
+        return Mock()
+
+    with (
+        patch.object(SharepointIndexer, "_get_target_drive_item") as mock_target,
+        patch.object(
+            indexer,
+            "_fetch_permissions_raw",
+            return_value={"present": [{"roles": ["read"]}]},  # "missing" omitted
+        ),
+        patch.object(indexer, "drive_item_to_file_data", new=AsyncMock(side_effect=_capture)),
+    ):
+        mock_target.return_value.get_files.return_value.execute_query.return_value = [
+            di_present,
+            di_missing,
+        ]
+
+        async def _drain():
+            return [fd async for fd in indexer.run_async()]
+
+        asyncio.run(_drain())
+
+    assert captured["present"] == [{"roles": ["read"]}]
+    assert captured["missing"] is None
