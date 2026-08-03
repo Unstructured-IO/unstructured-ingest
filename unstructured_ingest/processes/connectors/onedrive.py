@@ -106,16 +106,19 @@ class _AclDigestTelemetry:
             self.digests_computed += 1
 
     def log(self, connector_type: str) -> None:
-        # Report the counts as the evidence themselves; the digest is computed
-        # over permissions already fetched for ACL metadata and issues no Graph
-        # calls of its own (it hashes already-fetched data), so its marginal API
-        # cost is zero by construction rather than by a separately measured value.
+        # The count is permission-fetch batches (one per chunk / _fetch_permissions_raw
+        # invocation), not raw HTTP requests: that helper may retry the POST on
+        # throttling/network errors, which are not counted here. That's fine for the
+        # PLU-511 claim, which is that the digest itself makes no Graph calls of its
+        # own (it hashes permissions already fetched for ACL metadata) -- its marginal
+        # API cost is zero by construction, not a separately measured value.
         logger.info(
             f"ACL digest telemetry (PLU-511) [{connector_type}]: indexed "
             f"{self.items_indexed} item(s), computed {self.digests_computed} "
-            f"permissions_version digest(s) over permissions already fetched via "
-            f"{self.permission_batch_calls} Graph $batch call(s); the digest hashes "
-            f"already-fetched data and makes no Graph calls of its own."
+            f"permissions_version digest(s) over permissions fetched in "
+            f"{self.permission_batch_calls} batch(es) for ACL metadata (HTTP retries "
+            f"not counted separately); the digest hashes already-fetched data and "
+            f"makes no Graph calls of its own."
         )
 
 
