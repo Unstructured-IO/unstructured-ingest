@@ -479,11 +479,16 @@ class OnedriveIndexer(Indexer):
             di = drive_items[idx]
             status = sub.get("status")
             if status == 200:
-                # A present-but-empty value list is a genuine "no permissions"
-                # (revoked) state and stays []. A null/absent body or a missing
-                # value key is malformed/unavailable and degrades to None (skip
-                # the digest) rather than a fabricated revocation.
-                by_id[di.id] = (sub.get("body") or {}).get("value")
+                # A 200 can still carry a malformed body, so validate the shape
+                # before trusting it: body must be a dict and value a list.
+                # Anything else (null/absent body, a non-dict body, a missing or
+                # non-list value) is unavailable -> None, so the item skips the
+                # digest instead of crashing the run or fabricating a revocation.
+                # A present-but-empty list is a genuine "no permissions" (revoked)
+                # state and stays [].
+                body = sub.get("body")
+                value = body.get("value") if isinstance(body, dict) else None
+                by_id[di.id] = value if isinstance(value, list) else None
             elif status in (401, 403):
                 logger.error(f"forbidden fetching permissions for {di.name} (status {status})")
             elif status == 404:

@@ -502,6 +502,26 @@ class TestFetchPermissionsRaw:
             result = indexer._fetch_permissions_raw(items, access_token="tok")
         assert result == {"item-f.docx": None}
 
+    @pytest.mark.parametrize(
+        "malformed_body",
+        [
+            [],  # non-dict body (list)
+            "invalid",  # non-dict body (string)
+            {"value": "invalid"},  # value present but not a list
+            {"value": {}},  # value present but not a list
+        ],
+    )
+    def test_per_item_malformed_200_body_degrades_to_none(self, malformed_body):
+        # A 200 can still carry a malformed body. Any non-dict body or non-list
+        # value must degrade to None (skip the digest), never crash the run or
+        # fabricate a revocation.
+        indexer = _make_indexer()
+        items = [_make_drive_item("f.docx")]
+        body = _batch_response(responses=[{"id": "0", "status": 200, "body": malformed_body}])
+        with patch("requests.post", return_value=body):
+            result = indexer._fetch_permissions_raw(items, access_token="tok")
+        assert result == {"item-f.docx": None}
+
     def test_envelope_401_raises_user_auth_error(self):
         indexer = _make_indexer()
         items = [_make_drive_item("f.docx")]
