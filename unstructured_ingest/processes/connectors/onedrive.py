@@ -44,6 +44,7 @@ from unstructured_ingest.processes.utils.blob_storage import (
     BlobStoreUploadStager,
     BlobStoreUploadStagerConfig,
 )
+from unstructured_ingest.utils.acl import compute_permissions_version
 from unstructured_ingest.utils.dep_check import requires_dependencies
 
 if TYPE_CHECKING:
@@ -339,8 +340,18 @@ class OnedriveIndexer(Indexer):
             additional_metadata=self.get_properties_sync(drive_item=drive_item),
             display_name=server_path,
         )
-        if raw_permissions:
+        # None means the permission fetch was unavailable this run (error / no
+        # sub-response); leave the ACL fields unset. An empty list is a real
+        # state (all access revoked) and flows through to a stable digest.
+        #
+        # NOTE: the digest inherits permissions_data's coverage. SharePoint
+        # siteGroup grants are excluded (see _extract_identity_ids_from_raw), so
+        # site-group-mediated ACL changes don't move the digest. Known limitation.
+        if raw_permissions is not None:
             file_data.metadata.permissions_data = self.extract_permissions(raw_permissions)
+            file_data.metadata.permissions_version = compute_permissions_version(
+                file_data.metadata.permissions_data
+            )
         return file_data
 
     async def drive_item_to_file_data(
@@ -404,8 +415,11 @@ class OnedriveIndexer(Indexer):
         """Normalize raw Graph permission dicts to the read/update/delete schema
         shared with Google Drive and Confluence connectors."""
         if not raw_permissions:
+            # A revoked/empty permission set normalizes to the same all-empty
+            # read/update/delete triple as permissions whose roles map to no
+            # operation, so both produce the same digest and drifting between the
+            # two representations doesn't look like an ACL change.
             logger.debug("no permissions found")
-            return [{}]
 
         normalized: dict[str, dict[str, set[str]]] = {
             "read": {"users": set(), "groups": set()},
@@ -443,9 +457,16 @@ class OnedriveIndexer(Indexer):
     def _parse_batch_response(
         payload: dict[str, Any],
         drive_items: list["DriveItem"],
-    ) -> dict[str, list[dict[str, Any]]]:
-        """Map Graph $batch sub-responses to {drive_item.id: raw_permission_dicts}."""
-        by_id: dict[str, list[dict[str, Any]]] = {di.id: [] for di in drive_items}
+    ) -> dict[str, Optional[list[dict[str, Any]]]]:
+        """Map Graph $batch sub-responses to {drive_item.id: raw_permission_dicts}.
+
+        A value of None means permissions were not successfully fetched for that
+        item (error sub-response, or missing). An empty list means the item
+        genuinely has no permissions (all access revoked). Keeping the two
+        distinct lets the digest capture revocation without mistaking a fetch
+        error for one.
+        """
+        by_id: dict[str, Optional[list[dict[str, Any]]]] = {di.id: None for di in drive_items}
         for sub in payload.get("responses", []):
             sub_id = sub.get("id")
             # Builtin ValueError is shadowed in this module; use explicit
@@ -458,11 +479,18 @@ class OnedriveIndexer(Indexer):
             di = drive_items[idx]
             status = sub.get("status")
             if status == 200:
-                by_id[di.id] = sub.get("body", {}).get("value", [])
+                # A 200 can still carry a malformed body, so validate the shape
+                # before trusting it: body must be a dict and value a list.
+                # Anything else (null/absent body, a non-dict body, a missing or
+                # non-list value) is unavailable -> None, so the item skips the
+                # digest instead of crashing the run or fabricating a revocation.
+                # A present-but-empty list is a genuine "no permissions" (revoked)
+                # state and stays [].
+                body = sub.get("body")
+                value = body.get("value") if isinstance(body, dict) else None
+                by_id[di.id] = value if isinstance(value, list) else None
             elif status in (401, 403):
-                logger.error(
-                    f"forbidden fetching permissions for {di.name} (status {status})"
-                )
+                logger.error(f"forbidden fetching permissions for {di.name} (status {status})")
             elif status == 404:
                 logger.warning(f"permissions not found for {di.name}")
             else:
@@ -477,15 +505,18 @@ class OnedriveIndexer(Indexer):
         self,
         drive_items: list["DriveItem"],
         access_token: str,
-    ) -> dict[str, list[dict[str, Any]]]:
+    ) -> dict[str, Optional[list[dict[str, Any]]]]:
         """Fetch raw permission JSON for a batch of drive items via Graph /$batch.
 
         Bypasses the office365 SDK because its IdentitySet/SharePointIdentitySet
         have a mutable-default-arg singleton that collapses all Permission
         identities to whichever user was deserialized last in the process.
 
-        Returns {drive_item.id: [raw_permission_dict, ...]}. Failed sub-requests
-        and exhausted retries (network / 429 / 503) degrade to empty lists.
+        Returns {drive_item.id: [raw_permission_dict, ...]}. A value of None means
+        the fetch was unavailable for that item (failed sub-request, or exhausted
+        retries on network / 429 / 503); an empty list means the item genuinely
+        has no permissions. The two are kept distinct so revocation is captured
+        while a fetch error is not mistaken for one.
         """
         import requests
         from tenacity import (
@@ -503,10 +534,7 @@ class OnedriveIndexer(Indexer):
                 {
                     "id": str(idx),
                     "method": "GET",
-                    "url": (
-                        f"/drives/{di.parent_reference.driveId}"
-                        f"/items/{di.id}/permissions"
-                    ),
+                    "url": (f"/drives/{di.parent_reference.driveId}/items/{di.id}/permissions"),
                 }
                 for idx, di in enumerate(drive_items)
             ]
@@ -543,7 +571,7 @@ class OnedriveIndexer(Indexer):
                 f"giving up after retries on Graph $batch: {exc}; "
                 f"skipping permissions for {len(drive_items)} items"
             )
-            return {di.id: [] for di in drive_items}
+            return {di.id: None for di in drive_items}
 
         if resp.status_code == 401:
             raise UserAuthError(
@@ -555,7 +583,7 @@ class OnedriveIndexer(Indexer):
                 f"Graph $batch returned {resp.status_code}; "
                 f"skipping permissions for {len(drive_items)} items: {resp.text[:200]}"
             )
-            return {di.id: [] for di in drive_items}
+            return {di.id: None for di in drive_items}
 
         return self._parse_batch_response(resp.json(), drive_items)
 
@@ -577,13 +605,12 @@ class OnedriveIndexer(Indexer):
 
         for i in range(0, len(drive_items), PERMISSIONS_BATCH_SIZE):
             chunk = drive_items[i : i + PERMISSIONS_BATCH_SIZE]
-            perms_by_id = await asyncio.to_thread(
-                self._fetch_permissions_raw, chunk, access_token
-            )
+            perms_by_id = await asyncio.to_thread(self._fetch_permissions_raw, chunk, access_token)
             for drive_item in chunk:
+                # None = fetch unavailable (skip digest); [] = revoked (real digest).
                 yield await self.drive_item_to_file_data(
                     drive_item=drive_item,
-                    raw_permissions=perms_by_id.get(drive_item.id, []),
+                    raw_permissions=perms_by_id.get(drive_item.id),
                 )
 
 

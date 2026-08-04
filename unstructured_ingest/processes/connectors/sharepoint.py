@@ -330,9 +330,10 @@ class SharepointIndexer(OnedriveIndexer):
         async def _flush(chunk: list[DriveItem]) -> AsyncIterator[FileData]:
             perms_by_id = await asyncio.to_thread(self._fetch_permissions_raw, chunk, access_token)
             for di in chunk:
+                # None = fetch unavailable (skip digest); [] = revoked (real digest).
                 yield await self.drive_item_to_file_data(
                     drive_item=di,
-                    raw_permissions=perms_by_id.get(di.id, []),
+                    raw_permissions=perms_by_id.get(di.id),
                 )
 
         try:

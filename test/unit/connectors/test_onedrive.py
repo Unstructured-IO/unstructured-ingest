@@ -176,9 +176,15 @@ class TestExtractPermissions:
         indexer._extract_identity_ids_from_raw = OnedriveIndexer._extract_identity_ids_from_raw
         return indexer
 
-    def test_empty_permissions_returns_empty_dict_list(self, indexer):
+    def test_empty_permissions_returns_normalized_all_empty_triple(self, indexer):
+        # A revoked/empty permission set normalizes to the same all-empty triple
+        # as permissions whose roles map to no operation, so both hash equally.
         result = indexer.extract_permissions([])
-        assert result == [{}]
+        assert result == [
+            {"read": {"users": [], "groups": []}},
+            {"update": {"users": [], "groups": []}},
+            {"delete": {"users": [], "groups": []}},
+        ]
 
     def test_owner_role_maps_to_all_operations(self, indexer):
         result = indexer.extract_permissions(
@@ -350,9 +356,7 @@ class TestDriveItemToFileDataSync:
                 "grantedToV2": {"user": {"id": "user-1"}},
             }
         ]
-        file_data = indexer.drive_item_to_file_data_sync(
-            drive_item, raw_permissions=raw_perms
-        )
+        file_data = indexer.drive_item_to_file_data_sync(drive_item, raw_permissions=raw_perms)
         assert file_data.metadata.permissions_data is not None
         assert len(file_data.metadata.permissions_data) == 3
 
@@ -362,13 +366,30 @@ class TestDriveItemToFileDataSync:
         file_data = indexer.drive_item_to_file_data_sync(drive_item)
         assert file_data.metadata.permissions_data is None
 
-    def test_permissions_none_when_empty_list_passed(self):
-        # empty list (e.g. 403 fall-back) leaves the field as None rather than
-        # writing an all-empty placeholder
+    def test_permissions_captured_when_empty_list_passed(self):
+        # An empty list is a genuine "all access revoked" state (distinct from a
+        # failed fetch, which is None): it produces the normalized all-empty
+        # triple plus a stable digest so revocation is detected. Pinning the
+        # exact shape guards against representation drift that would look like an
+        # ACL change.
         indexer = _make_indexer()
         drive_item = _make_drive_item()
         file_data = indexer.drive_item_to_file_data_sync(drive_item, raw_permissions=[])
+        assert file_data.metadata.permissions_data == [
+            {"read": {"users": [], "groups": []}},
+            {"update": {"users": [], "groups": []}},
+            {"delete": {"users": [], "groups": []}},
+        ]
+        assert file_data.metadata.permissions_version is not None
+
+    def test_permissions_none_when_fetch_unavailable(self):
+        # None means the permission fetch was unavailable this run; leave the
+        # ACL fields unset rather than fabricating a revocation.
+        indexer = _make_indexer()
+        drive_item = _make_drive_item()
+        file_data = indexer.drive_item_to_file_data_sync(drive_item, raw_permissions=None)
         assert file_data.metadata.permissions_data is None
+        assert file_data.metadata.permissions_version is None
 
 
 def _batch_response(status_code: int = 200, responses: list[dict[str, Any]] | None = None) -> Mock:
@@ -430,7 +451,7 @@ class TestFetchPermissionsRaw:
             "item-f2.docx": "c",
         }
 
-    def test_per_item_403_yields_empty_for_that_item(self):
+    def test_per_item_403_yields_none_for_that_item(self):
         indexer = _make_indexer()
         items = [_make_drive_item(f"f{i}.docx") for i in range(2)]
         body = _batch_response(
@@ -447,7 +468,59 @@ class TestFetchPermissionsRaw:
             result = indexer._fetch_permissions_raw(items, access_token="tok")
 
         assert result["item-f0.docx"][0]["grantedToV2"]["user"]["id"] == "a"
-        assert result["item-f1.docx"] == []
+        # A forbidden sub-response is "unavailable", not "no permissions": None,
+        # so it is never mistaken for a revocation.
+        assert result["item-f1.docx"] is None
+
+    def test_per_item_200_empty_value_is_empty_list(self):
+        # A 200 with an empty value list is a genuine "no permissions" state
+        # (all access revoked): represented as [] and kept distinct from None.
+        indexer = _make_indexer()
+        items = [_make_drive_item("f.docx")]
+        body = _batch_response(responses=[{"id": "0", "status": 200, "body": {"value": []}}])
+        with patch("requests.post", return_value=body):
+            result = indexer._fetch_permissions_raw(items, access_token="tok")
+        assert result == {"item-f.docx": []}
+
+    def test_per_item_null_body_degrades_to_none(self):
+        # A 200 with a null body must not crash the index run; it degrades to
+        # None (unavailable), not [] (which would be a fabricated revocation).
+        indexer = _make_indexer()
+        items = [_make_drive_item("f.docx")]
+        body = _batch_response(responses=[{"id": "0", "status": 200, "body": None}])
+        with patch("requests.post", return_value=body):
+            result = indexer._fetch_permissions_raw(items, access_token="tok")
+        assert result == {"item-f.docx": None}
+
+    def test_per_item_200_missing_value_key_degrades_to_none(self):
+        # A 200 body with no "value" key is malformed/unavailable -> None, not a
+        # fabricated revocation.
+        indexer = _make_indexer()
+        items = [_make_drive_item("f.docx")]
+        body = _batch_response(responses=[{"id": "0", "status": 200, "body": {}}])
+        with patch("requests.post", return_value=body):
+            result = indexer._fetch_permissions_raw(items, access_token="tok")
+        assert result == {"item-f.docx": None}
+
+    @pytest.mark.parametrize(
+        "malformed_body",
+        [
+            [],  # non-dict body (list)
+            "invalid",  # non-dict body (string)
+            {"value": "invalid"},  # value present but not a list
+            {"value": {}},  # value present but not a list
+        ],
+    )
+    def test_per_item_malformed_200_body_degrades_to_none(self, malformed_body):
+        # A 200 can still carry a malformed body. Any non-dict body or non-list
+        # value must degrade to None (skip the digest), never crash the run or
+        # fabricate a revocation.
+        indexer = _make_indexer()
+        items = [_make_drive_item("f.docx")]
+        body = _batch_response(responses=[{"id": "0", "status": 200, "body": malformed_body}])
+        with patch("requests.post", return_value=body):
+            result = indexer._fetch_permissions_raw(items, access_token="tok")
+        assert result == {"item-f.docx": None}
 
     def test_envelope_401_raises_user_auth_error(self):
         indexer = _make_indexer()
@@ -466,7 +539,7 @@ class TestFetchPermissionsRaw:
         body.text = "internal server error"
         with patch("requests.post", return_value=body):
             result = indexer._fetch_permissions_raw(items, access_token="tok")
-        assert result == {"item-f0.docx": [], "item-f1.docx": []}
+        assert result == {"item-f0.docx": None, "item-f1.docx": None}
 
     def test_429_triggers_retry_then_succeeds(self):
         indexer = _make_indexer()
@@ -481,8 +554,10 @@ class TestFetchPermissionsRaw:
                 }
             ]
         )
-        with patch("requests.post", side_effect=[throttled, success]) as mock_post, \
-             patch("tenacity.wait_exponential.__call__", return_value=0):
+        with (
+            patch("requests.post", side_effect=[throttled, success]) as mock_post,
+            patch("tenacity.wait_exponential.__call__", return_value=0),
+        ):
             result = indexer._fetch_permissions_raw(items, access_token="tok")
         assert mock_post.call_count == 2
         assert result["item-f.docx"][0]["grantedToV2"]["user"]["id"] == "x"
@@ -490,14 +565,16 @@ class TestFetchPermissionsRaw:
     def test_network_errors_exhaust_retries_then_degrade(self):
         indexer = _make_indexer()
         items = [_make_drive_item(f"f{i}.docx") for i in range(2)]
-        with patch(
-            "requests.post",
-            side_effect=requests.exceptions.ConnectionError("dns down"),
-        ) as mock_post, \
-             patch("tenacity.wait_exponential.__call__", return_value=0):
+        with (
+            patch(
+                "requests.post",
+                side_effect=requests.exceptions.ConnectionError("dns down"),
+            ) as mock_post,
+            patch("tenacity.wait_exponential.__call__", return_value=0),
+        ):
             result = indexer._fetch_permissions_raw(items, access_token="tok")
         assert mock_post.call_count == 5  # stop_after_attempt(5)
-        assert result == {"item-f0.docx": [], "item-f1.docx": []}
+        assert result == {"item-f0.docx": None, "item-f1.docx": None}
 
     def test_malformed_sub_response_id_skipped(self):
         indexer = _make_indexer()
@@ -510,8 +587,9 @@ class TestFetchPermissionsRaw:
         )
         with patch("requests.post", return_value=body):
             result = indexer._fetch_permissions_raw(items, access_token="tok")
-        # malformed entries are skipped; default empty list remains
-        assert result == {"item-f.docx": []}
+        # malformed entries are skipped; the item never got a 200, so it stays
+        # None (unavailable), not [] (which would imply a genuine revocation)
+        assert result == {"item-f.docx": None}
 
 
 class TestSingletonBleedRegression:
@@ -557,20 +635,14 @@ class TestSingletonBleedRegression:
                 {
                     "id": str(i),
                     "status": 200,
-                    "body": {
-                        "value": [
-                            {"roles": ["read"], "grantedToV2": {"user": {"id": uid}}}
-                        ]
-                    },
+                    "body": {"value": [{"roles": ["read"], "grantedToV2": {"user": {"id": uid}}}]},
                 }
                 for i, uid in enumerate(["alice", "bob", "carol"])
             ]
         }
 
         by_id = indexer._parse_batch_response(batch_payload, items)
-        seen_ids = [
-            by_id[di.id][0]["grantedToV2"]["user"]["id"] for di in items
-        ]
+        seen_ids = [by_id[di.id][0]["grantedToV2"]["user"]["id"] for di in items]
         assert seen_ids == ["alice", "bob", "carol"]
 
         # And running them through extract_permissions yields three distinct users

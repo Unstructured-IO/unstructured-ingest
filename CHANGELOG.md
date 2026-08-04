@@ -1,3 +1,9 @@
+## [1.8.0]
+
+### Enhancements
+
+- **feat(PLU-511): ACL digest (`permissions_version`) for OneDrive/SharePoint incremental reprocessing.** Add a `permissions_version` field on `FileDataSourceMetadata` and a new `unstructured_ingest/utils/acl` module that computes a stable SHA-256 digest over a record's permissions at index time, so an ACL-only change (content unchanged) can trigger reprocessing under incremental. OneDrive and SharePoint emit it over the permissions they already batch-fetch, so there are no additional Graph calls. An unavailable permission fetch (error sub-response, exhausted retries, null/malformed body) is kept distinct from a genuinely empty permission set: only the latter (all access revoked) produces a digest, so a fetch failure is never mistaken for a revocation.
+
 ## [1.7.17]
 
 ### Fixes
