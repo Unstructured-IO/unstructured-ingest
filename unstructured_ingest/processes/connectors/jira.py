@@ -481,8 +481,10 @@ class JiraDownloader(Downloader):
             with self.connection_config.get_client() as client:
                 return client.issue(key=issue_key)
         except Exception as e:
-            logger.error(f"Failed to fetch issue with key: {issue_key}: {e}", exc_info=True)
-            raise SourceConnectionError(f"Failed to fetch issue with key: {issue_key}: {e}")
+            logger.error(f"Failed to fetch issue with key: {issue_key}: {safe_error_summary(e)}")
+            raise SourceConnectionError(
+                f"Failed to fetch issue with key: {issue_key}: {safe_error_summary(e)}"
+            ) from None
 
     def generate_attachment_file_data(
         self, attachment_dict: dict, parent_filedata: FileData

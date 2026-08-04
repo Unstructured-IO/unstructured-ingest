@@ -441,3 +441,42 @@ def test_precheck_without_spaces_raises(monkeypatch, connection_config):
 
         with pytest.raises(UserError):
             indexer.precheck()
+
+
+def test_downloader_error_redacts_secret(tmp_path, connection_config):
+    """A failing page fetch surfaces a SourceConnectionError with no raw exception text."""
+    from unstructured_ingest.error import SourceConnectionError
+
+    # A credential-bearing string of the kind an atlassian client error can embed;
+    # it must never reach the raised SourceConnectionError message.
+    secret = "password=secret&token=abc123XYZ"
+
+    downloader = ConfluenceDownloader(
+        connection_config=connection_config,
+        download_config=ConfluenceDownloaderConfig(download_dir=tmp_path),
+    )
+    file_data = FileData(
+        identifier="123",
+        connector_type="confluence",
+        source_identifiers=SourceIdentifiers(
+            filename="123.html",
+            fullpath="SPACE/123.html",
+            rel_path="SPACE/123.html",
+        ),
+        metadata=FileDataSourceMetadata(url="https://dummy/pages/123"),
+        additional_metadata={"space_id": 987},
+    )
+    mock_client = mock.MagicMock()
+    mock_client.get.side_effect = Exception(secret)
+
+    with mock.patch.object(type(connection_config), "get_client", mock.MagicMock()):
+        type(connection_config).get_client.return_value.__enter__.return_value = mock_client
+        with pytest.raises(SourceConnectionError) as excinfo:
+            downloader.run(file_data)
+
+    message = str(excinfo.value)
+    assert secret not in message
+    assert "abc123XYZ" not in message
+    # The page identifier and the sanitized summary survive for troubleshooting.
+    assert "123" in message
+    assert "Exception" in message

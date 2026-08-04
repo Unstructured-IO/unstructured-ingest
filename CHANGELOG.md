@@ -1,3 +1,9 @@
+## [1.7.17]
+
+### Fixes
+
+- **fix(FIE-336): redact raw exception text from raised connector errors.** Connector failure paths that interpolated `str(e)` into the raised `SourceConnectionError`/`UserError` could leak credentials, connection strings, or request payloads embedded in the original exception. Those raises now pass the exception through `safe_error_summary()` (type name plus allowlisted machine-readable fields only) and use `from None` to keep the original exception out of the raised error's standard traceback. The matching failure-path log lines (confluence, jira, ibm_watsonx) also route through `safe_error_summary()` instead of interpolating the raw exception or emitting its traceback, so debug/exception logging can't resurface the raw text either. Covers couchbase, confluence, jira, ibm_watsonx, and gcs; adds per-connector redaction unit tests. Also fixes the gcs `wrap_error` "Bad Request" branch, which guarded on the connector's shadowed `error.ValueError` (never raised by gcsfs) instead of the builtin `ValueError`/`HttpError(code=400)` that real 400s surface.
+
 ## [1.7.16]
 
 ### Fixes
