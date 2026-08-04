@@ -331,21 +331,29 @@ class IbmWatsonxUploader(SQLUploader):
                     transaction.append(data_table)
             except CommitFailedException as e:
                 table.refresh()
-                logger.debug(e)
-                raise IcebergCommitFailedException(str(e))
+                logger.debug(safe_error_summary(e))
+                # Defense-in-depth: this is caught by the outer `except Exception`
+                # (:348) and re-wrapped through safe_error_summary before it can
+                # reach the customer, but redact here too so the message never
+                # carries raw exception text regardless of how it is later handled.
+                raise IcebergCommitFailedException(safe_error_summary(e)) from None
             except RESTError as e:
-                raise DestinationConnectionError(str(e))
+                raise DestinationConnectionError(safe_error_summary(e)) from None
             except Exception as e:
-                raise ProviderError(f"Failed to upload data to table: {e}")
+                raise ProviderError(
+                    f"Failed to upload data to table: {safe_error_summary(e)}"
+                ) from None
 
         try:
             return _upload_data_table(table, data_table, file_data)
         except RESTError as e:
-            raise DestinationConnectionError(str(e))
+            raise DestinationConnectionError(safe_error_summary(e)) from None
         except ProviderError:
             raise
         except Exception as e:
-            raise ProviderError(f"Failed to upload data to table: {e}")
+            raise ProviderError(
+                f"Failed to upload data to table: {safe_error_summary(e)}"
+            ) from None
 
     @requires_dependencies(["pyiceberg", "tenacity"], extras="ibm-watsonx-s3")
     def upload_dataframe(self, df: "DataFrame", file_data: FileData) -> None:
@@ -377,7 +385,9 @@ class IbmWatsonxUploader(SQLUploader):
         except ProviderError:
             raise
         except Exception as e:
-            raise ProviderError(f"Failed to upload data to table: {e}")
+            raise ProviderError(
+                f"Failed to upload data to table: {safe_error_summary(e)}"
+            ) from None
 
     @requires_dependencies(["pandas"], extras="ibm-watsonx-s3")
     def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
