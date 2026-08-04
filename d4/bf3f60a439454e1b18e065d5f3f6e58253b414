@@ -1,0 +1,57 @@
+test/integration/embedders/test_togetherai.py
+  s_de31a99b8a9dc9::t_436e4032a57f6d 79-80,86
+  s_de31a99b8a9dc9::t_b242e85c1d97d8 54-55,61
+  s_de31a99b8a9dc9::t_555fe4cf221f5e 8
+  s_de31a99b8a9dc9::t_b2ccfbc9972ec0 40-42
+test/integration/embedders/test_bedrock.py
+  s_de31a99b8a9dc9::t_fa3a2acdebed45 8
+  s_de31a99b8a9dc9::t_febe9de23d080e 40-42
+  s_de31a99b8a9dc9::t_3a28f79d6556b0 104-105,111
+  s_de31a99b8a9dc9::t_5206ef25d9fafa 58-59,65
+test/integration/embedders/test_azure_openai.py
+  s_de31a99b8a9dc9::t_f52b0f5942aad0 9-13
+  s_de31a99b8a9dc9::t_fd4157e63be11b 48-50,66-73
+test/integration/embedders/test_octoai.py
+  s_de31a99b8a9dc9::t_a14c45faa6bd0a 36-38
+  s_de31a99b8a9dc9::t_bcc686f00b7418 53-60
+  s_de31a99b8a9dc9::t_04d9516f2de863 8
+  s_de31a99b8a9dc9::t_aabca61a6570c6 83-84,86-89
+test/integration/embedders/utils.py
+  s_de31a99b8a9dc9::t_d85bca7e5dfc7a 109
+  s_de31a99b8a9dc9::t_6923cb05d5fd0a 2,6-7,9-108,110-111,134,140-152,161,167-178
+test/integration/embedders/test_voyageai.py
+  s_de31a99b8a9dc9::t_2364ce14a48883 35-37,52-59,71-72,74-77
+  s_de31a99b8a9dc9::t_d81f6031abd259 8
+  s_de31a99b8a9dc9::t_5c2bb1ae746efc 90-92
+test/integration/embedders/test_vertexai.py
+  s_de31a99b8a9dc9::t_ea4b081c6816d9 8
+  s_de31a99b8a9dc9::t_f2886dd47c9bc0 52-59
+  s_de31a99b8a9dc9::t_a4c5f030cafa62 35-37
+  s_de31a99b8a9dc9::t_54798c122018ae 71-72,74-77
+test/integration/embedders/test_openai.py
+  s_de31a99b8a9dc9::t_3b957d016616dc 82-83,85-88
+  s_de31a99b8a9dc9::t_93f06aa48dda80 53-60
+  s_de31a99b8a9dc9::t_664202aace0d13 8
+  s_de31a99b8a9dc9::t_ba505d4377b7ae 36-38
+test/integration/embedders/test_mixedbread.py
+  s_de31a99b8a9dc9::t_1dc36352949c40 52-53,59
+  s_de31a99b8a9dc9::t_a956c8f188213b 8
+  s_de31a99b8a9dc9::t_02d8bc522eaf07 35-37
+  s_de31a99b8a9dc9::t_c20c800cb096e8 72-73,79
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "d4bf3f60a439454e1b18e065d5f3f6e58253b414",
+  "prompts": {},
+  "sessions": {
+    "s_de31a99b8a9dc9": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f43cf5c7-6142-4bb5-bb29-8eb51224ccc9",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulkarayan <pk@unstructured.io>"
+    }
+  }
+}
