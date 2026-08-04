@@ -6,7 +6,11 @@ from pathlib import Path
 import pydantic
 import pytest
 
-from test.integration.embedders.utils import validate_embedding_output, validate_raw_embedder
+from test.integration.embedders.utils import (
+    skip_on_transient_provider,
+    validate_embedding_output,
+    validate_raw_embedder,
+)
 from test.integration.utils import requires_env
 from unstructured_ingest.embed.azure_openai import (
     AzureOpenAIEmbeddingConfig,
@@ -41,8 +45,9 @@ def test_azure_openai_embedder(embedder_file: Path):
         embedding_azure_endpoint=azure_data.endpoint,
     )
     embedder = Embedder(config=embedder_config)
-    embedder.precheck()
-    results = embedder.run(elements_filepath=embedder_file)
+    with skip_on_transient_provider("azure_openai"):
+        embedder.precheck()
+        results = embedder.run(elements_filepath=embedder_file)
     assert results
     with embedder_file.open("r") as f:
         original_elements = json.load(f)
@@ -58,8 +63,14 @@ def test_raw_azure_openai_embedder(embedder_file: Path):
             azure_endpoint=azure_data.endpoint,
         )
     )
-    embedder.precheck()
-    validate_raw_embedder(embedder=embedder, embedder_file=embedder_file, expected_dimension=1536)
+    with skip_on_transient_provider("azure_openai"):
+        embedder.precheck()
+    validate_raw_embedder(
+        embedder=embedder,
+        embedder_file=embedder_file,
+        expected_dimension=1536,
+        provider_label="azure_openai",
+    )
 
 
 def test_openai_custom_tls_no_override_should_fail(mock_embeddings_server, embedder_file: Path):

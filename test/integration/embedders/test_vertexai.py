@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 
 from test.integration.embedders.utils import (
+    skip_on_transient_provider,
     validate_embedding_output,
     validate_raw_embedder,
     validate_raw_embedder_async,
@@ -31,8 +32,9 @@ def test_vertexai_embedder(embedder_file: Path):
     api_key = get_api_key()
     embedder_config = EmbedderConfig(embedding_provider="vertexai", embedding_api_key=api_key)
     embedder = Embedder(config=embedder_config)
-    embedder.precheck()
-    results = embedder.run(elements_filepath=embedder_file)
+    with skip_on_transient_provider("vertexai"):
+        embedder.precheck()
+        results = embedder.run(elements_filepath=embedder_file)
     assert results
     with embedder_file.open("r") as f:
         original_elements = json.load(f)
@@ -47,8 +49,14 @@ def test_raw_vertexai_embedder(embedder_file: Path):
             api_key=api_key,
         )
     )
-    embedder.precheck()
-    validate_raw_embedder(embedder=embedder, embedder_file=embedder_file, expected_dimension=768)
+    with skip_on_transient_provider("vertexai"):
+        embedder.precheck()
+    validate_raw_embedder(
+        embedder=embedder,
+        embedder_file=embedder_file,
+        expected_dimension=768,
+        provider_label="vertexai",
+    )
 
 
 @requires_env(API_KEY)
@@ -60,7 +68,11 @@ async def test_raw_async_vertexai_embedder(embedder_file: Path):
             api_key=api_key,
         )
     )
-    embedder.precheck()
+    with skip_on_transient_provider("vertexai"):
+        embedder.precheck()
     await validate_raw_embedder_async(
-        embedder=embedder, embedder_file=embedder_file, expected_dimension=768
+        embedder=embedder,
+        embedder_file=embedder_file,
+        expected_dimension=768,
+        provider_label="vertexai",
     )

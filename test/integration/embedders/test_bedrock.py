@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 
 from test.integration.embedders.utils import (
+    skip_on_transient_provider,
     validate_embedding_output,
     validate_raw_embedder,
     validate_raw_embedder_async,
@@ -36,8 +37,9 @@ def test_bedrock_embedder(embedder_file: Path):
         embedding_aws_secret_access_key=aws_credentials["aws_secret_access_key"],
     )
     embedder = Embedder(config=embedder_config)
-    embedder.precheck()
-    results = embedder.run(elements_filepath=embedder_file)
+    with skip_on_transient_provider("bedrock"):
+        embedder.precheck()
+        results = embedder.run(elements_filepath=embedder_file)
     assert results
     with embedder_file.open("r") as f:
         original_elements = json.load(f)
@@ -53,12 +55,14 @@ def test_raw_bedrock_embedder(embedder_file: Path):
             aws_secret_access_key=aws_credentials["aws_secret_access_key"],
         )
     )
-    embedder.precheck()
+    with skip_on_transient_provider("bedrock"):
+        embedder.precheck()
     validate_raw_embedder(
         embedder=embedder,
         embedder_file=embedder_file,
         expected_dimension=1536,
         expected_is_unit_vector=False,
+        provider_label="bedrock",
     )
 
 
@@ -97,10 +101,12 @@ async def test_raw_async_bedrock_embedder(embedder_file: Path):
             aws_secret_access_key=aws_credentials["aws_secret_access_key"],
         )
     )
-    embedder.precheck()
+    with skip_on_transient_provider("bedrock"):
+        embedder.precheck()
     await validate_raw_embedder_async(
         embedder=embedder,
         embedder_file=embedder_file,
         expected_dimension=1536,
         expected_is_unit_vector=False,
+        provider_label="bedrock",
     )

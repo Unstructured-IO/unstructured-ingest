@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 
 from test.integration.embedders.utils import (
+    skip_on_transient_provider,
     validate_embedding_output,
     validate_raw_embedder,
     validate_raw_embedder_async,
@@ -32,8 +33,9 @@ def test_openai_embedder(embedder_file: Path):
     api_key = get_api_key()
     embedder_config = EmbedderConfig(embedding_provider="openai", embedding_api_key=api_key)
     embedder = Embedder(config=embedder_config)
-    embedder.precheck()
-    results = embedder.run(elements_filepath=embedder_file)
+    with skip_on_transient_provider("openai"):
+        embedder.precheck()
+        results = embedder.run(elements_filepath=embedder_file)
     assert results
     with embedder_file.open("r") as f:
         original_elements = json.load(f)
@@ -48,8 +50,14 @@ def test_raw_openai_embedder(embedder_file: Path):
             api_key=api_key,
         )
     )
-    embedder.precheck()
-    validate_raw_embedder(embedder=embedder, embedder_file=embedder_file, expected_dimension=1536)
+    with skip_on_transient_provider("openai"):
+        embedder.precheck()
+    validate_raw_embedder(
+        embedder=embedder,
+        embedder_file=embedder_file,
+        expected_dimension=1536,
+        provider_label="openai",
+    )
 
 
 def test_raw_openai_embedder_invalid_credentials():
@@ -71,9 +79,13 @@ async def test_raw_async_openai_embedder(embedder_file: Path):
             api_key=api_key,
         )
     )
-    embedder.precheck()
+    with skip_on_transient_provider("openai"):
+        embedder.precheck()
     await validate_raw_embedder_async(
-        embedder=embedder, embedder_file=embedder_file, expected_dimension=1536
+        embedder=embedder,
+        embedder_file=embedder_file,
+        expected_dimension=1536,
+        provider_label="openai",
     )
 
 
