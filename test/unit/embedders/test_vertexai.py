@@ -61,6 +61,8 @@ def test_embedder_config_forwards_gemini_settings():
 
 
 def test_embedder_config_forwards_zero_dimensionality():
+    """0 must survive the forwarding filter: it is a configured width, not "unset". A truthiness
+    filter here would drop it and silently fall back to the model's full width."""
     embedder = EmbedderConfig(
         embedding_provider="vertexai",
         embedding_api_key=CREDENTIALS,
@@ -83,3 +85,28 @@ def test_embedder_config_omits_unset_gemini_settings():
     assert embedder.config.region is None
     assert embedder.config.dimensionality is None
     assert embedder.config.task is None
+
+
+def test_embedder_config_leaves_region_env_fallback_intact(monkeypatch):
+    """The end-to-end consequence of not forwarding an unset region: $VERTEXAI_REGION still wins,
+    so a pipeline that never sets the region keeps reaching its configured region."""
+    monkeypatch.setenv("VERTEXAI_REGION", "us-east1")
+    embedder = EmbedderConfig(
+        embedding_provider="vertexai",
+        embedding_api_key=CREDENTIALS,
+        embedding_model_name="gemini-embedding-2",
+    ).get_embedder()
+
+    assert embedder.config._resolve_location() == "us-east1"
+
+
+def test_embedder_config_region_overrides_env(monkeypatch):
+    monkeypatch.setenv("VERTEXAI_REGION", "us-east1")
+    embedder = EmbedderConfig(
+        embedding_provider="vertexai",
+        embedding_api_key=CREDENTIALS,
+        embedding_model_name="gemini-embedding-2",
+        embedding_vertexai_region="europe-west4",
+    ).get_embedder()
+
+    assert embedder.config._resolve_location() == "europe-west4"
