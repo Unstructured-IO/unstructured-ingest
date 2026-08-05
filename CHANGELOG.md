@@ -1,3 +1,9 @@
+## [1.9.0]
+
+### Enhancements
+
+- **feat: support Gemini-family Vertex AI embedding models (e.g. `gemini-embedding-2`).** These are served through `google-genai`'s `embed_content` rather than the legacy `TextEmbeddingModel` interface, which previously failed at client construction. Adds Gemini-only `region`, `dimensionality`, and `task` settings; legacy `text-embedding-00*` models are unchanged.
+
 ## [1.8.0]
 
 ### Enhancements

@@ -100,7 +100,7 @@ mixedbreadai = ["mixedbread"]
 octoai = ["openai", "tiktoken"]
 openai = ["openai>=2.20,<3", "tiktoken"]
 togetherai = ["together"]
-vertexai = ["vertexai"]
+vertexai = ["vertexai", "google-genai"]
 voyageai = ["voyageai", "langchain-core>=1.2.22,<2.0.0"]
 
 # Remote
@@ -158,6 +158,7 @@ test = [
     "cryptography",
     "fsspec",
     "vertexai",
+    "google-genai",
     "pyiceberg",
     "pyarrow",
     "networkx",
