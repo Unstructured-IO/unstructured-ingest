@@ -199,7 +199,7 @@ class VertexAIEmbeddingConfig(EmbeddingConfig):
         from google.genai import types
 
         kwargs: dict[str, Any] = {}
-        if self.dimensionality:
+        if self.dimensionality is not None:
             kwargs["output_dimensionality"] = self.dimensionality
         if self.task:
             kwargs["task_type"] = self.task

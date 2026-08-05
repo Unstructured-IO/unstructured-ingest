@@ -153,6 +153,21 @@ def test_genai_embed_batch_forwards_dimensionality_and_task(mocker):
     assert sent.task_type == "RETRIEVAL_DOCUMENT"
 
 
+def test_genai_embed_batch_forwards_zero_dimensionality(mocker):
+    """0 is a configured value, not "unset" — forward it and let the provider reject it, rather
+    than silently sending the model's full-width default."""
+    config = VertexAIEmbeddingConfig(
+        api_key=CREDENTIALS, model_name="gemini-embedding-2", dimensionality=0
+    )
+    client = _genai_client(mocker, [[0.1]])
+
+    config.embed_batch(client=client, batch=["a"])
+
+    sent = client.models.embed_content.call_args.kwargs["config"]
+    assert sent is not None
+    assert sent.output_dimensionality == 0
+
+
 def test_legacy_embed_batch_uses_text_embedding_model(mocker):
     config = VertexAIEmbeddingConfig(api_key=CREDENTIALS, model_name="text-embedding-005")
     client = mocker.MagicMock()
