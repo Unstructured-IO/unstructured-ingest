@@ -1,3 +1,9 @@
+## [1.10.3]
+
+### Fixes
+
+- **fix(milvus): classify client-caused gRPC errors as client errors.** A Milvus destination fed bad or expired customer credentials surfaced the gRPC `UNAUTHENTICATED` (and `PERMISSION_DENIED`/`INVALID_ARGUMENT`/`NOT_FOUND`) failure as a platform `DestinationConnectionError`/`WriteError`, counting a customer misconfiguration against the Job Completions SLO. A new `_classify_milvus_exception` maps the underlying `grpc.StatusCode` on the `MilvusException` to `UserAuthError` (401) for `UNAUTHENTICATED` and `UserError` (422) for `PERMISSION_DENIED`/`INVALID_ARGUMENT`/`NOT_FOUND`; every other code stays a platform error. It is wired into both `precheck()` and `insert_results()`. `precheck()` also drops its `@DestinationConnectionError.wrap` decorator, which would otherwise re-wrap the reclassified error back into a platform error; the wrapper's catch-all fallback is reproduced inline so non-Milvus failures still raise `DestinationConnectionError`.
+
 ## [1.10.2]
 
 ### Fixes
