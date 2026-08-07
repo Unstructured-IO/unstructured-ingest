@@ -11,6 +11,9 @@ from unstructured_ingest.data_types.file_data import FileData
 from unstructured_ingest.error import (
     DestinationConnectionError,
     KeyError,
+    UnstructuredIngestError,
+    UserAuthError,
+    UserError,
     WriteError,
     safe_error_summary,
 )
@@ -31,9 +34,37 @@ from unstructured_ingest.utils.data_prep import flatten_dict
 from unstructured_ingest.utils.dep_check import requires_dependencies
 
 if TYPE_CHECKING:
-    from pymilvus import MilvusClient
+    from pymilvus import MilvusClient, MilvusException
 
 CONNECTOR_TYPE = "milvus"
+
+
+def _classify_milvus_exception(
+    exc: "MilvusException", platform_error: UnstructuredIngestError
+) -> UnstructuredIngestError:
+    """Reclassify customer-caused Milvus failures as client errors.
+
+    When a gRPC call fails at the transport level (bad/expired credentials,
+    permission, malformed request, missing resource) pymilvus re-raises it as
+    ``MilvusException(e.code(), ...)`` where ``.code`` is the ``grpc.StatusCode``
+    enum member (see pymilvus ``decorators.error_handler``). Those are the
+    customer's fault, so surface them as user/auth errors (422/401) instead of a
+    platform error that burns the Job Completions SLO. Anything else (server-side
+    business codes, unknown failures) stays ``platform_error``.
+    """
+    import grpc
+
+    code = getattr(exc, "code", None)
+    message = safe_error_summary(exc)
+    if code == grpc.StatusCode.UNAUTHENTICATED:
+        return UserAuthError(f"Milvus authentication failed: {message}")
+    if code in (
+        grpc.StatusCode.PERMISSION_DENIED,
+        grpc.StatusCode.INVALID_ARGUMENT,
+        grpc.StatusCode.NOT_FOUND,
+    ):
+        return UserError(f"Milvus rejected the request: {message}")
+    return platform_error
 
 
 class MilvusAccessConfig(AccessConfig):
@@ -196,10 +227,13 @@ class MilvusUploader(Uploader):
             logger.warning(f"Could not determine if collection has dynamic fields enabled: {e}")
             return False
 
-    @DestinationConnectionError.wrap
     def precheck(self):
         from pymilvus import MilvusException
 
+        # Note: intentionally not decorated with @DestinationConnectionError.wrap.
+        # That wrapper re-wraps every escaping exception into a platform
+        # DestinationConnectionError, which would clobber the user/auth
+        # reclassification below. We reproduce its catch-all fallback inline.
         try:
             with self.get_client() as client:
                 if not client.has_collection(self.upload_config.collection_name):
@@ -208,8 +242,17 @@ class MilvusUploader(Uploader):
                     )
 
         except MilvusException as milvus_exception:
+            raise _classify_milvus_exception(
+                milvus_exception,
+                DestinationConnectionError(
+                    f"failed to precheck Milvus: {safe_error_summary(milvus_exception)}"
+                ),
+            ) from None
+        except UnstructuredIngestError:
+            raise
+        except Exception as e:
             raise DestinationConnectionError(
-                f"failed to precheck Milvus: {safe_error_summary(milvus_exception)}"
+                f"failed to precheck Milvus: {safe_error_summary(e)}"
             ) from None
 
     @contextmanager
@@ -297,8 +340,11 @@ class MilvusUploader(Uploader):
                     collection_name=self.upload_config.collection_name, data=prepared_data
                 )
             except MilvusException as milvus_exception:
-                raise WriteError(
-                    f"failed to upload records to Milvus: {str(milvus_exception.message)}"
+                raise _classify_milvus_exception(
+                    milvus_exception,
+                    WriteError(
+                        f"failed to upload records to Milvus: {str(milvus_exception.message)}"
+                    ),
                 ) from milvus_exception
             if "err_count" in res and isinstance(res["err_count"], int) and res["err_count"] > 0:
                 err_count = res["err_count"]
