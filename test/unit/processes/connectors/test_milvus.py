@@ -1,19 +1,27 @@
 import json
+from contextlib import contextmanager
 from pathlib import Path
+from unittest.mock import MagicMock
 
+import grpc
 import pytest
 
 from unstructured_ingest.data_types.file_data import FileData, SourceIdentifiers
 from unstructured_ingest.error import (
     DestinationConnectionError,
+    UnstructuredIngestError,
     UserAuthError,
     UserError,
     WriteError,
 )
 from unstructured_ingest.processes.connectors.milvus import (
     CONNECTOR_TYPE,
+    MilvusConnectionConfig,
+    MilvusUploader,
+    MilvusUploaderConfig,
     MilvusUploadStager,
     _classify_milvus_exception,
+    _grpc_status_code,
 )
 from unstructured_ingest.utils import ndjson
 
@@ -169,26 +177,57 @@ def test_run_produces_empty_output_when_no_embeddings(
 # Customer-caused Milvus failures (bad/expired creds, permission, bad request,
 # missing resource) must surface as client errors (UserAuthError/UserError), not
 # platform errors (WriteError/DestinationConnectionError) that burn the platform
-# Job Completions SLO. When a gRPC call fails at the transport level, pymilvus
-# re-raises MilvusException(e.code(), ...) where .code is the grpc.StatusCode
-# enum member, so that is what we classify on.
+# Job Completions SLO.
+#
+# CRUCIAL wire reality (verified against pymilvus 2.6.9 decorators.py):
+#   * Status codes in IGNORE_RETRY_CODES -- UNAUTHENTICATED, PERMISSION_DENIED,
+#     INVALID_ARGUMENT (+ DEADLINE_EXCEEDED/ALREADY_EXISTS/RESOURCE_EXHAUSTED/
+#     UNIMPLEMENTED) -- are re-raised as the RAW grpc.RpcError ("raise e from e"),
+#     NEVER wrapped in a MilvusException. So the whole customer-credential set
+#     (esp. UNAUTHENTICATED) reaches the connector as a grpc.RpcError.
+#   * Other codes (e.g. NOT_FOUND) are retried and, on exhaustion, wrapped into
+#     MilvusException(e.code, ...).
+# The tests below drive REAL grpc.RpcError subclasses whose .code() returns the
+# target grpc.StatusCode -- exactly what pymilvus re-raises -- plus a
+# MilvusException-wrapped path.
 # ---------------------------------------------------------------------------
 
 
+class _FakeRpcError(grpc.RpcError):
+    """A real grpc.RpcError subclass, shaped like what pymilvus re-raises.
+
+    ``grpc.RpcError`` exposes its status via a ``.code()`` *method* returning a
+    ``grpc.StatusCode``; the unwrapped codes (UNAUTHENTICATED, ...) arrive at
+    the connector as exactly this.
+    """
+
+    def __init__(self, status_code: grpc.StatusCode):
+        self._status_code = status_code
+
+    def code(self) -> grpc.StatusCode:
+        return self._status_code
+
+    def details(self) -> str:
+        return f"synthetic {self._status_code}"
+
+
 def _milvus_exception(status_code):
+    """A MilvusException carrying a grpc.StatusCode -- the pymilvus retry-storm
+    wrapped path for codes NOT in IGNORE_RETRY_CODES (e.g. NOT_FOUND)."""
     from pymilvus import MilvusException
 
     return MilvusException(code=status_code, message=f"boom: {status_code}")
+
+
+# --- direct classifier tests on the REAL grpc.RpcError type -----------------
 
 
 @pytest.mark.parametrize(
     "status_name",
     ["PERMISSION_DENIED", "INVALID_ARGUMENT", "NOT_FOUND"],
 )
-def test_classify_milvus_exception_user_error(status_name: str):
-    import grpc
-
-    exc = _milvus_exception(getattr(grpc.StatusCode, status_name))
+def test_classify_raw_grpc_rpc_error_is_user_error(status_name: str):
+    exc = _FakeRpcError(getattr(grpc.StatusCode, status_name))
     platform_fallback = WriteError("platform fallback")
 
     result = _classify_milvus_exception(exc, platform_fallback)
@@ -199,27 +238,24 @@ def test_classify_milvus_exception_user_error(status_name: str):
     assert result is not platform_fallback
 
 
-def test_classify_milvus_exception_unauthenticated_is_auth_error():
-    import grpc
-
-    exc = _milvus_exception(grpc.StatusCode.UNAUTHENTICATED)
+def test_classify_raw_grpc_unauthenticated_is_auth_error():
+    # UNAUTHENTICATED is the customer-credential signature and pymilvus 2.6.9
+    # never wraps it: it arrives as a RAW grpc.RpcError. It must become the auth
+    # subclass (401), which is still a UserError (client-class), never platform.
+    exc = _FakeRpcError(grpc.StatusCode.UNAUTHENTICATED)
     platform_fallback = WriteError("platform fallback")
 
     result = _classify_milvus_exception(exc, platform_fallback)
 
-    # UNAUTHENTICATED (401) is the org-315209346834 signature: it must be the
-    # auth subclass, which is still a UserError (client-class), never platform.
     assert isinstance(result, UserAuthError)
     assert isinstance(result, UserError)
     assert result is not platform_fallback
 
 
-def test_classify_milvus_exception_unrelated_code_falls_through_to_platform():
-    import grpc
-
+def test_classify_raw_grpc_unrelated_code_falls_through_to_platform():
     # An unrelated/server-side status (not in the reclassified set) must stay a
     # platform error so genuine platform failures still count against the SLO.
-    exc = _milvus_exception(grpc.StatusCode.INTERNAL)
+    exc = _FakeRpcError(grpc.StatusCode.INTERNAL)
     platform_fallback = WriteError("platform fallback")
 
     result = _classify_milvus_exception(exc, platform_fallback)
@@ -229,17 +265,45 @@ def test_classify_milvus_exception_unrelated_code_falls_through_to_platform():
     assert not isinstance(result, UserError)
 
 
-def test_classify_milvus_exception_precheck_fallback_is_destination_error():
-    import grpc
-
+def test_classify_precheck_fallback_is_destination_error():
     # Same fall-through behavior with precheck's platform class.
-    exc = _milvus_exception(grpc.StatusCode.INTERNAL)
+    exc = _FakeRpcError(grpc.StatusCode.INTERNAL)
     platform_fallback = DestinationConnectionError("platform fallback")
 
     result = _classify_milvus_exception(exc, platform_fallback)
 
     assert result is platform_fallback
     assert isinstance(result, DestinationConnectionError)
+
+
+# --- MilvusException-wrapped path (codes NOT in IGNORE_RETRY_CODES) ----------
+
+
+def test_classify_milvus_exception_wrapped_grpc_code_is_user_error():
+    # NOT_FOUND is not in IGNORE_RETRY_CODES, so after a retry storm it arrives
+    # wrapped in a MilvusException carrying the grpc.StatusCode. Still a client
+    # error.
+    exc = _milvus_exception(grpc.StatusCode.NOT_FOUND)
+    platform_fallback = WriteError("platform fallback")
+
+    result = _classify_milvus_exception(exc, platform_fallback)
+
+    assert isinstance(result, UserError)
+    assert result is not platform_fallback
+
+
+def test_classify_milvus_exception_callable_code_retry_storm_path():
+    # The pymilvus 2.6.9 SYNC retry-storm path stuffs the raw grpc.RpcError.code
+    # *method* into MilvusException.code (decorators.py:297 uses `e.code` not
+    # `e.code()`). _grpc_status_code must resolve the callable.
+    from pymilvus import MilvusException
+
+    raw = _FakeRpcError(grpc.StatusCode.NOT_FOUND)
+    exc = MilvusException(code=raw.code, message="retry storm")
+
+    assert _grpc_status_code(exc) == grpc.StatusCode.NOT_FOUND
+    result = _classify_milvus_exception(exc, WriteError("platform fallback"))
+    assert isinstance(result, UserError)
 
 
 def test_classify_milvus_exception_server_side_int_code_falls_through():
@@ -253,3 +317,145 @@ def test_classify_milvus_exception_server_side_int_code_falls_through():
     result = _classify_milvus_exception(exc, platform_fallback)
 
     assert result is platform_fallback
+
+
+# ---------------------------------------------------------------------------
+# Integration: drive the real uploader methods through a mocked Milvus client
+# that raises a REAL grpc.RpcError, exactly as pymilvus 2.6.9 re-raises it.
+# ---------------------------------------------------------------------------
+
+
+def _uploader() -> MilvusUploader:
+    return MilvusUploader(
+        connection_config=MilvusConnectionConfig(uri="http://localhost:19530"),
+        upload_config=MilvusUploaderConfig(collection_name="test_collection"),
+    )
+
+
+def _with_client(uploader: MilvusUploader, client: MagicMock) -> None:
+    @contextmanager
+    def _cm():
+        yield client
+
+    uploader.get_client = _cm
+
+
+@pytest.mark.parametrize(
+    "status_name,expected",
+    [
+        ("UNAUTHENTICATED", UserAuthError),
+        ("PERMISSION_DENIED", UserError),
+        ("INVALID_ARGUMENT", UserError),
+    ],
+)
+def test_precheck_reclassifies_raw_grpc_error(status_name: str, expected):
+    uploader = _uploader()
+    client = MagicMock()
+    client.has_collection.side_effect = _FakeRpcError(getattr(grpc.StatusCode, status_name))
+    _with_client(uploader, client)
+
+    with pytest.raises(expected) as excinfo:
+        uploader.precheck()
+    # UserAuthError is a UserError subclass; assert we did not fall through to a
+    # platform DestinationConnectionError.
+    assert not isinstance(excinfo.value, DestinationConnectionError)
+
+
+def test_precheck_missing_collection_is_user_error():
+    uploader = _uploader()
+    client = MagicMock()
+    client.has_collection.return_value = False
+    _with_client(uploader, client)
+
+    with pytest.raises(UserError) as excinfo:
+        uploader.precheck()
+    assert not isinstance(excinfo.value, DestinationConnectionError)
+
+
+def test_precheck_other_grpc_code_stays_platform():
+    uploader = _uploader()
+    client = MagicMock()
+    client.has_collection.side_effect = _FakeRpcError(grpc.StatusCode.INTERNAL)
+    _with_client(uploader, client)
+
+    with pytest.raises(DestinationConnectionError):
+        uploader.precheck()
+
+
+def test_precheck_non_grpc_exception_stays_platform():
+    # The @DestinationConnectionError.wrap catch-all fallback, reproduced inline.
+    uploader = _uploader()
+    client = MagicMock()
+    client.has_collection.side_effect = RuntimeError("socket exploded")
+    _with_client(uploader, client)
+
+    with pytest.raises(DestinationConnectionError):
+        uploader.precheck()
+
+
+@pytest.mark.parametrize(
+    "status_name,expected",
+    [
+        ("UNAUTHENTICATED", UserAuthError),
+        ("INVALID_ARGUMENT", UserError),
+    ],
+)
+def test_insert_results_reclassifies_raw_grpc_error(status_name: str, expected):
+    uploader = _uploader()
+    client = MagicMock()
+    # dynamic-fields enabled short-circuits _prepare_data_for_insert to avoid a
+    # second describe_collection; the failure we want to test is on insert().
+    client.describe_collection.return_value = {"enable_dynamic_field": True}
+    client.insert.side_effect = _FakeRpcError(getattr(grpc.StatusCode, status_name))
+    _with_client(uploader, client)
+
+    with pytest.raises(expected):
+        uploader.insert_results(data=[{"embeddings": [0.1], "text": "x"}])
+
+
+def test_insert_results_other_grpc_code_stays_write_error():
+    uploader = _uploader()
+    client = MagicMock()
+    client.describe_collection.return_value = {"enable_dynamic_field": True}
+    client.insert.side_effect = _FakeRpcError(grpc.StatusCode.INTERNAL)
+    _with_client(uploader, client)
+
+    with pytest.raises(WriteError) as excinfo:
+        uploader.insert_results(data=[{"embeddings": [0.1], "text": "x"}])
+    assert not isinstance(excinfo.value, UserError)
+
+
+def test_delete_by_record_id_reclassifies_raw_grpc_error(file_data: FileData):
+    uploader = _uploader()
+    client = MagicMock()
+    client.delete.side_effect = _FakeRpcError(grpc.StatusCode.PERMISSION_DENIED)
+    _with_client(uploader, client)
+
+    with pytest.raises(UserError):
+        uploader.delete_by_record_id(file_data=file_data)
+
+
+def test_prepare_data_reclassifies_raw_grpc_on_describe():
+    # has_dynamic_fields_enabled() swallows the first describe error (best
+    # effort) and returns False, so the non-dynamic branch calls
+    # describe_collection again -- which must surface as a classified error.
+    uploader = _uploader()
+    client = MagicMock()
+    client.describe_collection.side_effect = _FakeRpcError(grpc.StatusCode.UNAUTHENTICATED)
+    _with_client(uploader, client)
+
+    with pytest.raises(UserAuthError):
+        uploader._prepare_data_for_insert(data=[{"embeddings": [0.1], "text": "x"}])
+
+
+def test_run_data_missing_collection_delete_grpc_not_found_is_user_error(file_data: FileData):
+    # run_data() -> delete_by_record_id(): a NOT_FOUND on delete is wrapped in a
+    # MilvusException by pymilvus; still a client error, never platform.
+    uploader = _uploader()
+    client = MagicMock()
+    client.delete.side_effect = _milvus_exception(grpc.StatusCode.NOT_FOUND)
+    _with_client(uploader, client)
+
+    with pytest.raises(UserError) as excinfo:
+        uploader.run_data(data=[{"embeddings": [0.1]}], file_data=file_data)
+    assert isinstance(excinfo.value, UnstructuredIngestError)

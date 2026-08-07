@@ -2,7 +2,7 @@ import json
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Generator, Optional
+from typing import TYPE_CHECKING, Any, Callable, Generator, Optional
 
 from dateutil import parser
 from pydantic import Field, Secret
@@ -34,27 +34,64 @@ from unstructured_ingest.utils.data_prep import flatten_dict
 from unstructured_ingest.utils.dep_check import requires_dependencies
 
 if TYPE_CHECKING:
-    from pymilvus import MilvusClient, MilvusException
+    import grpc
+    from pymilvus import MilvusClient
 
 CONNECTOR_TYPE = "milvus"
 
 
-def _classify_milvus_exception(
-    exc: "MilvusException", platform_error: UnstructuredIngestError
-) -> UnstructuredIngestError:
-    """Reclassify customer-caused Milvus failures as client errors.
+def _grpc_status_code(exc: Exception) -> Optional["grpc.StatusCode"]:
+    """Extract the ``grpc.StatusCode`` from either exception type pymilvus raises.
 
-    When a gRPC call fails at the transport level (bad/expired credentials,
-    permission, malformed request, missing resource) pymilvus re-raises it as
-    ``MilvusException(e.code(), ...)`` where ``.code`` is the ``grpc.StatusCode``
-    enum member (see pymilvus ``decorators.error_handler``). Those are the
-    customer's fault, so surface them as user/auth errors (422/401) instead of a
-    platform error that burns the Job Completions SLO. Anything else (server-side
-    business codes, unknown failures) stays ``platform_error``.
+    pymilvus surfaces a transport-level gRPC failure two different ways
+    (see pymilvus ``decorators.py``):
+
+    * Status codes in ``IGNORE_RETRY_CODES`` (``UNAUTHENTICATED``,
+      ``PERMISSION_DENIED``, ``INVALID_ARGUMENT``, ...) are re-raised as the RAW
+      ``grpc.RpcError`` via ``raise e from e`` -- they are NEVER wrapped in a
+      ``MilvusException``. ``grpc.RpcError`` exposes the code as a ``.code()``
+      *method*.
+    * Every other code (e.g. ``NOT_FOUND``) is retried and, once the retry
+      budget is exhausted, wrapped into ``MilvusException(e.code, ...)``.
+      ``MilvusException`` exposes ``.code`` as a property; for a server-side
+      business failure that is an int ``ErrorCode`` (not a client error), and in
+      the sync retry-storm path pymilvus even stores the raw
+      ``grpc.RpcError.code`` *method* there.
+
+    So ``.code`` may be a ``grpc.StatusCode``, a callable returning one, or an
+    int. Only a resolved ``grpc.StatusCode`` counts; anything else returns
+    ``None`` and falls through to the platform error.
     """
     import grpc
 
     code = getattr(exc, "code", None)
+    if callable(code):
+        try:
+            code = code()
+        except Exception:
+            return None
+    return code if isinstance(code, grpc.StatusCode) else None
+
+
+def _classify_milvus_exception(
+    exc: Exception, platform_error: UnstructuredIngestError
+) -> UnstructuredIngestError:
+    """Reclassify customer-caused Milvus failures as client errors.
+
+    When a gRPC call fails at the transport level (bad/expired credentials,
+    permission, malformed request, missing resource) the failure is the
+    customer's fault, so surface it as a user/auth error (422/401) instead of a
+    platform error that burns the Job Completions SLO. Accepts BOTH the raw
+    ``grpc.RpcError`` (the codes pymilvus never wraps -- crucially
+    ``UNAUTHENTICATED``) and ``MilvusException``. Anything without a resolvable
+    client ``grpc.StatusCode`` (server-side business codes, unknown failures)
+    stays ``platform_error``.
+    """
+    import grpc
+
+    code = _grpc_status_code(exc)
+    if code is None:
+        return platform_error
     message = safe_error_summary(exc)
     if code == grpc.StatusCode.UNAUTHENTICATED:
         return UserAuthError(f"Milvus authentication failed: {message}")
@@ -65,6 +102,27 @@ def _classify_milvus_exception(
     ):
         return UserError(f"Milvus rejected the request: {message}")
     return platform_error
+
+
+@contextmanager
+def _reclassify_milvus_errors(
+    platform_error_factory: Callable[[Exception], UnstructuredIngestError],
+) -> Generator[None, None, None]:
+    """Run a Milvus client call, reclassifying customer-caused gRPC failures.
+
+    Catches BOTH ``grpc.RpcError`` (the raw, unwrapped codes -- including the
+    ``UNAUTHENTICATED`` case that motivated this fix) and ``MilvusException``,
+    and routes them through :func:`_classify_milvus_exception`. When the failure
+    is not a recognised client code the block re-raises the caller's platform
+    error unchanged, so genuine platform faults still count against the SLO.
+    """
+    import grpc
+    from pymilvus import MilvusException
+
+    try:
+        yield
+    except (grpc.RpcError, MilvusException) as exc:
+        raise _classify_milvus_exception(exc, platform_error_factory(exc)) from exc
 
 
 class MilvusAccessConfig(AccessConfig):
@@ -228,26 +286,26 @@ class MilvusUploader(Uploader):
             return False
 
     def precheck(self):
-        from pymilvus import MilvusException
-
         # Note: intentionally not decorated with @DestinationConnectionError.wrap.
         # That wrapper re-wraps every escaping exception into a platform
         # DestinationConnectionError, which would clobber the user/auth
         # reclassification below. We reproduce its catch-all fallback inline.
         try:
-            with self.get_client() as client:
-                if not client.has_collection(self.upload_config.collection_name):
-                    raise DestinationConnectionError(
-                        f"Collection '{self.upload_config.collection_name}' does not exist"
+            with (
+                _reclassify_milvus_errors(
+                    lambda exc: DestinationConnectionError(
+                        f"failed to precheck Milvus: {safe_error_summary(exc)}"
                     )
-
-        except MilvusException as milvus_exception:
-            raise _classify_milvus_exception(
-                milvus_exception,
-                DestinationConnectionError(
-                    f"failed to precheck Milvus: {safe_error_summary(milvus_exception)}"
                 ),
-            ) from None
+                self.get_client() as client,
+            ):
+                if not client.has_collection(self.upload_config.collection_name):
+                    # A missing target collection is the customer's
+                    # configuration problem (a bad/absent resource), not a
+                    # platform fault, so classify it as a user error.
+                    raise UserError(
+                        f"Milvus collection '{self.upload_config.collection_name}' does not exist"
+                    )
         except UnstructuredIngestError:
             raise
         except Exception as e:
@@ -269,9 +327,14 @@ class MilvusUploader(Uploader):
         )
         with self.get_client() as client:
             delete_filter = f'{self.upload_config.record_id_key} == "{file_data.identifier}"'
-            resp = client.delete(
-                collection_name=self.upload_config.collection_name, filter=delete_filter
-            )
+            with _reclassify_milvus_errors(
+                lambda exc: WriteError(
+                    f"failed to delete records from Milvus: {safe_error_summary(exc)}"
+                )
+            ):
+                resp = client.delete(
+                    collection_name=self.upload_config.collection_name, filter=delete_filter
+                )
             logger.info(
                 "deleted {} records from milvus collection {}".format(
                     resp["delete_count"], self.upload_config.collection_name
@@ -307,7 +370,14 @@ class MilvusUploader(Uploader):
 
         # If dynamic fields are not enabled, we need to filter out the metadata fields
         # to avoid insertion errors for fields not defined in the schema
-        with self.get_client() as client:
+        with (
+            self.get_client() as client,
+            _reclassify_milvus_errors(
+                lambda exc: WriteError(
+                    f"failed to describe Milvus collection: {safe_error_summary(exc)}"
+                )
+            ),
+        ):
             collection_info = client.describe_collection(
                 self.upload_config.collection_name,
             )
@@ -325,8 +395,6 @@ class MilvusUploader(Uploader):
 
     @requires_dependencies(["pymilvus"], extras="milvus")
     def insert_results(self, data: list[dict]):
-        from pymilvus import MilvusException
-
         logger.info(
             f"uploading {len(data)} entries to {self.connection_config.db_name} "
             f"db in collection {self.upload_config.collection_name}"
@@ -335,17 +403,14 @@ class MilvusUploader(Uploader):
         prepared_data = self._prepare_data_for_insert(data=data)
 
         with self.get_client() as client:
-            try:
+            with _reclassify_milvus_errors(
+                lambda exc: WriteError(
+                    f"failed to upload records to Milvus: {safe_error_summary(exc)}"
+                )
+            ):
                 res = client.insert(
                     collection_name=self.upload_config.collection_name, data=prepared_data
                 )
-            except MilvusException as milvus_exception:
-                raise _classify_milvus_exception(
-                    milvus_exception,
-                    WriteError(
-                        f"failed to upload records to Milvus: {str(milvus_exception.message)}"
-                    ),
-                ) from milvus_exception
             if "err_count" in res and isinstance(res["err_count"], int) and res["err_count"] > 0:
                 err_count = res["err_count"]
                 raise WriteError(f"failed to upload {err_count} docs")
