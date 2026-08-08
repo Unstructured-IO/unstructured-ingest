@@ -341,3 +341,38 @@ def test_downloader_rejects_attachment_path_traversal(tmp_path):
         downloader.run(parent_file_data)
 
     assert not (tmp_path.parent.parent / "outside.pdf.10011").exists()
+
+
+def test_get_issue_error_redacts_secret():
+    """A failing issue fetch surfaces a SourceConnectionError with no raw exception text."""
+    from unittest import mock
+
+    from unstructured_ingest.error import SourceConnectionError
+    from unstructured_ingest.processes.connectors.jira import JiraDownloaderConfig
+
+    # A credential-bearing string of the kind a jira client error can embed; it
+    # must never reach the raised SourceConnectionError message.
+    secret = "password=secret&token=abc123XYZ"
+
+    connection_config = JiraConnectionConfig(
+        access_config=JiraAccessConfig(token="pat"),
+        url="https://jira.example.com",
+    )
+    downloader = JiraDownloader(
+        connection_config=connection_config,
+        download_config=JiraDownloaderConfig(),
+    )
+    mock_client = mock.MagicMock()
+    mock_client.issue.side_effect = Exception(secret)
+
+    with mock.patch.object(type(connection_config), "get_client", mock.MagicMock()):
+        type(connection_config).get_client.return_value.__enter__.return_value = mock_client
+        with pytest.raises(SourceConnectionError) as excinfo:
+            downloader.get_issue("FACT-1")
+
+    message = str(excinfo.value)
+    assert secret not in message
+    assert "abc123XYZ" not in message
+    # The issue key and the sanitized summary survive for troubleshooting.
+    assert "FACT-1" in message
+    assert "Exception" in message

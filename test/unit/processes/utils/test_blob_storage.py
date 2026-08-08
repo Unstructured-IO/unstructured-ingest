@@ -1,17 +1,17 @@
 """Bounded-memory + output tests for ``BlobStoreUploadStager``.
 
 ``BlobStoreUploadStager.run`` overrides the base ``UploadStager.run`` and is the stager
-used by blob-store destinations (e.g. S3). It previously did ``get_json_data`` +
-``write_data`` (a whole-file load), which OOM-killed the stager on large partition
-outputs — and because it overrides ``run``, the base ``process_whole`` streaming fix did
-not cover it. It now streams the copy via the base ``process_whole`` (json_stream +
-write_data_streaming). These tests assert it still produces a correct ``.json`` copy and
-that peak memory stays flat as the input grows.
+used by blob-store destinations (e.g. S3). It always emits a ``.json`` copy, streaming
+NDJSON input element-by-element into a JSON array and routing JSON-array input through
+the base ``process_whole``. These tests assert it produces a correct ``.json`` copy for
+both input formats and that peak memory stays flat as the input grows.
 """
 
 import json
 import tracemalloc
 from pathlib import Path
+
+import pytest
 
 from unstructured_ingest.data_types.file_data import FileData, SourceIdentifiers
 from unstructured_ingest.processes.utils.blob_storage import (
@@ -53,10 +53,13 @@ def test_blob_store_stager_streams_json_copy(tmp_path: Path) -> None:
     assert json.loads(out.read_text()) == ELEMENTS
 
 
-def test_blob_store_stager_outputs_json_for_ndjson_input(tmp_path: Path) -> None:
+@pytest.mark.parametrize("elements", [ELEMENTS[:1], ELEMENTS], ids=["single", "multiple"])
+def test_blob_store_stager_outputs_json_for_ndjson_input(
+    tmp_path: Path, elements: list[dict]
+) -> None:
     src = tmp_path / "in.ndjson"
     with src.open("w") as f:
-        f.write("\n".join(json.dumps(e) for e in ELEMENTS))
+        f.write("\n".join(json.dumps(e) for e in elements))
 
     out = _stager().run(
         elements_filepath=src,
@@ -66,7 +69,7 @@ def test_blob_store_stager_outputs_json_for_ndjson_input(tmp_path: Path) -> None
     )
 
     assert out.suffix == ".json"
-    assert json.loads(out.read_text()) == ELEMENTS
+    assert json.loads(out.read_text()) == elements
 
 
 def _make_large_json_array(path: Path, num_elements: int) -> None:

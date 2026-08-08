@@ -1,3 +1,4 @@
+from contextlib import contextmanager
 from dataclasses import dataclass
 from time import time
 from typing import TYPE_CHECKING, Any, AsyncGenerator, Generator, Optional
@@ -42,16 +43,21 @@ class NotionAccessConfig(AccessConfig):
 class NotionConnectionConfig(ConnectionConfig):
     access_config: Secret[NotionAccessConfig]
 
+    @contextmanager
     @requires_dependencies(["notion_client"], extras="notion")
-    def get_client(self) -> "Client":
+    def get_client(self) -> Generator["Client", None, None]:
         from unstructured_ingest.processes.connectors.notion.client import Client
 
-        return Client(
+        client = Client(
             notion_version=NOTION_API_VERSION,
             auth=self.access_config.get_secret_value().notion_api_key,
             logger=logger,
             log_level=logger.level,
         )
+        try:
+            yield client
+        finally:
+            client.close()
 
 
 class NotionIndexerConfig(IndexerConfig):
@@ -85,11 +91,11 @@ class NotionIndexer(Indexer):
     def precheck(self) -> None:
         """Check the connection to the Notion API."""
         try:
-            client = self.connection_config.get_client()
-            # Perform a simple request to verify connection
-            request = client._build_request("HEAD", "users")
-            response = client.client.send(request)
-            response.raise_for_status()
+            with self.connection_config.get_client() as client:
+                # Perform a simple request to verify connection
+                request = client._build_request("HEAD", "users")
+                response = client.client.send(request)
+                response.raise_for_status()
 
         except (ImportError, UnstructuredIngestError):
             # Preserve dependency-install guidance and connector-authored typed
@@ -102,56 +108,56 @@ class NotionIndexer(Indexer):
             ) from None
 
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
-        client = self.connection_config.get_client()
-        processed_pages: set[str] = set()
-        processed_databases: set[str] = set()
+        with self.connection_config.get_client() as client:
+            processed_pages: set[str] = set()
+            processed_databases: set[str] = set()
 
-        pages_to_process: set[str] = set(self.index_config.page_ids or [])
-        databases_to_process: set[str] = set(self.index_config.database_ids or [])
+            pages_to_process: set[str] = set(self.index_config.page_ids or [])
+            databases_to_process: set[str] = set(self.index_config.database_ids or [])
 
-        while pages_to_process or databases_to_process:
-            # Process pages
-            for page_id in list(pages_to_process):
-                if page_id in processed_pages:
-                    continue
+            while pages_to_process or databases_to_process:
+                # Process pages
+                for page_id in list(pages_to_process):
+                    if page_id in processed_pages:
+                        continue
 
-                processed_pages.add(page_id)
-                pages_to_process.remove(page_id)
-                file_data = self.get_page_file_data(page_id=page_id, client=client)
-                if file_data:
-                    yield file_data
+                    processed_pages.add(page_id)
+                    pages_to_process.remove(page_id)
+                    file_data = self.get_page_file_data(page_id=page_id, client=client)
+                    if file_data:
+                        yield file_data
 
-                if self.index_config.recursive:
-                    (child_pages, child_databases) = self.get_child_pages_and_databases(
-                        page_id=page_id,
-                        client=client,
-                        processed_pages=processed_pages,
-                        processed_databases=processed_databases,
-                    )
-                    pages_to_process.update(child_pages)
-                    databases_to_process.update(child_databases)
+                    if self.index_config.recursive:
+                        (child_pages, child_databases) = self.get_child_pages_and_databases(
+                            page_id=page_id,
+                            client=client,
+                            processed_pages=processed_pages,
+                            processed_databases=processed_databases,
+                        )
+                        pages_to_process.update(child_pages)
+                        databases_to_process.update(child_databases)
 
-            # Process databases
-            for database_id in list(databases_to_process):
-                if database_id in processed_databases:
-                    continue
-                processed_databases.add(database_id)
-                databases_to_process.remove(database_id)
-                file_data = self.get_database_file_data(database_id=database_id, client=client)
-                if file_data:
-                    yield file_data
-                if self.index_config.recursive:
-                    (
-                        child_pages,
-                        child_databases,
-                    ) = self.get_child_pages_and_databases_from_database(
-                        database_id=database_id,
-                        client=client,
-                        processed_pages=processed_pages,
-                        processed_databases=processed_databases,
-                    )
-                    pages_to_process.update(child_pages)
-                    databases_to_process.update(child_databases)
+                # Process databases
+                for database_id in list(databases_to_process):
+                    if database_id in processed_databases:
+                        continue
+                    processed_databases.add(database_id)
+                    databases_to_process.remove(database_id)
+                    file_data = self.get_database_file_data(database_id=database_id, client=client)
+                    if file_data:
+                        yield file_data
+                    if self.index_config.recursive:
+                        (
+                            child_pages,
+                            child_databases,
+                        ) = self.get_child_pages_and_databases_from_database(
+                            database_id=database_id,
+                            client=client,
+                            processed_pages=processed_pages,
+                            processed_databases=processed_databases,
+                        )
+                        pages_to_process.update(child_pages)
+                        databases_to_process.update(child_databases)
 
     @requires_dependencies(["notion_client"], extras="notion")
     def get_page_file_data(self, page_id: str, client: "Client") -> Optional[FileData]:
@@ -284,23 +290,22 @@ class NotionDownloader(Downloader):
     connector_type: str = CONNECTOR_TYPE
 
     def run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
-        client = self.connection_config.get_client()
         record_locator = file_data.metadata.record_locator
+        if "page_id" not in record_locator and "database_id" not in record_locator:
+            raise ValueError("Invalid record_locator in file_data")
 
-        if "page_id" in record_locator:
-            return self.download_page(
-                client=client,
-                page_id=record_locator["page_id"],
-                file_data=file_data,
-            )
-        elif "database_id" in record_locator:
+        with self.connection_config.get_client() as client:
+            if "page_id" in record_locator:
+                return self.download_page(
+                    client=client,
+                    page_id=record_locator["page_id"],
+                    file_data=file_data,
+                )
             return self.download_database(
                 client=client,
                 database_id=record_locator["database_id"],
                 file_data=file_data,
             )
-        else:
-            raise ValueError("Invalid record_locator in file_data")
 
     def download_page(self, client, page_id: str, file_data: FileData) -> DownloadResponse:
         from unstructured_ingest.processes.connectors.notion.helpers import extract_page_html

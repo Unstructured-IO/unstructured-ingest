@@ -1,8 +1,61 @@
-## [1.7.11]
+## [1.8.1]
 
 ### Enhancements
 
 - **feat: annotate connectors with location capability markers.** `RegistryEntry` now carries opt-in capability markers (`location_shape`, `location_identity`, `supports_recursion`, and `emits_record_version`) plus per-field `x-runtime-eligible` schema hints, so consumers can identify a connector's target location shape, the settings paths that identify that location, and its recursion/record-version semantics. Markers default to unannotated (`location_shape=None`) so a connector without them is never mistaken for an explicit declaration and consumers fall back to their existing defaults. Markers are applied across the fsspec, SQL, search-index, and API-folder connector families.
+
+## [1.8.0]
+
+### Enhancements
+
+- **feat(PLU-511): ACL digest (`permissions_version`) for OneDrive/SharePoint incremental reprocessing.** Add a `permissions_version` field on `FileDataSourceMetadata` and a new `unstructured_ingest/utils/acl` module that computes a stable SHA-256 digest over a record's permissions at index time, so an ACL-only change (content unchanged) can trigger reprocessing under incremental. OneDrive and SharePoint emit it over the permissions they already batch-fetch, so there are no additional Graph calls. An unavailable permission fetch (error sub-response, exhausted retries, null/malformed body) is kept distinct from a genuinely empty permission set: only the latter (all access revoked) produces a digest, so a fetch failure is never mistaken for a revocation.
+
+## [1.7.17]
+
+### Fixes
+
+- **fix(FIE-336): redact raw exception text from raised connector errors.** Connector failure paths that interpolated `str(e)` into the raised `SourceConnectionError`/`UserError` could leak credentials, connection strings, or request payloads embedded in the original exception. Those raises now pass the exception through `safe_error_summary()` (type name plus allowlisted machine-readable fields only) and use `from None` to keep the original exception out of the raised error's standard traceback. The matching failure-path log lines (confluence, jira, ibm_watsonx) also route through `safe_error_summary()` instead of interpolating the raw exception or emitting its traceback, so debug/exception logging can't resurface the raw text either. Covers couchbase, confluence, jira, ibm_watsonx, and gcs; adds per-connector redaction unit tests. Also fixes the gcs `wrap_error` "Bad Request" branch, which guarded on the connector's shadowed `error.ValueError` (never raised by gcsfs) instead of the builtin `ValueError`/`HttpError(code=400)` that real 400s surface.
+
+## [1.7.16]
+
+### Fixes
+
+- **fix(PLU-526): classify SQL/postgres mid-upload connection failures as user errors.** The SQL uploader only wrapped connection failures in `precheck()`; a destination reachable at precheck could still drop during the write loop (e.g. a customer's tunnel to a private Postgres going down), letting the raw driver exception surface as a 500/platform fault. `SQLUploader.upload_dataframe` now re-raises such failures as `DestinationConnectionError` (matching `precheck()`), so they are classified as 4xx/user faults instead.
+
+## [1.7.15]
+
+### Fixes
+
+- **Correctly classify refreshed slack tokens** Slack token is prefixed with 'xoxe.' when obtained via a refresh, slack source now accounts for it when classifying provided token.
+
+## [1.7.14]
+
+### Fixes
+
+- **fix(ibm-watsonx-s3): support account-scoped (SaaS) Iceberg REST endpoint.** Adds an optional `account_id` to the IBM watsonx.data connection config. When set, the connector targets the account-scoped Iceberg REST path (`/api/v1/iceberg`) and sends the required `AccountId` header; when unset, it keeps the legacy instance-scoped behavior (`/mds/iceberg`).
+
+## [1.7.13]
+
+### Fixes
+
+- **Preserve NDJSON records after format detection.** The fallback parser now rewinds the input stream before reading line-delimited JSON, preventing valid records from being skipped after the detection pass.
+- **fix(security): apply tar extraction filters on supported runtimes.** Tar extraction now detects the existing `tarfile.tar_filter` capability instead of gating it on the Python minor version, so supported Python 3.11 maintenance releases receive the same filtering already used on Python 3.12+. Older patch releases retain the existing warning-and-extract behavior.
+- **Refresh cached downloads when the source is newer.** Download freshness checks now compare local and remote modification times in the correct direction and accept both epoch and ISO-formatted source timestamps.
+- **Stamp downloaded files with the source modification time.** Downloaded files take their modification time from the source whenever it is an epoch or ISO-formatted timestamp, even when the source creation time is missing or unparseable, so freshness checks compare against the remote time rather than the download time.
+- **Report Databricks Volumes modification times in epoch seconds.** The Databricks SDK reports modification times in milliseconds; they are now converted to seconds so freshness checks no longer treat every indexed file as newer than its local copy.
+- **Close Zendesk and Notion HTTP clients after connector operations.** Connector prechecks, indexing, downloads, and constructor-failure paths now release their underlying HTTP connection pools.
+
+## [1.7.12]
+
+### Fixes
+
+- **fix(stager): preserve single-record NDJSON partition output.** Blob-storage staging now reads `.ndjson` inputs with an NDJSON-aware streaming reader instead of treating them as top-level JSON arrays, preventing single-record partition output from being silently dropped. Adds regression coverage for single- and multi-record inputs and updates the Google Drive expected output with the `drive_id` field introduced in 1.7.10.
+
+## [1.7.11]
+
+### Fixes
+
+- **fix(FS-2139): centralize bounded Slack API rate-limit retries in SDK client configuration.** Sync and async Slack clients now use the Slack SDK's connection and rate-limit retry handlers configured once in `SlackConnectionConfig`, replacing custom call-site retry loops across indexer join/history and downloader history/replies/files calls.
 
 ## [1.7.10]
 

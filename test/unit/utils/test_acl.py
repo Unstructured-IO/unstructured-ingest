@@ -1,0 +1,84 @@
+"""ACL digest determinism and behavior."""
+
+from unstructured_ingest.utils.acl import compute_permissions_version
+
+
+def _perms(read_users):
+    return [
+        {"read": {"users": read_users, "groups": []}},
+        {"update": {"users": [], "groups": []}},
+        {"delete": {"users": [], "groups": []}},
+    ]
+
+
+def test_none_permissions_returns_none():
+    # No ACL signal at all -> no digest (connector did not emit permissions).
+    assert compute_permissions_version(None) is None
+
+
+def test_empty_permissions_is_a_real_digest():
+    # Empty list is a real state (e.g. all access revoked), not "no signal".
+    digest = compute_permissions_version([])
+    assert digest is not None
+    assert compute_permissions_version(None) != digest
+
+
+def test_same_permissions_same_digest():
+    assert compute_permissions_version(_perms(["a", "b"])) == compute_permissions_version(
+        _perms(["a", "b"])
+    )
+
+
+def test_reordered_users_same_digest():
+    # Same permissions, different order -> identical digest, no false positive.
+    assert compute_permissions_version(_perms(["a", "b"])) == compute_permissions_version(
+        _perms(["b", "a"])
+    )
+
+
+def test_reordered_operations_same_digest():
+    # The list of operation dicts may come back in any order.
+    forward = [
+        {"read": {"users": ["a"], "groups": []}},
+        {"update": {"users": [], "groups": []}},
+    ]
+    reversed_order = [
+        {"update": {"users": [], "groups": []}},
+        {"read": {"users": ["a"], "groups": []}},
+    ]
+    assert compute_permissions_version(forward) == compute_permissions_version(reversed_order)
+
+
+def test_real_change_changes_digest():
+    # A genuine ACL change must move the digest.
+    assert compute_permissions_version(_perms(["a"])) != compute_permissions_version(
+        _perms(["a", "c"])
+    )
+
+
+def test_revocation_changes_digest():
+    # Going from granted to fully revoked (empty) must change the digest.
+    assert compute_permissions_version(_perms(["a", "b"])) != compute_permissions_version([])
+
+
+def test_denied_permissions_affect_digest():
+    # Deny-side changes (FileNet sibling keys) must also move the digest.
+    base = _perms(["a"])
+    assert compute_permissions_version(base, denied_permissions_data=None) != (
+        compute_permissions_version(base, denied_permissions_data=[{"read": {"deny_users": ["x"]}}])
+    )
+
+
+def test_denied_only_permissions_have_digest():
+    # None allows + non-None denies is a distinct code path (the early-return
+    # guard requires BOTH args None). It must still yield a stable, non-None
+    # digest computed from the deny side alone.
+    digest = compute_permissions_version(
+        None, denied_permissions_data=[{"read": {"deny_users": ["x"]}}]
+    )
+    assert digest is not None
+    assert digest != compute_permissions_version(None, denied_permissions_data=None)
+    # And a deny-side change moves it.
+    assert digest != compute_permissions_version(
+        None, denied_permissions_data=[{"read": {"deny_users": ["y"]}}]
+    )

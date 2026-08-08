@@ -1,7 +1,8 @@
 import json
+import math
 import re
-from datetime import datetime
-from typing import Any, Union
+from datetime import datetime, timezone
+from typing import Any, Optional, Union
 
 from dateutil import parser
 
@@ -72,3 +73,29 @@ def fix_unescaped_unicode(text: str, encoding: str = "utf-8") -> str:
         # Return original text if encoding fails
         logger.warning(f"Failed to fix unescaped Unicode sequences: {e}", exc_info=True)
         return text
+
+
+def parse_timestamp(value: Optional[str]) -> Optional[float]:
+    """Epoch seconds for an epoch-like or ISO-8601 value, or None if it isn't either.
+
+    ISO-8601 values without an offset are interpreted as UTC. Non-finite values such as "NaN" and
+    "inf" are rejected: they are not usable timestamps.
+
+    Parsing is strict by design. ``dateutil.parser`` coerces values like "Monday" into a real
+    date, which would make unusable metadata look like a valid timestamp.
+    """
+    if value is None:
+        return None
+    try:
+        epoch_seconds = float(value)
+    except ValueError:
+        pass
+    else:
+        return epoch_seconds if math.isfinite(epoch_seconds) else None
+    try:
+        parsed = datetime.fromisoformat(value)
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed.timestamp()

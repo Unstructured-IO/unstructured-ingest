@@ -291,6 +291,7 @@ def get_json_data(path: Path) -> list[dict]:
             return json.load(f)
         except Exception as e:
             logger.warning(f"failed to read {path} as json: {e}")
+            f.seek(0)
         try:
             return ndjson.load(f)
         except Exception as e:

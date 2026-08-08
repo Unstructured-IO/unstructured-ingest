@@ -1,12 +1,16 @@
 import logging
 
 import pytest
+from pytest_mock import MockerFixture
 
 from unstructured_ingest.error import ProviderError, UserAuthError, UserError
 from unstructured_ingest.processes.connectors.databricks.volumes_native import (
     DatabricksNativeVolumesAccessConfig,
     DatabricksNativeVolumesConnectionConfig,
+    DatabricksNativeVolumesIndexer,
+    DatabricksNativeVolumesIndexerConfig,
 )
+from unstructured_ingest.utils.string_and_date_utils import parse_timestamp
 
 SECRET = "SECRETpassword=hunter2 key=AKIAEXAMPLE"
 
@@ -73,3 +77,25 @@ def test_wrap_error_unhandled_log_redacts(caplog: pytest.LogCaptureFixture):
 
     assert SECRET not in caplog.text
     assert "hunter2" not in caplog.text
+
+
+def test_indexed_file_reports_modification_time_in_epoch_seconds(mocker: MockerFixture):
+    pytest.importorskip("databricks.sdk")
+    indexer = DatabricksNativeVolumesIndexer(
+        connection_config=_connection_config(),
+        index_config=DatabricksNativeVolumesIndexerConfig(
+            catalog="catalog", volume="volume", volume_path="path"
+        ),
+    )
+    file_info = mocker.MagicMock(
+        is_dir=False, path="/Volumes/catalog/schema/volume/path/example.pdf"
+    )
+    # The Databricks SDK reports modification_time in milliseconds.
+    file_info.modification_time = 1729186569000
+    client = mocker.MagicMock()
+    client.dbfs.list.return_value = [file_info]
+    mocker.patch.object(_connection_config().__class__, "get_client", return_value=client)
+
+    file_data = next(iter(indexer.run()))
+
+    assert parse_timestamp(file_data.metadata.date_modified) == 1729186569.0

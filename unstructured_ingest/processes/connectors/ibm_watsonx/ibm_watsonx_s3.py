@@ -45,6 +45,9 @@ CONNECTOR_TYPE = "ibm_watsonx_s3"
 
 DEFAULT_IBM_CLOUD_AUTH_URL = "https://iam.cloud.ibm.com/identity/token"
 DEFAULT_ICEBERG_URI_PATH = "/mds/iceberg"
+# Account-scoped (SaaS) Iceberg REST base path. IBM is deprecating the legacy
+# instance-scoped /mds/iceberg path in favor of this one.
+ACCOUNT_SCOPED_ICEBERG_URI_PATH = "/api/v1/iceberg"
 DEFAULT_ICEBERG_CATALOG_TYPE = "rest"
 
 
@@ -60,6 +63,15 @@ class IbmWatsonxConnectionConfig(ConnectionConfig):
     object_storage_endpoint: str = Field(description="Cloud Object Storage public endpoint")
     object_storage_region: str = Field(description="Cloud Object Storage region")
     catalog: str = Field(description="Catalog name")
+    account_id: Optional[str] = Field(
+        default=None,
+        description=(
+            "IBM Cloud account ID for account-scoped (SaaS) watsonx.data instances. "
+            "When set, the connector targets the account-scoped Iceberg REST endpoint "
+            "(/api/v1/iceberg) and sends the required AccountId header. When unset, the "
+            "connector keeps the legacy instance-scoped behavior (/mds/iceberg)."
+        ),
+    )
     max_retries_connection: int = Field(
         default=10,
         description="Maximum number of retries in case of a connection error (RESTError)",
@@ -71,7 +83,8 @@ class IbmWatsonxConnectionConfig(ConnectionConfig):
 
     @property
     def iceberg_url(self) -> str:
-        return f"https://{self.iceberg_endpoint.strip('/')}{DEFAULT_ICEBERG_URI_PATH}"
+        path = ACCOUNT_SCOPED_ICEBERG_URI_PATH if self.account_id else DEFAULT_ICEBERG_URI_PATH
+        return f"https://{self.iceberg_endpoint.strip('/')}{path}"
 
     @property
     def object_storage_url(self) -> str:
@@ -146,7 +159,7 @@ class IbmWatsonxConnectionConfig(ConnectionConfig):
             raise self.wrap_error(e)
 
     def get_catalog_config(self) -> dict[str, Any]:
-        return {
+        config = {
             "name": self.catalog,
             "type": DEFAULT_ICEBERG_CATALOG_TYPE,
             "uri": self.iceberg_url,
@@ -161,6 +174,11 @@ class IbmWatsonxConnectionConfig(ConnectionConfig):
             # in order to use user-provided S3 credentials.
             "header.X-Iceberg-Access-Delegation": None,
         }
+        # Account-scoped (SaaS) MDS requires the account ID as a request header.
+        # It must be the `AccountId` header; the query-parameter form is rejected.
+        if self.account_id:
+            config["header.AccountId"] = self.account_id
+        return config
 
     @requires_dependencies(["pyiceberg"], extras="ibm-watsonx-s3")
     @contextmanager
@@ -316,21 +334,29 @@ class IbmWatsonxUploader(SQLUploader):
                     transaction.append(data_table)
             except CommitFailedException as e:
                 table.refresh()
-                logger.debug(e)
-                raise IcebergCommitFailedException(str(e))
+                logger.debug(safe_error_summary(e))
+                # Defense-in-depth: this is caught by the outer `except Exception`
+                # (:348) and re-wrapped through safe_error_summary before it can
+                # reach the customer, but redact here too so the message never
+                # carries raw exception text regardless of how it is later handled.
+                raise IcebergCommitFailedException(safe_error_summary(e)) from None
             except RESTError as e:
-                raise DestinationConnectionError(str(e))
+                raise DestinationConnectionError(safe_error_summary(e)) from None
             except Exception as e:
-                raise ProviderError(f"Failed to upload data to table: {e}")
+                raise ProviderError(
+                    f"Failed to upload data to table: {safe_error_summary(e)}"
+                ) from None
 
         try:
             return _upload_data_table(table, data_table, file_data)
         except RESTError as e:
-            raise DestinationConnectionError(str(e))
+            raise DestinationConnectionError(safe_error_summary(e)) from None
         except ProviderError:
             raise
         except Exception as e:
-            raise ProviderError(f"Failed to upload data to table: {e}")
+            raise ProviderError(
+                f"Failed to upload data to table: {safe_error_summary(e)}"
+            ) from None
 
     @requires_dependencies(["pyiceberg", "tenacity"], extras="ibm-watsonx-s3")
     def upload_dataframe(self, df: "DataFrame", file_data: FileData) -> None:
@@ -362,7 +388,9 @@ class IbmWatsonxUploader(SQLUploader):
         except ProviderError:
             raise
         except Exception as e:
-            raise ProviderError(f"Failed to upload data to table: {e}")
+            raise ProviderError(
+                f"Failed to upload data to table: {safe_error_summary(e)}"
+            ) from None
 
     @requires_dependencies(["pandas"], extras="ibm-watsonx-s3")
     def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
