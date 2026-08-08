@@ -5,6 +5,7 @@ from pydantic import Field, Secret
 
 from unstructured_ingest.processes.connector_registry import (
     DestinationRegistryEntry,
+    LocationShape,
     SourceRegistryEntry,
 )
 from unstructured_ingest.processes.connectors.databricks.volumes import (
@@ -81,6 +82,14 @@ databricks_native_volumes_destination_entry = DestinationRegistryEntry(
     uploader_config=DatabricksNativeVolumesUploaderConfig,
     upload_stager_config=BlobStoreUploadStagerConfig,
     upload_stager=BlobStoreUploadStager,
+    location_shape=LocationShape.OTHER,
+    location_identity=(
+        "uploader_config.catalog",
+        "uploader_config.schema",
+        "uploader_config.volume",
+        "uploader_config.volume_path",
+    ),
+    supports_recursion=False,
 )
 
 databricks_native_volumes_source_entry = SourceRegistryEntry(
@@ -89,4 +98,12 @@ databricks_native_volumes_source_entry = SourceRegistryEntry(
     indexer_config=DatabricksNativeVolumesIndexerConfig,
     downloader=DatabricksNativeVolumesDownloader,
     downloader_config=DatabricksNativeVolumesDownloaderConfig,
+    location_shape=LocationShape.OTHER,
+    location_identity=(
+        "indexer_config.catalog",
+        "indexer_config.schema",
+        "indexer_config.volume",
+        "indexer_config.volume_path",
+    ),
+    supports_recursion=False,
 )

@@ -16,6 +16,7 @@ from unstructured_ingest.error import ProviderError, UserError, ValueError, safe
 from unstructured_ingest.logger import logger
 from unstructured_ingest.processes.connector_registry import (
     DestinationRegistryEntry,
+    LocationShape,
     SourceRegistryEntry,
 )
 from unstructured_ingest.processes.connectors.fsspec.fsspec import (
@@ -234,6 +235,9 @@ gcs_source_entry = SourceRegistryEntry(
     downloader=GcsDownloader,
     downloader_config=GcsDownloaderConfig,
     connection_config=GcsConnectionConfig,
+    location_shape=LocationShape.FSSPEC_URL,
+    location_identity=("indexer_config.remote_url",),
+    emits_record_version=True,
 )
 
 gcs_destination_entry = DestinationRegistryEntry(
@@ -242,4 +246,6 @@ gcs_destination_entry = DestinationRegistryEntry(
     connection_config=GcsConnectionConfig,
     upload_stager_config=BlobStoreUploadStagerConfig,
     upload_stager=BlobStoreUploadStager,
+    location_shape=LocationShape.FSSPEC_URL,
+    location_identity=("uploader_config.remote_url",),
 )

@@ -39,7 +39,10 @@ CONNECTOR_TYPE = "fsspec"
 
 
 class FileConfig(BaseModel):
-    remote_url: str = Field(description="Remote fsspec URL formatted as `protocol://dir/path`")
+    remote_url: str = Field(
+        description="Remote fsspec URL formatted as `protocol://dir/path`",
+        json_schema_extra={"x-runtime-eligible": True},
+    )
     protocol: str = Field(init=False, default="")
     path_without_protocol: str = Field(init=False, default="")
     supported_protocols: list[str] = Field(
@@ -65,7 +68,7 @@ class FileConfig(BaseModel):
 
 
 class FsspecIndexerConfig(FileConfig, IndexerConfig):
-    recursive: bool = False
+    recursive: bool = Field(default=False, json_schema_extra={"x-runtime-eligible": True})
     sample_n_files: Optional[int] = None
 
 
