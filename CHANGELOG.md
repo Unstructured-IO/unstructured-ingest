@@ -1,3 +1,9 @@
+## [1.7.18]
+
+### Chores
+
+- **test: skip embedder integration tests on transient provider errors.** The hosted-provider embedder integration tests (openai, azure_openai, vertexai, voyageai, octoai, togetherai, mixedbread, bedrock) now `pytest.skip` rather than fail when the provider is transiently rate-limited / unavailable (5xx) / timing out - an environmental flake, not a defect in the code under test. Auth (`UserAuthError`), quota (`QuotaError`), user-input (`UserError`), and wrong-output (`AssertionError`) failures are deliberately excluded and still fail. HuggingFace (local model) is left unguarded. Test-only; no library source changed.
+
 ## [1.7.17]
 
 ### Fixes
