@@ -4,6 +4,10 @@
 
 - **feat(PLU-511): ACL digest (`permissions_version`) for OneDrive/SharePoint incremental reprocessing.** Add a `permissions_version` field on `FileDataSourceMetadata` and a new `unstructured_ingest/utils/acl` module that computes a stable SHA-256 digest over a record's permissions at index time, so an ACL-only change (content unchanged) can trigger reprocessing under incremental. OneDrive and SharePoint emit it over the permissions they already batch-fetch, so there are no additional Graph calls. An unavailable permission fetch (error sub-response, exhausted retries, null/malformed body) is kept distinct from a genuinely empty permission set: only the latter (all access revoked) produces a digest, so a fetch failure is never mistaken for a revocation.
 
+### Chores
+
+- **test: skip embedder integration tests on transient provider errors.** The hosted-provider embedder integration tests (openai, azure_openai, vertexai, voyageai, octoai, togetherai, mixedbread, bedrock) now `pytest.skip` rather than fail when the provider is transiently rate-limited / unavailable (5xx) / timing out - an environmental flake, not a defect in the code under test. Auth (`UserAuthError`), quota (`QuotaError`), user-input (`UserError`), and wrong-output (`AssertionError`) failures are deliberately excluded and still fail. HuggingFace (local model) is left unguarded. Test-only; no library source changed.
+
 ## [1.7.17]
 
 ### Fixes
