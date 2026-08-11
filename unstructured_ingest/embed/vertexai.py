@@ -81,6 +81,14 @@ _VERTEX_PUBLISHER_MODEL_RE = re.compile(
 # endpoint is reachable without depending on the installed SDK version building it.
 _VERTEX_MULTI_REGIONS = frozenset({"us", "eu"})
 
+# Region of last resort for the genai transport. Availability is per-model, not per-deployment: the
+# Gemini embedding family is served from ``global`` and 404s in ordinary regions like us-east1,
+# while the legacy text-embedding models are served from both. So a deployment-wide regional pin
+# cannot be correct for every model, and ``global`` is the only value that serves all of them.
+# NOTE: ``global`` is deliberately not in _VERTEX_MULTI_REGIONS — google-genai builds the correct
+# host for it on its own, and forcing the "rep" host here would break it.
+_VERTEX_DEFAULT_LOCATION = "global"
+
 
 def _vertex_location_from_resource_path(model_name: Optional[str]) -> Optional[str]:
     """Return the ``locations/<loc>`` segment of a full Vertex resource-path model id, or ``None``
@@ -117,7 +125,7 @@ class VertexAIEmbeddingConfig(EmbeddingConfig):
         default=None,
         description=(
             "Vertex AI region. Only used by Gemini-family models; falls back to the "
-            "VERTEXAI_REGION environment variable."
+            "VERTEXAI_REGION environment variable, then to 'global'."
         ),
     )
     dimensionality: Optional[int] = Field(
@@ -157,19 +165,14 @@ class VertexAIEmbeddingConfig(EmbeddingConfig):
         os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = str(application_credentials_path)
 
     def _resolve_location(self) -> str:
-        """Region for the genai client: the location baked into a full resource-path model id,
-        else the configured region, else ``$VERTEXAI_REGION``."""
-        location = (
+        """Region for the genai client: the location baked into a full resource-path model id, else
+        the configured region, else ``$VERTEXAI_REGION``, else ``global``."""
+        return (
             _vertex_location_from_resource_path(self.embedder_model_name)
             or self.region
             or os.getenv("VERTEXAI_REGION")
+            or _VERTEX_DEFAULT_LOCATION
         )
-        if not location:
-            raise UserError(
-                f"A Vertex AI region is required for model '{self.embedder_model_name}'. Set the "
-                "region on the embedder settings or the VERTEXAI_REGION environment variable."
-            )
-        return location
 
     @requires_dependencies(["google.genai"], extras="vertexai")
     def get_genai_client(self):

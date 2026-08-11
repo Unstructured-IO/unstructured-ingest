@@ -2,7 +2,7 @@
 
 ### Enhancements
 
-- **feat: support Gemini-family Vertex AI embedding models (e.g. `gemini-embedding-2`).** These are served through `google-genai`'s `embed_content` rather than the legacy `TextEmbeddingModel` interface, which previously failed at client construction. Adds Gemini-only `region`, `dimensionality`, and `task` settings, reachable from the pipeline as `embedding_vertexai_region`/`embedding_vertexai_dimensionality`/`embedding_vertexai_task` on `EmbedderConfig`; legacy `text-embedding-00*` models are unchanged.
+- **feat: support Gemini-family Vertex AI embedding models (e.g. `gemini-embedding-2`).** These are served through `google-genai`'s `embed_content` rather than the legacy `TextEmbeddingModel` interface, which previously failed at client construction. Adds Gemini-only `region`, `dimensionality`, and `task` settings, reachable from the pipeline as `embedding_vertexai_region`/`embedding_vertexai_dimensionality`/`embedding_vertexai_task` on `EmbedderConfig`; legacy `text-embedding-00*` models are unchanged. Region defaults to `global`, the only location that serves both families.
 
 ## [1.8.0]
 

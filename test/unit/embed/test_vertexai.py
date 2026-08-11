@@ -286,11 +286,18 @@ def test_genai_client_built_for_the_publisher_path_location(mocker, monkeypatch)
     assert client.models.embed_content.call_args.kwargs["model"] == model
 
 
-def test_missing_region_raises_user_error(monkeypatch):
+def test_missing_region_defaults_to_global(monkeypatch):
+    """Availability is per-model, not per-deployment: the Gemini embedding family is served from
+    'global' and 404s in ordinary regions like us-east1, so 'global' is the only safe default."""
     monkeypatch.delenv("VERTEXAI_REGION", raising=False)
     config = VertexAIEmbeddingConfig(api_key=CREDENTIALS, model_name="gemini-embedding-2")
-    with pytest.raises(UserError, match="Vertex AI region is required"):
-        config._resolve_location()
+    assert config._resolve_location() == "global"
+
+
+def test_env_region_still_wins_over_the_global_default(monkeypatch):
+    monkeypatch.setenv("VERTEXAI_REGION", "us-east1")
+    config = VertexAIEmbeddingConfig(api_key=CREDENTIALS, model_name="gemini-embedding-2")
+    assert config._resolve_location() == "us-east1"
 
 
 def test_genai_client_requires_project_id(monkeypatch):
