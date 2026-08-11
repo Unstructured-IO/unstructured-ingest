@@ -47,7 +47,8 @@ ApiKeyType = Secret[Annotated[dict, BeforeValidator(conform_string_to_dict)]]
 #
 # Dispatch on the model-id prefix rather than probing the publisher model: it costs no extra
 # authenticated round trip, and new members of the family (``gemini-embedding-001``,
-# ``gemini-embedding-2``, ...) work without a release here.
+# ``gemini-embedding-2``, ...) work without a release here. Matched against the bare model id, so
+# a publisher-style path naming a Gemini model routes here too — see _vertex_routing_model_id.
 _GENAI_MODEL_PREFIXES: tuple[str, ...] = ("gemini-embedding",)
 
 # ``embedContent`` accepts exactly ONE content per request for these models — passing a list of
@@ -58,12 +59,21 @@ _GENAI_MODEL_PREFIXES: tuple[str, ...] = ("gemini-embedding",)
 # turning into an equally large burst of requests against the provider's rate limit.
 _GENAI_MAX_CONCURRENT_REQUESTS = 8
 
-# Fine-tuned Vertex models are addressed by a full resource path that already names the region the
-# endpoint is served from, e.g. ``projects/<project>/locations/<location>/endpoints/<id>``. Those
-# endpoints live in a fixed location, so a single global ``VERTEXAI_REGION`` cannot reach more than
-# one of them in the same process. Plain model ids (``gemini-embedding-2``) do not match and keep
-# using the configured/global region.
+# Vertex models can also be addressed by a full resource path that already names the region they are
+# served from, e.g. ``projects/<project>/locations/<location>/publishers/google/models/<model>`` for
+# a publisher model, or ``projects/<project>/locations/<location>/endpoints/<id>`` for a fine-tuned
+# endpoint. Those live in a fixed location, so a single global ``VERTEXAI_REGION`` cannot reach more
+# than one of them in the same process — and the client must be built for the location named in the
+# path, or the request 404s. Plain model ids (``gemini-embedding-2``) do not match and keep using
+# the configured/global region.
 _VERTEX_RESOURCE_LOCATION_RE = re.compile(r"^projects/[^/]+/locations/(?P<location>[^/]+)/")
+
+# A publisher-style resource path names the model in its final segment, so transport routing can
+# still tell a Gemini model from a legacy one. A bare ``endpoints/<id>`` path names no model at all,
+# carries no signal about which family it serves, and therefore stays on the legacy transport.
+_VERTEX_PUBLISHER_MODEL_RE = re.compile(
+    r"^projects/[^/]+/locations/[^/]+/publishers/[^/]+/models/(?P<model>.+)$"
+)
 
 # Vertex multi-region locations are not served by the ``<location>-aiplatform.googleapis.com``
 # regional host google-genai builds by default (that host is invalid for a multi-region) — they are
@@ -79,6 +89,16 @@ def _vertex_location_from_resource_path(model_name: Optional[str]) -> Optional[s
         return None
     match = _VERTEX_RESOURCE_LOCATION_RE.match(model_name)
     return match.group("location") if match else None
+
+
+def _vertex_routing_model_id(model_name: Optional[str]) -> str:
+    """Return the bare model id to route on. Unwraps a publisher-style resource path
+    (``projects/../locations/../publishers/google/models/gemini-embedding-2`` -> that final
+    segment); any other value, including a bare ``endpoints/<id>`` path, is returned unchanged."""
+    if not isinstance(model_name, str):
+        return ""
+    match = _VERTEX_PUBLISHER_MODEL_RE.match(model_name)
+    return match.group("model") if match else model_name
 
 
 def _vertex_multi_region_base_url(location: Optional[str]) -> Optional[str]:
@@ -117,7 +137,7 @@ class VertexAIEmbeddingConfig(EmbeddingConfig):
     @property
     def uses_genai_transport(self) -> bool:
         """Whether this model must be driven through google-genai rather than TextEmbeddingModel."""
-        model_name = (self.embedder_model_name or "").lower()
+        model_name = _vertex_routing_model_id(self.embedder_model_name).lower()
         return model_name.startswith(_GENAI_MODEL_PREFIXES)
 
     def wrap_error(self, e: Exception) -> Exception:

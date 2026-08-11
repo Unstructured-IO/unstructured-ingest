@@ -49,7 +49,13 @@ def test_embed_documents_does_not_break_element_to_dict(mocker):
         ("text-embedding-005", False),
         ("text-embedding-004", False),
         ("textembedding-gecko@001", False),
-        # A fine-tune resource path is not a Gemini embedding id and keeps the legacy transport.
+        # A publisher-style resource path names the model in its final segment, so it routes on
+        # that. This is the canonical way to pin a region, and embed_content accepts the full path.
+        ("projects/p/locations/global/publishers/google/models/gemini-embedding-2", True),
+        ("projects/p/locations/us-central1/publishers/google/models/gemini-embedding-001", True),
+        ("projects/p/locations/us-central1/publishers/google/models/text-embedding-005", False),
+        # A bare fine-tune endpoint path names no model, so it carries no signal about which family
+        # it serves and stays on the legacy transport.
         ("projects/p/locations/us-east1/endpoints/123", False),
     ],
 )
@@ -240,13 +246,44 @@ def test_explicit_region_wins_over_env(monkeypatch):
 
 
 def test_resource_path_region_wins_over_config_and_env(monkeypatch):
+    """A publisher path pins the location, and the client must be built for that same location or
+    the request 404s — so the path beats both the explicit region and the env var."""
     monkeypatch.setenv("VERTEXAI_REGION", "us-east1")
     config = VertexAIEmbeddingConfig(
         api_key=CREDENTIALS,
-        model_name="projects/p/locations/europe-west1/endpoints/123",
+        model_name="projects/p/locations/europe-west1/publishers/google/models/gemini-embedding-2",
         region="us-central1",
     )
+    assert config.uses_genai_transport, "a publisher path must reach the genai transport"
     assert config._resolve_location() == "europe-west1"
+
+
+def test_genai_client_built_for_the_publisher_path_location(mocker, monkeypatch):
+    """End-to-end: the location in a publisher path reaches the genai client, and the full path is
+    still what gets sent as the model id."""
+    monkeypatch.setenv("VERTEXAI_REGION", "us-east1")
+    model = "projects/p/locations/europe-west1/publishers/google/models/gemini-embedding-2"
+    config = VertexAIEmbeddingConfig(api_key=CREDENTIALS, model_name=model)
+
+    mocker.patch(
+        "google.oauth2.service_account.Credentials.from_service_account_info",
+        return_value=mocker.sentinel.credentials,
+    )
+    client_cls = mocker.patch("google.genai.Client")
+
+    config.get_genai_client()
+
+    kwargs = client_cls.call_args.kwargs
+    assert kwargs["location"] == "europe-west1"
+    assert kwargs["project"] == "test-project"
+    assert kwargs["vertexai"] is True
+    # Routing unwraps the path, but the provider is still given the full resource path as the model.
+    client = mocker.MagicMock()
+    client.models.embed_content.return_value = mocker.MagicMock(
+        embeddings=[mocker.MagicMock(values=[0.1])]
+    )
+    config.embed_batch(client=client, batch=["a"])
+    assert client.models.embed_content.call_args.kwargs["model"] == model
 
 
 def test_missing_region_raises_user_error(monkeypatch):
