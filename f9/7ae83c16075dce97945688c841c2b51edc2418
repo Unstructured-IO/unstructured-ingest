@@ -1,0 +1,31 @@
+CHANGELOG.md
+  s_7309e0b1d1b5fa::t_d832e2c1960c0f 3-6,9
+test/integration/embedders/test_mixedbread.py
+  s_7309e0b1d1b5fa::t_3c071850fa26f4 52
+  s_7309e0b1d1b5fa::t_2810b44c25252c 71
+unstructured_ingest/embed/vertexai.py
+  s_7309e0b1d1b5fa::t_d39752b632db1f 43,48-53
+  s_7309e0b1d1b5fa::t_3b7dc4b25f8fc1 16
+test/integration/embedders/test_togetherai.py
+  s_7309e0b1d1b5fa::t_5e52b609d63bcf 32-36
+test/integration/embedders/test_utils.py
+  s_7309e0b1d1b5fa::t_030317e9d7c79e 1-102,105-108
+  s_7309e0b1d1b5fa::t_2fc802f4d94b6a 103-104
+  s_7309e0b1d1b5fa::t_50be2cdaa7df2a 109-110
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "f97ae83c16075dce97945688c841c2b51edc2418",
+  "prompts": {},
+  "sessions": {
+    "s_7309e0b1d1b5fa": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "fd39723f-1b4c-41f5-bd07-a9077291277a",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulkarayan <pk@unstructured.io>"
+    }
+  }
+}
