@@ -1,0 +1,19 @@
+CHANGELOG.md
+  s_de31a99b8a9dc9::t_60aa4e3c14cd39 6-10
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "cd25d9c0edeaf6d33325bfc6cce4b1752c25f7dc",
+  "prompts": {},
+  "sessions": {
+    "s_de31a99b8a9dc9": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f43cf5c7-6142-4bb5-bb29-8eb51224ccc9",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulkarayan <pk@unstructured.io>"
+    }
+  }
+}
