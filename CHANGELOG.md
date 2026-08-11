@@ -1,3 +1,9 @@
+## [1.9.1]
+
+### Fixes
+
+- **fix(release): unblock the PyPI publish.** `hatchling 1.32.0` bumped emitted `Metadata-Version` to `2.5`, which the publish action's pinned `packaging` 25.0 rejected. Caps `hatchling<1.32` and bumps `pypa/gh-action-pypi-publish` to v1.14.2. Also adds a `workflow_dispatch` trigger so a failed publish can be retried without cutting a new version.
+
 ## [1.9.0]
 
 ### Enhancements

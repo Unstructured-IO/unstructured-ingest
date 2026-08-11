@@ -170,7 +170,11 @@ test = [
 unstructured-ingest = "unstructured_ingest.main:main"
 
 [build-system]
-requires = ["hatchling"]
+# Upper bound guards against a backend release silently changing the emitted
+# Metadata-Version: hatchling 1.32.0 moved to 2.5, which older packaging/twine
+# (and other downstream metadata readers) reject. Stay on 2.4 until that has
+# had time to propagate.
+requires = ["hatchling>=1.27,<1.32"]
 build-backend = "hatchling.build"
 
 [tool.uv]

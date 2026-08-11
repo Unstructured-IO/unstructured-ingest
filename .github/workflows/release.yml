@@ -4,6 +4,16 @@ on:
   release:
     types:
       - published
+  # Manual re-run, e.g. when a publish failed after the release was cut.
+  # GitHub restricts workflow_dispatch to users with write access to this repo,
+  # which is granted solely through the Unstructured-IO engineering/infra/admins
+  # teams — there are no outside collaborators.
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing release tag to publish (e.g. 1.9.0)"
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -19,8 +29,16 @@ env:
 jobs:
   release:
     runs-on: ubuntu-latest
+    env:
+      # On a release event this is the published tag; on a manual run it is the
+      # tag typed into the form. Dispatch runs the workflow file from the ref it
+      # was launched on (normally main), so the tag must be checked out
+      # explicitly rather than relying on the default ref.
+      RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          ref: ${{ github.event.release.tag_name || inputs.tag }}
 
       - name: Install uv
         uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5
@@ -35,7 +53,7 @@ jobs:
 
       - name: Validate version matches release tag
         env:
-          TAG: ${{ github.event.release.tag_name }}
+          TAG: ${{ env.RELEASE_TAG }}
         run: |
           PKG_VERSION=$(uv run --no-sync python -c "from unstructured_ingest.__version__ import __version__; print(__version__)")
           if [[ "$TAG" != "$PKG_VERSION" && "$TAG" != "v$PKG_VERSION" ]]; then
@@ -48,7 +66,7 @@ jobs:
         run: uv build
 
       - name: Publish package
-        uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e # release/v1
+        uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
 
       # Best-effort: attempt Azure upload even if PyPI fails, but only if build succeeded.
       - name: Create .pypirc for Azure Artifacts
