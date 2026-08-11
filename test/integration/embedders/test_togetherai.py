@@ -29,6 +29,11 @@ def get_api_key() -> str:
 
 
 # TODO: re-enable these tests when TogetherAI API is fixed
+#
+# Every test below is @pytest.mark.skip because the TogetherAI API is disabled
+# (a permanent exclusion, not a transient outage), so the
+# skip_on_transient_provider guards here are inert - they only start gating
+# skip-vs-fail once these skip marks are removed and the API is re-enabled.
 
 
 @pytest.mark.skip(reason="TogetherAI API disabled")

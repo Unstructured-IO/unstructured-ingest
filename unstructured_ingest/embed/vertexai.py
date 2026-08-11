@@ -13,7 +13,7 @@ from unstructured_ingest.embed.interfaces import (
     BaseEmbeddingEncoder,
     EmbeddingConfig,
 )
-from unstructured_ingest.error import UserAuthError, is_internal_error
+from unstructured_ingest.error import QuotaError, UserAuthError, is_internal_error
 from unstructured_ingest.utils.dep_check import requires_dependencies
 
 if TYPE_CHECKING:
@@ -40,10 +40,17 @@ class VertexAIEmbeddingConfig(EmbeddingConfig):
     def wrap_error(self, e: Exception) -> Exception:
         if is_internal_error(e=e):
             return e
+        from google.api_core.exceptions import ResourceExhausted
         from google.auth.exceptions import GoogleAuthError
 
         if isinstance(e, GoogleAuthError):
             return UserAuthError(e)
+        if isinstance(e, ResourceExhausted):
+            # Quota / rate exhaustion (HTTP 429). Surface as QuotaError - a user
+            # error - so it fails loudly instead of being mistaken for a
+            # transient provider blip and skipped. Mirrors OpenAI/OctoAI, which
+            # map insufficient_quota to QuotaError.
+            return QuotaError(e)
         return e
 
     def register_application_credentials(self):

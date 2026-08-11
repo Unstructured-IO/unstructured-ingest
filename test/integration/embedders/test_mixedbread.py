@@ -49,8 +49,7 @@ def test_raw_mixedbread_embedder(embedder_file: Path):
             api_key=api_key,
         )
     )
-    with skip_on_transient_provider("mixedbread"):
-        embedder.precheck()
+    embedder.precheck()
     validate_raw_embedder(
         embedder=embedder,
         embedder_file=embedder_file,
@@ -69,8 +68,7 @@ async def test_raw_async_mixedbread_embedder(embedder_file: Path):
             api_key=api_key,
         )
     )
-    with skip_on_transient_provider("mixedbread"):
-        embedder.precheck()
+    embedder.precheck()
     await validate_raw_embedder_async(
         embedder=embedder,
         embedder_file=embedder_file,
