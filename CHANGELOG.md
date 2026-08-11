@@ -1,3 +1,9 @@
+## [1.8.1]
+
+### Fixes
+
+- **fix(pinecone): make `vector_length` optional on `PineconeUploader.create_destination`.** The parameter was a required positional with no default, so any caller that could not determine the embedding dimension upfront crashed with `TypeError: create_destination() missing 1 required positional argument: 'vector_length'` before the method body ran. This happened even when the target index already existed and no dimension was needed, since the failure occurred at call binding. Pinecone was the only connector implementing `create_destination` with a required `vector_length`: Weaviate and AstraDB already default it to `None`, and Databricks and Teradata do not accept it. Pinecone now matches, so auto-create is a no-op when the index exists and the dimension is unknown.
+
 ## [1.8.0]
 
 ### Enhancements

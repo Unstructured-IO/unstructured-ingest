@@ -251,7 +251,7 @@ class PineconeUploader(VectorDBUploader):
 
     def create_destination(
         self,
-        vector_length: int,
+        vector_length: Optional[int] = None,
         destination_name: str = "unstructuredautocreated",
         destination_type: Literal["pod", "serverless"] = "serverless",
         serverless_cloud: str = "aws",
