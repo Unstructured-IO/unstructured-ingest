@@ -7304,6 +7304,7 @@ vectara = [
     { name = "requests" },
 ]
 vertexai = [
+    { name = "google-genai" },
     { name = "vertexai" },
 ]
 voyageai = [
@@ -7342,6 +7343,7 @@ test = [
     { name = "docker" },
     { name = "faker" },
     { name = "fsspec" },
+    { name = "google-genai" },
     { name = "htmlbuilder" },
     { name = "httpx" },
     { name = "networkx" },
@@ -7407,6 +7409,7 @@ requires-dist = [
     { name = "fsspec", marker = "extra == 'sftp'" },
     { name = "gcsfs", marker = "extra == 'gcs'" },
     { name = "google-api-python-client", marker = "extra == 'google-drive'" },
+    { name = "google-genai", marker = "extra == 'vertexai'" },
     { name = "htmlbuilder", marker = "extra == 'notion'" },
     { name = "httpx", marker = "extra == 'ibm-watsonx-s3'" },
     { name = "httpx", marker = "extra == 'notion'" },
@@ -7523,6 +7526,7 @@ test = [
     { name = "docker" },
     { name = "faker" },
     { name = "fsspec" },
+    { name = "google-genai" },
     { name = "htmlbuilder" },
     { name = "httpx" },
     { name = "networkx" },

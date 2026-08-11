@@ -1,8 +1,14 @@
-## [1.8.1]
+## [1.9.1]
 
 ### Enhancements
 
 - **feat: annotate connectors with location capability markers.** `RegistryEntry` now carries opt-in capability markers (`location_shape`, `location_identity`, `supports_recursion`, and `emits_record_version`) plus per-field `x-runtime-eligible` schema hints, so consumers can identify a connector's target location shape, the settings paths that identify that location, and its recursion/record-version semantics. Markers default to unannotated (`location_shape=None`) so a connector without them is never mistaken for an explicit declaration and consumers fall back to their existing defaults. Markers are applied across the fsspec, SQL, search-index, and API-folder connector families.
+
+## [1.9.0]
+
+### Enhancements
+
+- **feat: support Gemini-family Vertex AI embedding models (e.g. `gemini-embedding-2`).** These are served through `google-genai`'s `embed_content` rather than the legacy `TextEmbeddingModel` interface, which previously failed at client construction. Adds Gemini-only `region`, `dimensionality`, and `task` settings, reachable from the pipeline as `embedding_vertexai_region`/`embedding_vertexai_dimensionality`/`embedding_vertexai_task` on `EmbedderConfig`; legacy `text-embedding-00*` models are unchanged. Region defaults to `global`, the only location that serves both families.
 
 ## [1.8.0]
 
