@@ -1,3 +1,5 @@
+import inspect
+
 import pytest
 
 from unstructured_ingest.data_types.file_data import FileData, SourceIdentifiers
@@ -100,3 +102,15 @@ def test_map_pinecone_api_error_preserves_cause():
         raise wrapped from api_error
     except ProviderError as caught:
         assert caught.__cause__ is api_error
+
+
+def test_create_destination_callable_without_vector_length():
+    """Callers that cannot resolve the embedding dimension upfront still need to invoke
+    create_destination, which is a no-op when the index already exists. A required
+    vector_length raised TypeError at call binding, before that check could run."""
+    signature = inspect.signature(PineconeUploader.create_destination)
+
+    bound = signature.bind(None)
+
+    assert "vector_length" not in bound.arguments
+    assert signature.parameters["vector_length"].default is None
