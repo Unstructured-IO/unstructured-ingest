@@ -52,6 +52,21 @@ class EmbedderConfig(BaseModel):
     embedding_azure_api_version: Optional[str] = Field(
         description="Azure API version", default=None
     )
+    embedding_vertexai_region: Optional[str] = Field(
+        default=None,
+        description="Vertex AI region. Only used by Gemini-family models; falls back to the "
+        "VERTEXAI_REGION environment variable.",
+    )
+    embedding_vertexai_dimensionality: Optional[int] = Field(
+        default=None,
+        description="Output embedding dimension. Only used by Gemini-family Vertex AI models, "
+        "which support Matryoshka truncation.",
+    )
+    embedding_vertexai_task: Optional[str] = Field(
+        default=None,
+        description="Embedding task type, e.g. RETRIEVAL_DOCUMENT. "
+        "Only used by Gemini-family Vertex AI models.",
+    )
 
     def get_huggingface_embedder(self, embedding_kwargs: dict) -> "BaseEmbeddingEncoder":
         from unstructured_ingest.embed.huggingface import (
@@ -113,6 +128,18 @@ class EmbedderConfig(BaseModel):
             VertexAIEmbeddingConfig,
             VertexAIEmbeddingEncoder,
         )
+
+        # Only forward what was actually set; the config's own defaults (and the
+        # VERTEXAI_REGION fallback) must stay reachable, and dimensionality=0 is a
+        # value the provider gets to reject rather than one that means "unset".
+        gemini_kwargs = {
+            "region": self.embedding_vertexai_region,
+            "dimensionality": self.embedding_vertexai_dimensionality,
+            "task": self.embedding_vertexai_task,
+        }
+        embedding_kwargs = embedding_kwargs | {
+            key: value for key, value in gemini_kwargs.items() if value is not None
+        }
 
         return VertexAIEmbeddingEncoder(
             config=VertexAIEmbeddingConfig.model_validate(embedding_kwargs)

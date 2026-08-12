@@ -1,4 +1,4 @@
-## [1.8.1]
+## [1.9.2]
 
 ### Fixes
 
@@ -7,6 +7,18 @@
 ### Chores
 
 - **test: skip embedder integration tests on transient provider errors.** The hosted-provider embedder integration tests (openai, azure_openai, vertexai, voyageai, octoai, togetherai, mixedbread, bedrock) now `pytest.skip` rather than fail when the provider is transiently rate-limited / unavailable (5xx) / timing out - an environmental flake, not a defect in the code under test. Auth (`UserAuthError`), quota (`QuotaError`), user-input (`UserError`), and wrong-output (`AssertionError`) failures are deliberately excluded and still fail. HuggingFace (local model) is left unguarded. Adds a unit test (`test/integration/embedders/test_utils.py`) covering the transient-vs-fatal classifier directly.
+
+## [1.9.1]
+
+### Fixes
+
+- **fix(release): unblock the PyPI publish.** `hatchling 1.32.0` bumped emitted `Metadata-Version` to `2.5`, which the publish action's pinned `packaging` 25.0 rejected. Caps `hatchling<1.32` and bumps `pypa/gh-action-pypi-publish` to v1.14.2. Also adds a `workflow_dispatch` trigger so a failed publish can be retried without cutting a new version.
+
+## [1.9.0]
+
+### Enhancements
+
+- **feat: support Gemini-family Vertex AI embedding models (e.g. `gemini-embedding-2`).** These are served through `google-genai`'s `embed_content` rather than the legacy `TextEmbeddingModel` interface, which previously failed at client construction. Adds Gemini-only `region`, `dimensionality`, and `task` settings, reachable from the pipeline as `embedding_vertexai_region`/`embedding_vertexai_dimensionality`/`embedding_vertexai_task` on `EmbedderConfig`; legacy `text-embedding-00*` models are unchanged. Region defaults to `global`, the only location that serves both families.
 
 ## [1.8.0]
 
