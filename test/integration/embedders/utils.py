@@ -96,6 +96,12 @@ def _is_transient_provider_error(exc: BaseException) -> bool:
     # response but no embedding") is raised bare, with neither set. Only the wrapped kind is a
     # transient blip; the bare kind is a real defect and must FAIL. Checked before the type/status
     # rules so the default 500 can't re-classify a bare ProviderError as transient.
+    #
+    # STOPGAP (FIE-365): this couples skip-behavior to HOW the error was raised, which is fragile.
+    # It is exact only because, within embedder scope, the sole ProviderError is the bare contract
+    # case. CONTRIBUTORS: do NOT raise a genuinely-transient ProviderError bare, and do NOT raise a
+    # contract ProviderError from within an `except` -- either would be misclassified here. FIE-365
+    # tracks replacing this with an explicit signal (a `transient` flag / dedicated contract type).
     if isinstance(exc, ProviderError):
         return exc.__cause__ is not None or exc.__context__ is not None
     if isinstance(exc, _TRANSIENT_ERROR_TYPES):
