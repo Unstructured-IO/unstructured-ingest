@@ -1,0 +1,19 @@
+test/integration/embedders/utils.py
+  s_88f5e039d48824::t_fc738cad63fd77 99-104
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "d350b4597085b3fdd751cf54d1fc71bd49b7dc87",
+  "prompts": {},
+  "sessions": {
+    "s_88f5e039d48824": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "abd23ca1-87cc-4d2f-9d2e-16aa42f63726",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulkarayan <pk@unstructured.io>"
+    }
+  }
+}
