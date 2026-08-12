@@ -162,3 +162,36 @@ def test_bare_provider_error_fails_the_guard():
 def test_wrapped_provider_error_skips_the_guard():
     with pytest.raises(pytest.skip.Exception), skip_on_transient_provider("test-provider"):
         raise _provider_error_with_cause()
+
+
+def test_no_embedding_contract_failure_fails_through_the_real_encoder_guard():
+    # Regression: drive the ACTUAL Vertex encoder path a hosted-provider test wraps. The
+    # no-embedding ProviderError is raised bare in _first_embedding and propagates through
+    # BaseEmbeddingEncoder.embed_documents' `except Exception as e: raise self.wrap_error(e=e)`
+    # (wrap_error returns the same object, so this is `raise e` of the CURRENTLY-HANDLED exception).
+    # Re-raising the current exception does NOT set self-referential __context__, so the guard sees
+    # neither __cause__ nor __context__ and correctly FAILS the test rather than skipping it - the
+    # output-defect FIE-341 explicitly promises to catch.
+    pytest.importorskip("google.genai")
+    from unittest.mock import MagicMock, patch
+
+    from unstructured_ingest.embed.vertexai import (
+        VertexAIEmbeddingConfig,
+        VertexAIEmbeddingEncoder,
+    )
+
+    config = VertexAIEmbeddingConfig(
+        api_key={"project_id": "p", "type": "service_account"}, model_name="gemini-embedding-2"
+    )
+    encoder = VertexAIEmbeddingEncoder(config=config)
+    client = MagicMock()
+    response = MagicMock()
+    response.embeddings = []
+    client.models.embed_content.return_value = response
+
+    with (
+        patch.object(VertexAIEmbeddingConfig, "get_genai_client", return_value=client),
+        pytest.raises(ProviderError),
+        skip_on_transient_provider("vertexai"),
+    ):
+        encoder.embed_documents(elements=[{"text": "hi"}])
