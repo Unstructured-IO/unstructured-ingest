@@ -59,7 +59,6 @@ class _UnknownSDKError(Exception):
 TRANSIENT_CASES = [
     # 1. the library's typed transient classes
     RateLimitError("rate limited"),
-    ProviderError("5xx from provider"),
     UnstructuredTimeoutError("timed out"),
     EmbeddingEncoderConnectionError("connection dropped"),
     # 2. raw SDK exceptions exposing a transient HTTP status
@@ -85,7 +84,33 @@ NON_TRANSIENT_CASES = [
     _RawStatusError(403),
     _RawStatusError(404),
     _UnknownSDKError("no status, no marker"),
+    # A BARE ProviderError (no cause/context) is a contract assertion the library raises directly
+    # (e.g. Vertex "successful response but no embedding") - a real defect that must FAIL, not skip,
+    # despite ProviderError's default status_code of 500.
+    ProviderError("contract failure: successful response but no embedding"),
 ]
+
+
+def _provider_error_with_cause() -> ProviderError:
+    """A ProviderError that explicitly wraps an underlying transient (`raise ... from e`)."""
+    try:
+        raise ConnectionError("underlying provider 503")
+    except Exception as underlying:
+        try:
+            raise ProviderError("wrapped provider outage") from underlying
+        except ProviderError as pe:
+            return pe
+
+
+def _provider_error_with_context() -> ProviderError:
+    """A ProviderError raised inside an `except` block, so implicit chaining sets __context__."""
+    try:
+        raise ConnectionError("underlying provider 503")
+    except Exception:
+        try:
+            raise ProviderError("wrapped provider outage")
+        except ProviderError as pe:
+            return pe
 
 
 @pytest.mark.parametrize("exc", TRANSIENT_CASES, ids=lambda e: type(e).__name__)
@@ -108,3 +133,32 @@ def test_skip_on_transient_provider_skips(exc: BaseException):
 def test_skip_on_transient_provider_reraises(exc: BaseException):
     with pytest.raises(type(exc)), skip_on_transient_provider("test-provider"):
         raise exc
+
+
+# --- ProviderError is classified by CAUSE, not by type/status ---------------
+# A wrapped provider outage (raised `from e`, or from within an `except`) is transient; a bare
+# contract ProviderError is not. This is the distinguishing rule that keeps a "successful response
+# but no embedding" defect from being skipped while still skipping a genuine wrapped 5xx.
+
+
+def test_bare_provider_error_is_not_transient():
+    assert _is_transient_provider_error(ProviderError("no embedding")) is False
+
+
+def test_provider_error_with_explicit_cause_is_transient():
+    assert _is_transient_provider_error(_provider_error_with_cause()) is True
+
+
+def test_provider_error_with_context_is_transient():
+    assert _is_transient_provider_error(_provider_error_with_context()) is True
+
+
+def test_bare_provider_error_fails_the_guard():
+    # The contract-failure path must re-raise (fail the test), not skip.
+    with pytest.raises(ProviderError), skip_on_transient_provider("test-provider"):
+        raise ProviderError("successful response but no embedding")
+
+
+def test_wrapped_provider_error_skips_the_guard():
+    with pytest.raises(pytest.skip.Exception), skip_on_transient_provider("test-provider"):
+        raise _provider_error_with_cause()

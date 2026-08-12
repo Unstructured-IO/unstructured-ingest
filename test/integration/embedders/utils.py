@@ -42,10 +42,12 @@ from unstructured_ingest.error import (
 # false pass, and none of the checks can match an auth error.
 
 # The library's own transient error types (see unstructured_ingest/error.py).
-# UserAuthError / UserError / QuotaError are intentionally excluded.
+# UserAuthError / UserError / QuotaError are intentionally excluded. ProviderError is handled
+# separately (by cause, below) rather than listed here: it is a generic wrapper the library uses
+# for BOTH a wrapped provider outage AND a bare contract assertion, so bare membership would
+# over-skip.
 _TRANSIENT_ERROR_TYPES = (
     RateLimitError,
-    ProviderError,
     UnstructuredTimeoutError,
     EmbeddingEncoderConnectionError,
 )
@@ -87,6 +89,15 @@ def _is_transient_provider_error(exc: BaseException) -> bool:
     # Never treat an output-correctness assertion as a provider hiccup.
     if isinstance(exc, AssertionError):
         return False
+    # ProviderError is a generic wrapper with a default status_code of 500, so it would otherwise
+    # read as transient by BOTH type and status. Distinguish by cause: the library wraps a real
+    # provider failure by raising ProviderError from within an `except` (implicit __context__) or
+    # explicitly `from e` (__cause__), whereas a CONTRACT assertion (e.g. Vertex's "successful
+    # response but no embedding") is raised bare, with neither set. Only the wrapped kind is a
+    # transient blip; the bare kind is a real defect and must FAIL. Checked before the type/status
+    # rules so the default 500 can't re-classify a bare ProviderError as transient.
+    if isinstance(exc, ProviderError):
+        return exc.__cause__ is not None or exc.__context__ is not None
     if isinstance(exc, _TRANSIENT_ERROR_TYPES):
         return True
     status_code = _status_code_of(exc)
