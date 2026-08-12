@@ -8,7 +8,7 @@ from unstructured_ingest.embed.vertexai import (
     VertexAIEmbeddingEncoder,
     _vertex_multi_region_base_url,
 )
-from unstructured_ingest.error import ProviderError, UserError
+from unstructured_ingest.error import ProviderError, QuotaError, UserError
 
 CREDENTIALS = {"project_id": "test-project", "type": "service_account"}
 
@@ -141,6 +141,33 @@ def test_genai_embed_batch_raises_when_no_embedding_returned(mocker):
 
     with pytest.raises(ProviderError, match="no embedding"):
         config.embed_batch(client=client, batch=["a"])
+
+
+def test_wrap_error_maps_legacy_resource_exhausted_to_quota():
+    from google.api_core.exceptions import ResourceExhausted
+
+    config = VertexAIEmbeddingConfig(api_key=CREDENTIALS, model_name="text-embedding-004")
+    assert isinstance(config.wrap_error(ResourceExhausted("429 quota")), QuotaError)
+
+
+def test_wrap_error_maps_genai_client_429_to_quota():
+    # Gemini-family models go through google-genai, which raises its own ClientError (code 429)
+    # for quota exhaustion rather than api_core.ResourceExhausted; that must still fail loudly.
+    from google.genai.errors import ClientError
+
+    config = VertexAIEmbeddingConfig(api_key=CREDENTIALS, model_name="gemini-embedding-2")
+    err = ClientError(429, {"error": {"code": 429, "status": "RESOURCE_EXHAUSTED"}})
+    assert isinstance(config.wrap_error(err), QuotaError)
+
+
+def test_wrap_error_leaves_non_quota_genai_client_error_raw():
+    # A non-429 genai error is not a quota fault: it must pass through unchanged, not be
+    # mis-mapped to QuotaError.
+    from google.genai.errors import ClientError
+
+    config = VertexAIEmbeddingConfig(api_key=CREDENTIALS, model_name="gemini-embedding-2")
+    err = ClientError(400, {"error": {"code": 400, "status": "INVALID_ARGUMENT"}})
+    assert config.wrap_error(err) is err
 
 
 def test_genai_embed_batch_forwards_dimensionality_and_task(mocker):
