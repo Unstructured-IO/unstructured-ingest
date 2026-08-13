@@ -325,16 +325,21 @@ class MilvusUploader(Uploader):
             f"deleting any content with metadata {RECORD_ID_LABEL}={file_data.identifier} "
             f"from milvus collection {self.upload_config.collection_name}"
         )
-        with self.get_client() as client:
-            delete_filter = f'{self.upload_config.record_id_key} == "{file_data.identifier}"'
-            with _reclassify_milvus_errors(
+        # Enter the reclassify context BEFORE get_client so a customer-caused
+        # auth/permission failure from get_client's using_database() call (issued
+        # on __enter__ when db_name is set) is reclassified too, matching precheck.
+        with (
+            _reclassify_milvus_errors(
                 lambda exc: WriteError(
                     f"failed to delete records from Milvus: {safe_error_summary(exc)}"
                 )
-            ):
-                resp = client.delete(
-                    collection_name=self.upload_config.collection_name, filter=delete_filter
-                )
+            ),
+            self.get_client() as client,
+        ):
+            delete_filter = f'{self.upload_config.record_id_key} == "{file_data.identifier}"'
+            resp = client.delete(
+                collection_name=self.upload_config.collection_name, filter=delete_filter
+            )
             logger.info(
                 "deleted {} records from milvus collection {}".format(
                     resp["delete_count"], self.upload_config.collection_name
@@ -371,12 +376,12 @@ class MilvusUploader(Uploader):
         # If dynamic fields are not enabled, we need to filter out the metadata fields
         # to avoid insertion errors for fields not defined in the schema
         with (
-            self.get_client() as client,
             _reclassify_milvus_errors(
                 lambda exc: WriteError(
                     f"failed to describe Milvus collection: {safe_error_summary(exc)}"
                 )
             ),
+            self.get_client() as client,
         ):
             collection_info = client.describe_collection(
                 self.upload_config.collection_name,
@@ -402,15 +407,17 @@ class MilvusUploader(Uploader):
 
         prepared_data = self._prepare_data_for_insert(data=data)
 
-        with self.get_client() as client:
-            with _reclassify_milvus_errors(
+        with (
+            _reclassify_milvus_errors(
                 lambda exc: WriteError(
                     f"failed to upload records to Milvus: {safe_error_summary(exc)}"
                 )
-            ):
-                res = client.insert(
-                    collection_name=self.upload_config.collection_name, data=prepared_data
-                )
+            ),
+            self.get_client() as client,
+        ):
+            res = client.insert(
+                collection_name=self.upload_config.collection_name, data=prepared_data
+            )
             if "err_count" in res and isinstance(res["err_count"], int) and res["err_count"] > 0:
                 err_count = res["err_count"]
                 raise WriteError(f"failed to upload {err_count} docs")
