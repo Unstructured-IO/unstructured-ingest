@@ -1,4 +1,5 @@
 import json
+import traceback
 from contextlib import contextmanager
 from pathlib import Path
 from unittest.mock import MagicMock
@@ -22,6 +23,7 @@ from unstructured_ingest.processes.connectors.milvus import (
     MilvusUploadStager,
     _classify_milvus_exception,
     _grpc_status_code,
+    _reclassify_milvus_errors,
 )
 from unstructured_ingest.utils import ndjson
 
@@ -274,6 +276,27 @@ def test_classify_precheck_fallback_is_destination_error():
 
     assert result is platform_fallback
     assert isinstance(result, DestinationConnectionError)
+
+
+def test_reclassify_does_not_chain_raw_provider_exception():
+    # Redaction invariant (CHANGELOG 1.6.31 / 1.7.8): the reclassified error must
+    # not carry the raw provider exception via __cause__, or its unredacted text
+    # would resurface through traceback logging (logger.exception / exc_info).
+    secret = "password=hunter2"
+    raw = _FakeRpcError(grpc.StatusCode.UNAUTHENTICATED)
+    raw.args = (secret,)
+
+    with (
+        pytest.raises(UserAuthError) as excinfo,
+        _reclassify_milvus_errors(lambda exc: WriteError("redacted fallback")),
+    ):
+        raise raw
+
+    assert excinfo.value.__cause__ is None
+    rendered = "".join(
+        traceback.format_exception(type(excinfo.value), excinfo.value, excinfo.value.__traceback__)
+    )
+    assert secret not in rendered
 
 
 # --- MilvusException-wrapped path (codes NOT in IGNORE_RETRY_CODES) ----------

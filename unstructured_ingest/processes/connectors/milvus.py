@@ -115,6 +115,12 @@ def _reclassify_milvus_errors(
     and routes them through :func:`_classify_milvus_exception`. When the failure
     is not a recognised client code the block re-raises the caller's platform
     error unchanged, so genuine platform faults still count against the SLO.
+
+    Re-raises ``from None`` (not ``from exc``): the raised error's message is
+    already redacted via ``safe_error_summary``, and suppressing the exception
+    chain keeps the raw provider text (server free-text / debug_error_string)
+    from resurfacing through traceback logging, per the connector redaction
+    invariant (CHANGELOG 1.6.31 / 1.7.8).
     """
     import grpc
     from pymilvus import MilvusException
@@ -122,7 +128,7 @@ def _reclassify_milvus_errors(
     try:
         yield
     except (grpc.RpcError, MilvusException) as exc:
-        raise _classify_milvus_exception(exc, platform_error_factory(exc)) from exc
+        raise _classify_milvus_exception(exc, platform_error_factory(exc)) from None
 
 
 class MilvusAccessConfig(AccessConfig):
