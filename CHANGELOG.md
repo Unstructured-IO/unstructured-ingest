@@ -1,3 +1,9 @@
+## [1.9.2]
+
+### Fixes
+
+- **fix(sftp): cap `paramiko<5` so `ssh-rsa` host-key pinning keeps working.** The SFTP connector accepts `ssh-ed25519` and `ssh-rsa` in `host_public_key`, but `paramiko` 5.0.0 removed `ssh-rsa` from its default host-key algorithms. Against a server that presents an `ssh-rsa` host key, an otherwise correct pinned key would pass config validation and then fail at connect with `Incompatible ssh peer (no acceptable host key)`. The `sftp` extra declared `paramiko` unbounded, so a routine dependency resolution could pick up 5.x and break pinning.
+
 ## [1.9.1]
 
 ### Fixes
