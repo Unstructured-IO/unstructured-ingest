@@ -1,0 +1,2 @@
+CHANGELOG.md merge=union
+uv.lock merge=uv-lock
