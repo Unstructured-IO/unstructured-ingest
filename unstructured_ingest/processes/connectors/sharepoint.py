@@ -20,6 +20,7 @@ from unstructured_ingest.error import (
     UserAuthError,
     UserError,
     ValueError,
+    safe_error_summary,
 )
 from unstructured_ingest.logger import logger
 from unstructured_ingest.processes.connector_registry import (
@@ -37,12 +38,20 @@ from unstructured_ingest.processes.connectors.onedrive import (
 from unstructured_ingest.utils.dep_check import requires_dependencies
 
 if TYPE_CHECKING:
+    from office365.graph_client import GraphClient
     from office365.onedrive.driveitems.driveItem import DriveItem
     from office365.onedrive.sites.site import Site
     from office365.runtime.client_request_exception import ClientRequestException
 
 CONNECTOR_TYPE = "sharepoint"
 LEGACY_DEFAULT_PATH = "Shared Documents"
+
+GRAPH_BASE_URL = "https://graph.microsoft.com/v1.0"
+
+# Without this header the Graph channels endpoint reports `shared` channels as
+# `unknownFutureValue`, so a shared Teams channel can't be identified by membershipType.
+# (The channel is still enumerated/walkable, but its type is opaque without the header.)
+_CHANNELS_PREFER_HEADER = "include-unknown-enum-members"
 
 
 class SharepointAccessConfig(OnedriveAccessConfig):
@@ -54,13 +63,16 @@ class SharepointConnectionConfig(OnedriveConnectionConfig):
         default=None,
         description="User principal name or service account, usually your Azure AD email.",
     )
-    site: str = Field(
+    site: Optional[str] = Field(
+        default=None,
         description="Sharepoint site url. Process either base url e.g \
                     https://[tenant].sharepoint.com  or relative sites \
                     https://[tenant].sharepoint.com/sites/<site_name>. \
                     To process all sites within the tenant pass a site url as \
                     https://[tenant]-admin.sharepoint.com.\
-                    This requires the app to be registered at a tenant level"
+                    This requires the app to be registered at a tenant level. \
+                    Optional when indexing a Microsoft Teams team instead (set \
+                    team_id on the indexer config); provide either a site or a team_id.",
     )
     library: Optional[str] = Field(
         default=None,
@@ -94,6 +106,19 @@ class SharepointConnectionConfig(OnedriveConnectionConfig):
 class SharepointIndexerConfig(OnedriveIndexerConfig):
     # TODO: We can probably make path non-optional on OnedriveIndexerConfig once tested
     path: str = Field(default="")
+    team_id: Optional[str] = Field(
+        default=None,
+        description="Microsoft Teams team (group) ID whose channel files should be indexed. "
+        "When set, the connector indexes Teams channel files instead of a SharePoint site "
+        "document library. Provide either a connection-config 'site' or a 'team_id', not both. "
+        "Enumerating channels requires the Team.ReadBasic.All and Channel.ReadBasic.All "
+        "application scopes in addition to Sites.Read.All.",
+    )
+    channels: Optional[list[str]] = Field(
+        default=None,
+        description="Optional filter of Teams channels to index, by channel display name or "
+        "channel ID. Only applies in team mode. Leave empty to index every channel in the team.",
+    )
 
 
 # Microsoft/SharePoint correlation headers worth preserving for support/diagnosis.
@@ -271,15 +296,40 @@ class SharepointIndexer(OnedriveIndexer):
             logger.error(f"Unexpected error accessing SharePoint path '{path}': {e}")
             raise UserError(f"Failed to validate SharePoint path '{path}': {str(e)}")
 
+    def _is_team_mode(self) -> bool:
+        """Team mode indexes Teams channel files; site mode indexes a document library."""
+        return bool(self.index_config.team_id)
+
+    def _validate_targeting(self) -> None:
+        """Exactly one targeting mode must be configured: a SharePoint site or a Teams team."""
+        has_team = bool(self.index_config.team_id)
+        has_site = bool(self.connection_config.site)
+        if has_team and has_site:
+            raise UserError(
+                "Provide either a SharePoint 'site' or a Teams 'team_id', not both. "
+                "Configure one targeting mode per connector instance."
+            )
+        if not has_team and not has_site:
+            raise UserError(
+                "A SharePoint 'site' or a Teams 'team_id' is required to index files."
+            )
+
     @requires_dependencies(["office365"], extras="sharepoint")
     def precheck(self) -> None:
-        """Validate SharePoint connection before indexing."""
-        from office365.runtime.client_request_exception import ClientRequestException
-
+        """Validate the SharePoint (site) or Teams (team) connection before indexing."""
         self.connection_config._log_oauth_advisory()
+        self._validate_targeting()
 
         # Validate authentication - this call will raise UserAuthError if invalid
         self.connection_config.get_token()
+
+        if self._is_team_mode():
+            self._precheck_team()
+        else:
+            self._precheck_site()
+
+    def _precheck_site(self) -> None:
+        from office365.runtime.client_request_exception import ClientRequestException
 
         try:
             client = self.connection_config.get_client()
@@ -298,13 +348,83 @@ class SharepointIndexer(OnedriveIndexer):
         except ClientRequestException as e:
             logger.error(f"SharePoint precheck failed for site: {self.connection_config.site}")
             _handle_client_request_exception(e, f"SharePoint site {self.connection_config.site}")
+        except UnstructuredIngestError:
+            raise
         except Exception as e:
             logger.error(f"Unexpected error during SharePoint precheck: {e}", exc_info=True)
             raise UserError(f"Failed to validate SharePoint connection: {str(e)}")
 
+    def _precheck_team(self) -> None:
+        """Validate the team is reachable and the Teams enumeration scopes are granted.
+
+        Listing channels exercises Team.ReadBasic.All / Channel.ReadBasic.All and the team
+        id in one call, and raises the typed auth/not-found errors from _list_channels_sync.
+        """
+        token_resp = self.connection_config.get_token()
+        access_token = token_resp.get("access_token") if isinstance(token_resp, dict) else None
+        if not access_token:
+            raise SourceConnectionError("failed to acquire access token for Teams precheck")
+        # Raises UserAuthError (missing scope / forbidden), NotFoundError (bad team), etc.
+        self._list_channels_sync(access_token)
+        logger.info(
+            f"Teams connection validated successfully for team: {self.index_config.team_id}"
+        )
+
+    def drive_item_to_file_data_sync(
+        self,
+        drive_item: DriveItem,
+        raw_permissions: Optional[list[dict[str, Any]]] = None,
+    ) -> FileData:
+        """Extend the base mapping with the item's drive id + item id.
+
+        Teams private/shared channels live on their *own* SharePoint sites, each with a
+        distinct drive, so the downloader can't re-resolve them via the single configured
+        site. Carrying drive_id + item_id lets the downloader fetch via
+        client.drives[drive_id].items[item_id] regardless of which site the file lives on.
+        Harmless for ordinary site files (they get their own drive id too) and backward
+        compatible — FileData indexed before this still falls back to site+path.
+        """
+        file_data = super().drive_item_to_file_data_sync(
+            drive_item, raw_permissions=raw_permissions
+        )
+        parent_ref = getattr(drive_item, "parent_reference", None)
+        drive_id = getattr(parent_ref, "driveId", None) if parent_ref is not None else None
+        if drive_id:
+            record_locator = file_data.metadata.record_locator or {}
+            record_locator["drive_id"] = drive_id
+            record_locator["item_id"] = drive_item.id
+            file_data.metadata.record_locator = record_locator
+        return file_data
+
+    async def _emit_chunk(
+        self, chunk: list["DriveItem"], access_token: str
+    ) -> AsyncIterator[FileData]:
+        perms_by_id = await asyncio.to_thread(self._fetch_permissions_raw, chunk, access_token)
+        for di in chunk:
+            # None = fetch unavailable (skip digest); [] = revoked (real digest).
+            yield await self.drive_item_to_file_data(
+                drive_item=di,
+                raw_permissions=perms_by_id.get(di.id),
+            )
+
+    async def _emit_drive_items(
+        self, drive_items: "list[DriveItem]", access_token: str
+    ) -> AsyncIterator[FileData]:
+        """Batch drive items into permission-fetch chunks and yield FileData for each."""
+        chunk: list[DriveItem] = []
+        for drive_item in drive_items:
+            chunk.append(drive_item)
+            if len(chunk) >= PERMISSIONS_BATCH_SIZE:
+                async for fd in self._emit_chunk(chunk, access_token):
+                    yield fd
+                chunk = []
+        if chunk:
+            async for fd in self._emit_chunk(chunk, access_token):
+                yield fd
+
     @requires_dependencies(["office365"], extras="sharepoint")
     async def run_async(self, **kwargs: Any) -> AsyncIterator[FileData]:
-        from office365.runtime.client_request_exception import ClientRequestException
+        self._validate_targeting()
 
         token_resp = await asyncio.to_thread(self.connection_config.get_token)
         if "error" in token_resp:
@@ -315,6 +435,19 @@ class SharepointIndexer(OnedriveIndexer):
 
         access_token = token_resp["access_token"]
         client = await asyncio.to_thread(self.connection_config.get_client)
+
+        if self._is_team_mode():
+            async for fd in self._run_team_async(client, access_token):
+                yield fd
+        else:
+            async for fd in self._run_site_async(client, access_token):
+                yield fd
+
+    async def _run_site_async(
+        self, client: "GraphClient", access_token: str
+    ) -> AsyncIterator[FileData]:
+        from office365.runtime.client_request_exception import ClientRequestException
+
         try:
             client_site = client.sites.get_by_url(self.connection_config.site).get().execute_query()
             site_drive_item = self.connection_config._get_drive_item(client_site)
@@ -327,15 +460,6 @@ class SharepointIndexer(OnedriveIndexer):
             self._get_target_drive_item, site_drive_item, path
         )
 
-        async def _flush(chunk: list[DriveItem]) -> AsyncIterator[FileData]:
-            perms_by_id = await asyncio.to_thread(self._fetch_permissions_raw, chunk, access_token)
-            for di in chunk:
-                # None = fetch unavailable (skip digest); [] = revoked (real digest).
-                yield await self.drive_item_to_file_data(
-                    drive_item=di,
-                    raw_permissions=perms_by_id.get(di.id),
-                )
-
         try:
             drive_items = target_drive_item.get_files(
                 recursive=self.index_config.recursive
@@ -344,16 +468,148 @@ class SharepointIndexer(OnedriveIndexer):
             logger.error(f"Failed to list SharePoint files for site: {self.connection_config.site}")
             _handle_client_request_exception(e, f"SharePoint site {self.connection_config.site}")
 
-        chunk: list[DriveItem] = []
-        for drive_item in drive_items:
-            chunk.append(drive_item)
-            if len(chunk) >= PERMISSIONS_BATCH_SIZE:
-                async for fd in _flush(chunk):
-                    yield fd
-                chunk = []
-        if chunk:
-            async for fd in _flush(chunk):
+        async for fd in self._emit_drive_items(drive_items, access_token):
+            yield fd
+
+    async def _run_team_async(
+        self, client: "GraphClient", access_token: str
+    ) -> AsyncIterator[FileData]:
+        from office365.runtime.client_request_exception import ClientRequestException
+
+        team_id = self.index_config.team_id
+        channels = await asyncio.to_thread(self._list_channels_sync, access_token)
+        channels = self._filter_channels(channels)
+        if not channels:
+            logger.warning(f"no channels to index for team '{team_id}'")
+            return
+
+        for channel in channels:
+            channel_id = channel.get("id")
+            channel_name = channel.get("displayName") or channel_id
+            files_folder = await asyncio.to_thread(
+                self._get_channel_files_folder_sync, access_token, channel_id, channel_name
+            )
+            if not files_folder:
+                # Not provisioned / unreachable — best-effort skip, never abort the crawl.
+                continue
+
+            folder = client.drives[files_folder["drive_id"]].items[files_folder["item_id"]]
+            try:
+                drive_items = await asyncio.to_thread(self._list_channel_files, folder)
+            except ClientRequestException as e:
+                logger.warning(
+                    f"skipping channel '{channel_name}': failed to list files: "
+                    f"{safe_error_summary(e)}"
+                )
+                continue
+
+            async for fd in self._emit_drive_items(drive_items, access_token):
                 yield fd
+
+    def _list_channel_files(self, folder: "DriveItem") -> "list[DriveItem]":
+        return folder.get_files(recursive=self.index_config.recursive).execute_query()
+
+    def _filter_channels(self, channels: list[dict]) -> list[dict]:
+        """Restrict to the requested channels (by display name or id); no filter = all."""
+        wanted = self.index_config.channels
+        if not wanted:
+            return channels
+        wanted_set = {w.strip().lower() for w in wanted if w and w.strip()}
+        selected = [
+            c
+            for c in channels
+            if (c.get("id", "").lower() in wanted_set)
+            or (c.get("displayName", "").lower() in wanted_set)
+        ]
+        matched = {c.get("id", "").lower() for c in selected}
+        matched |= {c.get("displayName", "").lower() for c in selected}
+        for w in wanted_set:
+            if w not in matched:
+                logger.warning(
+                    f"requested channel '{w}' not found in team '{self.index_config.team_id}'"
+                )
+        return selected
+
+    @requires_dependencies(["requests"], extras="sharepoint")
+    def _graph_get(self, access_token: str, url: str, prefer: Optional[str] = None):
+        import requests
+
+        headers = {"Authorization": f"Bearer {access_token}"}
+        if prefer:
+            headers["Prefer"] = prefer
+        full_url = url if url.startswith("http") else f"{GRAPH_BASE_URL}{url}"
+        return requests.get(full_url, headers=headers, timeout=60)
+
+    def _list_channels_sync(self, access_token: str) -> list[dict]:
+        """Enumerate a team's channels via Graph (paginated), sending the Prefer header so
+        shared channels are correctly typed. Maps auth/not-found/throttle to typed errors."""
+        team_id = self.index_config.team_id
+        channels: list[dict] = []
+        url: Optional[str] = f"/teams/{team_id}/channels?$select=id,displayName,membershipType"
+        while url:
+            resp = self._graph_get(access_token, url, prefer=_CHANNELS_PREFER_HEADER)
+            if resp.status_code in (401, 403):
+                raise UserAuthError(
+                    f"[HTTP {resp.status_code}] Access forbidden enumerating channels for team "
+                    f"'{team_id}'. The app registration needs the Team.ReadBasic.All and "
+                    f"Channel.ReadBasic.All application scopes: {_truncate_body(resp.text)}"
+                )
+            if resp.status_code == 404:
+                raise NotFoundError(f"Team not found: '{team_id}'")
+            if resp.status_code == 429:
+                raise RateLimitError(f"Rate limited enumerating channels for team '{team_id}'")
+            if resp.status_code >= 400:
+                raise UserError(
+                    f"[HTTP {resp.status_code}] Failed to enumerate channels for team "
+                    f"'{team_id}': {_truncate_body(resp.text)}"
+                )
+            body = resp.json()
+            channels.extend(body.get("value", []))
+            url = body.get("@odata.nextLink")
+        logger.info(f"found {len(channels)} channel(s) in team '{team_id}'")
+        return channels
+
+    def _get_channel_files_folder_sync(
+        self, access_token: str, channel_id: str, channel_name: str
+    ) -> Optional[dict]:
+        """Resolve a channel's files folder to its {drive_id, item_id}.
+
+        Returns None (skip the channel) when the folder isn't reachable — most importantly
+        the on-demand-provisioning 404 ("Folder location for this channel is not ready yet"),
+        which fires until the channel's Files tab is first opened, and cross-tenant/forbidden
+        shared channels. A single bad channel must never abort the whole team crawl.
+        """
+        team_id = self.index_config.team_id
+        resp = self._graph_get(
+            access_token, f"/teams/{team_id}/channels/{channel_id}/filesFolder"
+        )
+        if resp.status_code == 404:
+            logger.info(
+                f"channel '{channel_name}' files folder is not provisioned yet "
+                f"(open the channel's Files tab to provision it); skipping"
+            )
+            return None
+        if resp.status_code in (401, 403):
+            logger.warning(
+                f"access forbidden to files folder for channel '{channel_name}' "
+                f"(may be a cross-tenant shared channel); skipping"
+            )
+            return None
+        if resp.status_code >= 400:
+            logger.warning(
+                f"failed to resolve files folder for channel '{channel_name}' "
+                f"(HTTP {resp.status_code}); skipping: {_truncate_body(resp.text)}"
+            )
+            return None
+        body = resp.json()
+        drive_id = (body.get("parentReference") or {}).get("driveId")
+        item_id = body.get("id")
+        if not drive_id or not item_id:
+            logger.warning(
+                f"channel '{channel_name}' files folder response missing drive/item id; skipping"
+            )
+            return None
+        return {"drive_id": drive_id, "item_id": item_id}
 
 
 class SharepointDownloaderConfig(OnedriveDownloaderConfig):
@@ -392,13 +648,22 @@ class SharepointDownloader(OnedriveDownloader):
             wait_exponential,
         )
 
-        if file_data.source_identifiers is None or not file_data.source_identifiers.fullpath:
+        record_locator = file_data.metadata.record_locator or {}
+        drive_id = record_locator.get("drive_id")
+        item_id = record_locator.get("item_id")
+        has_drive_ref = bool(drive_id and item_id)
+
+        server_relative_path = (
+            file_data.source_identifiers.fullpath if file_data.source_identifiers else None
+        )
+        # Either a drive-id reference (preferred; works across sites incl. Teams private/
+        # shared channels) or a server-relative path (legacy site+path resolution) is enough.
+        if not has_drive_ref and not server_relative_path:
             raise ValueError(
                 f"file data doesn't have enough information to get "
                 f"file content: {file_data.model_dump()}"
             )
 
-        server_relative_path = file_data.source_identifiers.fullpath
         client = self.connection_config.get_client()
 
         _exp_wait = wait_exponential(exp_base=2, multiplier=1, min=2, max=10)
@@ -418,12 +683,23 @@ class SharepointDownloader(OnedriveDownloader):
             before=before_log(logger, logging.DEBUG),
             reraise=True,
         )
-        def _get_item_by_path() -> DriveItem:
-            # Split so the failure is attributed to what actually failed: a 404 on the
-            # file fetch means the file is missing, not the site. Both paths preserve the
-            # real status/body/correlation headers and map to a typed error (401/403 ->
-            # auth, 404 -> not found, 429 -> rate limit, which the retry classifier above
-            # then retries) instead of masking every upstream failure as "Site not found".
+        def _get_item() -> DriveItem:
+            # Prefer drive-id resolution: /drives/{driveId}/items/{itemId} addresses a file
+            # on any site — including the separate sites that Teams private/shared channels
+            # provision — which the single configured-site path can't reach. MS also
+            # recommends storing & reusing driveId+itemId rather than site/library URLs.
+            if has_drive_ref:
+                try:
+                    return client.drives[drive_id].items[item_id].get().execute_query()
+                except ClientRequestException as e:
+                    _handle_client_request_exception(
+                        e, f"SharePoint drive item '{item_id}' (drive '{drive_id}')"
+                    )
+            # Fallback for FileData indexed before drive_id was captured: resolve via the
+            # configured site + server-relative path. Split so the failure is attributed to
+            # what actually failed (a 404 on the file fetch means the file is missing, not
+            # the site). Both paths preserve the real status/body/correlation headers and
+            # map to a typed error the retry classifier can act on.
             try:
                 client_site = (
                     client.sites.get_by_url(self.connection_config.site).get().execute_query()
@@ -444,7 +720,7 @@ class SharepointDownloader(OnedriveDownloader):
         # unrecognized failures still surface as a connection error, while typed errors pass
         # through with their true status.
         try:
-            file = _get_item_by_path()
+            file = _get_item()
         except UnstructuredIngestError:
             raise
         except Exception as e:
@@ -453,7 +729,7 @@ class SharepointDownloader(OnedriveDownloader):
             ) from e
 
         if not file:
-            raise NotFoundError(f"file not found: {server_relative_path}")
+            raise NotFoundError(f"file not found: {server_relative_path or item_id}")
         return file
 
 

@@ -1,3 +1,11 @@
+## [1.10.0]
+
+### Enhancements
+
+- **feat(sharepoint): index and download Microsoft Teams channel files.** The SharePoint source connector can now target a Microsoft Teams team instead of a site: set `team_id` (and optionally filter with `channels`, by display name or channel id) on the indexer config and leave `site` unset — provide exactly one of `site` or `team_id`. It enumerates the team's channels and indexes each channel's files reusing the existing DriveItem walk, permission batching, and incremental (etag) behavior. Standard, private, and shared channels are all supported: private/shared channels live on separate SharePoint sites, so `record_locator` now carries `drive_id`+`item_id` and the downloader resolves files via `client.drives[drive_id].items[item_id]` (with a backward-compatible fallback to the configured site + server-relative path for files indexed before this change). Existing site/library/path configurations are unchanged. Channel enumeration requires the `Team.ReadBasic.All` and `Channel.ReadBasic.All` application scopes in addition to `Sites.Read.All`; missing-scope / forbidden cases surface as `UserAuthError`. Channels whose Files folder is not provisioned yet (Teams provisions it on first Files-tab open) are skipped rather than aborting the crawl.
+
+  **Known limitation (ACL fidelity):** for **private and shared** Teams channels, captured permissions do not reflect channel membership. Teams channel membership is mediated through SharePoint *site groups*, which the permission extractor does not resolve — only direct Azure AD user/group grants are captured (for standard channels this includes the team's backing Microsoft 365 group). Consequently the `permissions_version` ACL digest does not detect membership changes inside private/shared channels. Full channel-membership fidelity is planned as a follow-up.
+
 ## [1.9.2]
 
 ### Fixes
