@@ -108,6 +108,14 @@ class ChromaUploadStager(UploadStager):
             logger.debug(f"date {date_string} string not a timestamp: {e}")
         return parser.parse(date_string)
 
+    def should_include(self, element_dict: dict) -> bool:
+        # The embedder skips elements with empty text, so those arrive without an
+        # "embeddings" key. The uploader passes one embedding per id, so a missing one
+        # becomes a null entry and Chroma rejects the whole batch. An element that has
+        # text but no embedding means no embedder ran, which is a misconfiguration that
+        # should keep failing loudly rather than be dropped silently.
+        return bool(element_dict.get("text")) or "embeddings" in element_dict
+
     def conform_dict(self, element_dict: dict, file_data: FileData) -> dict:
         """
         Prepares dictionary in the format that Chroma requires

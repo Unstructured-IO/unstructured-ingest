@@ -1,3 +1,9 @@
+## [1.9.3]
+
+### Fixes
+
+- **fix(qdrant, chroma, astradb): skip elements the embedder left without an embedding.** Elements with empty text are not embedded, and each of these destinations failed differently on them: Chroma rejected the entire batch, Astra DB raised an error asking the user to configure an embedding provider they already had, and Qdrant stored a point with no vector that search can never return. All three now drop those elements during staging. An element that has text but no embedding is kept, since that means no embedder ran at all and each destination's existing error should still surface rather than a workflow silently uploading nothing. Astra DB drops nothing when configured to generate the vectors itself, and Weaviate is unchanged, since both treat a missing vector as a request to vectorize server-side.
+
 ## [1.9.2]
 
 ### Fixes
