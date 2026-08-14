@@ -1,0 +1,25 @@
+unstructured_ingest/processes/connectors/milvus.py
+  s_1964dec4e21f57::t_2c6d2606732805 118-123,131
+test/unit/processes/connectors/test_milvus.py
+  s_1964dec4e21f57::t_1a05d1b81f70e1 289-293
+  s_1964dec4e21f57::t_5bfca070dc3f4e 26
+  s_1964dec4e21f57::t_0803d3d2c7eb4c 297
+  s_1964dec4e21f57::t_c886994a8b0584 2
+  s_1964dec4e21f57::t_e2d0815976d213 281-288,294-296,298-301
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "bb5e6688ab7a716ec1b9da246c708e96327f4c6f",
+  "prompts": {},
+  "sessions": {
+    "s_1964dec4e21f57": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "334e664a-6aa4-489d-8321-5a5c6257d954",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulkarayan <pk@unstructured.io>"
+    }
+  }
+}
