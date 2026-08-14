@@ -15,7 +15,7 @@ from urllib.parse import urlparse
 from pydantic import Field, Secret, model_validator
 
 from unstructured_ingest.data_types.file_data import FileData, FileDataSourceMetadata
-from unstructured_ingest.error import UserAuthError
+from unstructured_ingest.error import ConnectionError, UserAuthError, safe_error_summary
 from unstructured_ingest.logger import logger
 from unstructured_ingest.processes.connector_registry import (
     DestinationRegistryEntry,
@@ -327,8 +327,18 @@ class SftpConnectionConfig(FsspecConnectionConfig):
                     ) from None
                 except paramiko.AuthenticationException:
                     raise UserAuthError(
-                        f"Authentication failed for {self.host}: "
-                        "provided credentials are incorrect"
+                        f"Authentication failed for {self.host}: the server did not accept "
+                        "the configured credentials or authentication method"
+                    ) from None
+                except paramiko.IncompatiblePeer as e:
+                    raise UserAuthError(
+                        f"SFTP negotiation failed for {self.host} ({safe_error_summary(e)}); "
+                        f"host key negotiation is constrained to the pinned {key_type} "
+                        f"family, so check that the server publishes a {key_type} host key"
+                    ) from None
+                except paramiko.SSHException as e:
+                    raise ConnectionError(
+                        f"SFTP connection to {self.host} failed: {safe_error_summary(e)}"
                     ) from None
                 self.client = ssh_client
                 self.ftp = ssh_client.open_sftp()
