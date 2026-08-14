@@ -1,4 +1,4 @@
-## [1.9.2]
+## [1.9.3]
 
 ### Fixes
 
@@ -7,6 +7,12 @@
 ### Chores
 
 - **test: skip embedder integration tests on transient provider errors.** The hosted-provider embedder integration tests (openai, azure_openai, vertexai, voyageai, octoai, togetherai, mixedbread, bedrock) now `pytest.skip` rather than fail when the provider is transiently rate-limited / unavailable (5xx) / timing out - an environmental flake, not a defect in the code under test. Auth (`UserAuthError`), quota (`QuotaError`), user-input (`UserError`), and wrong-output (`AssertionError`) failures are deliberately excluded and still fail. HuggingFace (local model) is left unguarded. Adds a unit test (`test/integration/embedders/test_utils.py`) covering the transient-vs-fatal classifier directly.
+
+## [1.9.2]
+
+### Fixes
+
+- **fix(sftp): cap `paramiko<5` so `ssh-rsa` host-key pinning keeps working.** The SFTP connector accepts `ssh-ed25519` and `ssh-rsa` in `host_public_key`, but `paramiko` 5.0.0 removed `ssh-rsa` from its default host-key algorithms. Against a server that presents an `ssh-rsa` host key, an otherwise correct pinned key would pass config validation and then fail at connect with `Incompatible ssh peer (no acceptable host key)`. The `sftp` extra declared `paramiko` unbounded, so a routine dependency resolution could pick up 5.x and break pinning.
 
 ## [1.9.1]
 
