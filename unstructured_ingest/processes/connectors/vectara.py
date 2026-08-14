@@ -44,9 +44,7 @@ class VectaraAccessConfig(AccessConfig):
 class VectaraConnectionConfig(ConnectionConfig):
     access_config: Secret[VectaraAccessConfig]
     customer_id: str
-    corpus_name: Optional[str] = Field(
-        default=None, json_schema_extra={"x-runtime-eligible": True}
-    )
+    corpus_name: Optional[str] = Field(default=None, json_schema_extra={"x-runtime-eligible": True})
     corpus_key: Optional[str] = None
     token_url: str = "https://auth.vectara.com/oauth2/token"
 
