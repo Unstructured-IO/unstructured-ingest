@@ -1,3 +1,15 @@
+## [1.9.3]
+
+### Fixes
+
+- **fix(sftp): constrain host-key negotiation to the pinned key's algorithm family.** SSH separates a key's *format* (`ssh-rsa` — what a key blob or `known_hosts` entry names) from the *public key algorithm* negotiated in KEXINIT (`ssh-rsa`, `rsa-sha2-256`, `rsa-sha2-512`; RFC 8332). `paramiko.SSHClient` only moves the literal known-hosts name to the front of its preference list, so against a server that has dropped SHA-1 `ssh-rsa` — Azure Blob Storage SFTP, among others — the pin matched nothing and negotiation fell through to the next mutual algorithm, normally `ecdsa-sha2-nistp256`. A correct `host_public_key` then failed with a host-key mismatch reporting an ECDSA key. `get_client` now passes `disabled_algorithms` so only the pinned key's family is offered. This also makes the `paramiko<5` cap from 1.9.2 non-load-bearing for such servers.
+
+- **fix(sftp): report host-key and authentication failures without echoing keys.** `BadHostKeyException.__str__` embeds both host keys in full, and printing the key the server just presented invites pasting it into `host_public_key` — which would trust whatever answered and defeat the pin. When `host_public_key` is set, that exception and `AuthenticationException` are now re-raised as `UserAuthError` with a short message and `from None`, which also keeps paramiko's frames — holding the password as a local in `client.py` `_auth` — out of the chained traceback.
+
+- **fix(sftp): `SftpDownloader.connector_type` was a pydantic `FieldInfo`, not a string.** The dataclass assigned `Field(default=CONNECTOR_TYPE, init=False)` where its siblings use a bare literal, so the `FieldInfo` object became the default value. With no explicit `download_dir`, building the default download path raised `TypeError: unsupported operand type(s) for /: 'PosixPath' and 'FieldInfo'`. No other fsspec downloader was affected.
+
+- **fix(logging): strip credentials from URLs written to logs.** `DataSanitizer.sanitize_url` dropped query parameters but returned `netloc` verbatim, and userinfo (`user:password@`) lives in `netloc`. An fsspec-style `remote_url` carrying credentials therefore reached connector error logs in the clear through `log_connection_failed`. The userinfo is now replaced with `***`; it is dropped whole rather than masking only the password, since schemes like `https://<token>@host` carry the secret in the username.
+
 ## [1.9.2]
 
 ### Fixes
