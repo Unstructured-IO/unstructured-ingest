@@ -77,6 +77,12 @@ class QdrantUploadStager(UploadStager, ABC):
         default_factory=lambda: QdrantUploadStagerConfig()
     )
 
+    def should_include(self, element_dict: dict) -> bool:
+        # Elements with empty text are skipped by the embedder and arrive without an
+        # "embeddings" key. Qdrant accepts such a point with an empty vector rather
+        # than rejecting it, leaving a point that no vector search can ever return.
+        return "embeddings" in element_dict
+
     def conform_dict(self, element_dict: dict, file_data: FileData) -> dict:
         """Prepares dictionary in the format that Chroma requires"""
         data = element_dict.copy()

@@ -1,3 +1,9 @@
+## [1.9.3]
+
+### Fixes
+
+- **fix(qdrant, chroma, astradb): skip elements that have no embedding.** Elements with empty text are not embedded, and each of these destinations failed differently on them: Chroma rejected the entire batch, Astra DB raised an error asking the user to configure an embedding provider they already had, and Qdrant stored a point with no vector that search can never return. All three now drop those elements before upload, matching Milvus and Pinecone. Astra DB keeps them when it is configured to generate the vectors itself, and Weaviate is unchanged, since both treat a missing vector as a request to vectorize server-side.
+
 ## [1.9.2]
 
 ### Fixes

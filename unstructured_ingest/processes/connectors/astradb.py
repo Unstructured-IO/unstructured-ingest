@@ -343,6 +343,14 @@ class AstraDBUploadStager(UploadStager):
             metadata["original_elements"] = format_and_truncate_orig_elements(element_dict)
             metadata.pop("orig_elements", None)
 
+    def should_include(self, element_dict: dict) -> bool:
+        # Elements with empty text are skipped by the embedder and arrive without an
+        # "embeddings" key. When Astra generates the vectors it works from the content
+        # instead, so only drop the element when we are the ones supplying the vector.
+        if self.upload_stager_config.astra_generated_embeddings:
+            return True
+        return "embeddings" in element_dict
+
     def conform_dict(self, element_dict: dict, file_data: FileData) -> dict:
         self.truncate_dict_elements(element_dict)
         if self.upload_stager_config.flatten_metadata:
