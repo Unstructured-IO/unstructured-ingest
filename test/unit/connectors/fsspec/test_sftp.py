@@ -470,7 +470,9 @@ class TestGetClientHostKeyMismatch:
 
         message = str(excinfo.value)
         assert "public keys do not match" in message
-        assert "sftp.example.com" in message
+        assert str(excinfo.value) == (
+            "SFTP host key verification failed for sftp.example.com: public keys do not match"
+        )
         # Neither the presented nor the expected key may appear.
         assert presented.get_base64() not in message
         assert expected.get_base64() not in message
