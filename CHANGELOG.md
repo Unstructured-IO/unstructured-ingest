@@ -4,6 +4,18 @@
 
 - **feat: annotate connectors with location capability markers.** `RegistryEntry` now carries opt-in capability markers (`location_shape`, `location_identity`, `supports_recursion`, and `emits_record_version`) plus per-field `x-runtime-eligible` schema hints, so consumers can identify a connector's target location shape, the settings paths that identify that location, and its recursion/record-version semantics. Markers default to unannotated (`location_shape=None`) so a connector without them is never mistaken for an explicit declaration and consumers fall back to their existing defaults. Markers are applied across the fsspec, SQL, search-index, and API-folder connector families.
 
+## [1.9.3]
+
+### Fixes
+
+- **fix(qdrant, chroma, astradb): skip elements the embedder left without an embedding.** Elements with empty text are not embedded, and each of these destinations failed differently on them: Chroma rejected the entire batch, Astra DB raised an error asking the user to configure an embedding provider they already had, and Qdrant stored a point with no vector that search can never return. All three now drop those elements during staging. An element that has text but no embedding is kept, since that means no embedder ran at all and each destination's existing error should still surface rather than a workflow silently uploading nothing. Astra DB drops nothing when configured to generate the vectors itself, and Weaviate is unchanged, since both treat a missing vector as a request to vectorize server-side.
+
+## [1.9.2]
+
+### Fixes
+
+- **fix(sftp): cap `paramiko<5` so `ssh-rsa` host-key pinning keeps working.** The SFTP connector accepts `ssh-ed25519` and `ssh-rsa` in `host_public_key`, but `paramiko` 5.0.0 removed `ssh-rsa` from its default host-key algorithms. Against a server that presents an `ssh-rsa` host key, an otherwise correct pinned key would pass config validation and then fail at connect with `Incompatible ssh peer (no acceptable host key)`. The `sftp` extra declared `paramiko` unbounded, so a routine dependency resolution could pick up 5.x and break pinning.
+
 ## [1.9.1]
 
 ### Fixes

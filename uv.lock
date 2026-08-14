@@ -7446,7 +7446,7 @@ requires-dist = [
     { name = "pandas", marker = "extra == 'snowflake'" },
     { name = "pandas", marker = "extra == 'teradata'" },
     { name = "pandas", marker = "extra == 'vastdb'" },
-    { name = "paramiko", marker = "extra == 'sftp'" },
+    { name = "paramiko", marker = "extra == 'sftp'", specifier = "<5" },
     { name = "pinecone", marker = "extra == 'pinecone'" },
     { name = "praw", marker = "extra == 'reddit'" },
     { name = "psycopg2-binary", marker = "extra == 'postgres'" },
