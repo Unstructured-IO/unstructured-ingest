@@ -31,12 +31,15 @@ class DataSanitizer:
 
     @staticmethod
     def sanitize_url(url: str) -> str:
-        """Sanitize URLs for logging, removing sensitive query parameters."""
+        """Sanitize URLs for logging, removing credentials and query parameters."""
         if not url:
             return "<url>"
         try:
             parsed = urlparse(url)
-            return f"{parsed.scheme}://{parsed.netloc}{parsed.path}"
+            netloc = parsed.netloc
+            if "@" in netloc:
+                netloc = f"***@{netloc.rsplit('@', 1)[1]}"
+            return f"{parsed.scheme}://{netloc}{parsed.path}"
         except (ValueError, TypeError):
             return "<url>"
 
