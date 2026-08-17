@@ -804,6 +804,18 @@ class TestGraphGet:
         assert mock_get.call_args[0][0] == "https://graph.microsoft.com/v1.0/next-page"
         assert "Prefer" not in mock_get.call_args.kwargs["headers"]
 
+    def test_network_error_becomes_retriable_connection_error(self):
+        # A raw requests network error/timeout must not escape uncaught (which would abort
+        # an in-flight multi-channel crawl); it is a retriable typed connection error.
+        import requests
+
+        indexer = _make_team_indexer()
+        with (
+            patch("requests.get", side_effect=requests.exceptions.ConnectionError("boom")),
+            pytest.raises(SourceConnectionNetworkError),
+        ):
+            indexer._graph_get("tok", "/teams/x/channels")
+
 
 class TestListChannels:
     def test_sends_prefer_header_and_paginates(self):
@@ -863,11 +875,59 @@ class TestChannelFilesFolder:
         ):
             assert indexer._get_channel_files_folder_sync("tok", "c1", "General") is None
 
-    def test_403_is_skipped_not_raised(self):
-        # A single forbidden (e.g. cross-tenant shared) channel must not abort the crawl.
+    def test_403_shared_channel_is_skipped(self):
+        # A forbidden *shared* channel can legitimately be cross-tenant → skip, don't abort.
         indexer = _make_team_indexer()
         with patch.object(indexer, "_graph_get", return_value=_graph_response(403)):
-            assert indexer._get_channel_files_folder_sync("tok", "c1", "Shared") is None
+            assert (
+                indexer._get_channel_files_folder_sync(
+                    "tok", "c1", "Shared", membership_type="shared"
+                )
+                is None
+            )
+
+    def test_403_standard_channel_raises_auth_error(self):
+        # A 403 on a standard/private channel means a real scope gap (e.g. missing
+        # Sites.Read.All). It must surface, not silently produce an empty crawl.
+        indexer = _make_team_indexer()
+        with (
+            patch.object(indexer, "_graph_get", return_value=_graph_response(403, text="denied")),
+            pytest.raises(UserAuthError, match="Sites.Read.All"),
+        ):
+            indexer._get_channel_files_folder_sync(
+                "tok", "c1", "General", membership_type="standard"
+            )
+
+    def test_403_unknown_membership_raises_auth_error(self):
+        # No membership type given → treat conservatively (not a known-safe shared channel).
+        indexer = _make_team_indexer()
+        with (
+            patch.object(indexer, "_graph_get", return_value=_graph_response(401)),
+            pytest.raises(UserAuthError),
+        ):
+            indexer._get_channel_files_folder_sync("tok", "c1", "General")
+
+    def test_429_raises_rate_limit(self):
+        # Throttling must be retriable (consistent with channel enumeration), not a
+        # permanent per-channel skip that loses all of that channel's files.
+        indexer = _make_team_indexer()
+        with (
+            patch.object(indexer, "_graph_get", return_value=_graph_response(429)),
+            pytest.raises(RateLimitError),
+        ):
+            indexer._get_channel_files_folder_sync(
+                "tok", "c1", "General", membership_type="standard"
+            )
+
+    def test_5xx_raises_connection_error(self):
+        indexer = _make_team_indexer()
+        with (
+            patch.object(indexer, "_graph_get", return_value=_graph_response(503)),
+            pytest.raises(SourceConnectionNetworkError),
+        ):
+            indexer._get_channel_files_folder_sync(
+                "tok", "c1", "General", membership_type="private"
+            )
 
     def test_missing_drive_id_is_skipped(self):
         indexer = _make_team_indexer()
@@ -917,7 +977,7 @@ class TestRunAsyncTeamMode:
             {"id": "chB", "displayName": "Private", "membershipType": "private"},
         ]
 
-        def _files_folder(access_token, channel_id, channel_name):
+        def _files_folder(access_token, channel_id, channel_name, membership_type=None):
             # chA resolves; chB is not provisioned -> skip
             return {"drive_id": "d1", "item_id": "root1"} if channel_id == "chA" else None
 
@@ -940,6 +1000,14 @@ class TestRunAsyncTeamMode:
 
         # Only chA's two files; chB skipped because its files folder isn't provisioned.
         assert [r.identifier for r in results] == ["f1", "f2"]
+
+        # Pin the cross-site addressing: the provisioned channel's *own* resolved
+        # drive_id/item_id must be used. With a bare MagicMock, client.drives[x].items[y]
+        # returns the same chain for any x/y, so without these asserts the test would pass
+        # even if _run_team_async ignored the channel's drive — the core private/shared
+        # channel behavior this PR adds.
+        client.drives.__getitem__.assert_called_once_with("d1")
+        client.drives.__getitem__.return_value.items.__getitem__.assert_called_once_with("root1")
 
     def test_run_async_rejects_both_targets(self):
         indexer = _make_team_indexer(
@@ -1003,6 +1071,69 @@ class TestDownloaderDriveIdResolution:
         with pytest.raises(NotFoundError) as exc_info:
             downloader._fetch_file(self._file_data_with_drive_ref())
         assert exc_info.value.status_code == 404
+
+    def test_drive_id_403_maps_to_user_auth_error(self, mock_download_config):
+        # 403 through the new drive-id branch must surface the real status (not a masked
+        # SourceConnectionError) and must not retry — auth misconfig isn't transient.
+        client = MagicMock()
+        execute_query = (
+            client.drives.__getitem__.return_value.items.__getitem__.return_value.get.return_value.execute_query
+        )
+        execute_query.side_effect = _client_request_exception(403)
+        downloader = self._downloader_with_client(client, mock_download_config)
+
+        with pytest.raises(UserAuthError) as exc_info:
+            downloader._fetch_file(self._file_data_with_drive_ref())
+        assert exc_info.value.status_code == 403
+        assert execute_query.call_count == 1
+
+    def test_drive_id_429_retries_then_raises_rate_limit(self, mock_download_config):
+        # A throttle through the drive-id branch must retry up to max_retries and then
+        # surface RateLimitError (429), matching the site-path branch's behavior.
+        client = MagicMock()
+        execute_query = (
+            client.drives.__getitem__.return_value.items.__getitem__.return_value.get.return_value.execute_query
+        )
+        execute_query.side_effect = _client_request_exception(429)
+        downloader = self._downloader_with_client(client, mock_download_config)
+
+        with pytest.raises(RateLimitError) as exc_info:
+            downloader._fetch_file(self._file_data_with_drive_ref())
+        assert exc_info.value.status_code == 429
+        assert execute_query.call_count == mock_download_config.max_retries
+
+    def test_legacy_fallback_resolves_via_site_and_path(self, mock_download_config):
+        # FileData indexed before drive_id was captured (no drive_id in record_locator)
+        # must still resolve via the configured site + server-relative path.
+        client = MagicMock()
+        mock_site = Mock()
+        mock_drive_item = Mock()
+        mock_file = Mock()
+        client.sites.get_by_url.return_value.get.return_value.execute_query.return_value = mock_site
+        mock_drive_item.get_by_path.return_value.get.return_value.execute_query.return_value = (
+            mock_file
+        )
+        conn = Mock(spec=SharepointConnectionConfig)
+        conn.site = "https://test.sharepoint.com/sites/test"
+        conn.get_client.return_value = client
+        conn._get_drive_item.return_value = mock_drive_item
+        downloader = SharepointDownloader(
+            connection_config=conn, download_config=mock_download_config
+        )
+        fd = FileData(
+            source_identifiers=SourceIdentifiers(
+                filename="f.docx", fullpath="/sites/test/Shared Documents/f.docx"
+            ),
+            connector_type="sharepoint",
+            identifier="i1",
+        )  # no drive_id in record_locator -> legacy site+path fallback
+
+        result = downloader._fetch_file(fd)
+
+        assert result is mock_file
+        mock_drive_item.get_by_path.assert_called_with("/sites/test/Shared Documents/f.docx")
+        # The drive-id branch must not be used when no drive ref is present.
+        client.drives.__getitem__.assert_not_called()
 
 
 # ---------------------------------------------------------------------------

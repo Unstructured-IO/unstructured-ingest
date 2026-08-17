@@ -513,8 +513,13 @@ class SharepointIndexer(OnedriveIndexer):
         for channel in channels:
             channel_id = channel.get("id")
             channel_name = channel.get("displayName") or channel_id
+            membership_type = channel.get("membershipType")
             files_folder = await asyncio.to_thread(
-                self._get_channel_files_folder_sync, access_token, channel_id, channel_name
+                self._get_channel_files_folder_sync,
+                access_token,
+                channel_id,
+                channel_name,
+                membership_type,
             )
             if not files_folder:
                 # Not provisioned / unreachable — best-effort skip, never abort the crawl.
@@ -565,7 +570,16 @@ class SharepointIndexer(OnedriveIndexer):
         if prefer:
             headers["Prefer"] = prefer
         full_url = url if url.startswith("http") else f"{GRAPH_BASE_URL}{url}"
-        return requests.get(full_url, headers=headers, timeout=60)
+        try:
+            return requests.get(full_url, headers=headers, timeout=60)
+        except requests.exceptions.RequestException as exc:
+            # A transient network error / timeout is retriable — surface it as a typed
+            # connection error so the run is retried, rather than letting a raw requests
+            # exception abort the whole crawl (e.g. partway through a multi-channel Teams
+            # walk). Applies to both channel enumeration and filesFolder resolution.
+            raise SourceConnectionNetworkError(
+                f"network error calling Microsoft Graph ({url}): {safe_error_summary(exc)}"
+            ) from exc
 
     def _list_channels_sync(self, access_token: str) -> list[dict]:
         """Enumerate a team's channels via Graph (paginated), sending the Prefer header so
@@ -597,14 +611,24 @@ class SharepointIndexer(OnedriveIndexer):
         return channels
 
     def _get_channel_files_folder_sync(
-        self, access_token: str, channel_id: str, channel_name: str
+        self,
+        access_token: str,
+        channel_id: str,
+        channel_name: str,
+        membership_type: Optional[str] = None,
     ) -> Optional[dict]:
         """Resolve a channel's files folder to its {drive_id, item_id}.
 
-        Returns None (skip the channel) when the folder isn't reachable — most importantly
-        the on-demand-provisioning 404 ("Folder location for this channel is not ready yet"),
-        which fires until the channel's Files tab is first opened, and cross-tenant/forbidden
-        shared channels. A single bad channel must never abort the whole team crawl.
+        Returns None (skip the channel) only for benign, per-channel conditions: the
+        on-demand-provisioning 404 ("Folder location for this channel is not ready yet",
+        which fires until the channel's Files tab is first opened) and a forbidden *shared*
+        channel (which can legitimately live in an external tenant we can't reach).
+
+        A 401/403 on a standard/private channel is NOT skipped: it signals a real permission
+        gap (e.g. the app is missing Sites.Read.All), which must surface as UserAuthError
+        rather than silently yielding an empty crawl. Throttling (429) and upstream 5xx are
+        raised as retriable typed errors so the run is retried instead of permanently dropping
+        the channel's files.
         """
         team_id = self.index_config.team_id
         resp = self._graph_get(
@@ -617,11 +641,29 @@ class SharepointIndexer(OnedriveIndexer):
             )
             return None
         if resp.status_code in (401, 403):
-            logger.warning(
-                f"access forbidden to files folder for channel '{channel_name}' "
-                f"(may be a cross-tenant shared channel); skipping"
+            # Only a shared channel can legitimately be cross-tenant/unreachable. A 403 on a
+            # standard or private channel means we lack the SharePoint scope, so fail loudly
+            # instead of masking it as a skip that produces zero files.
+            if (membership_type or "").lower() == "shared":
+                logger.warning(
+                    f"access forbidden to files folder for shared channel '{channel_name}' "
+                    f"(may be a cross-tenant shared channel); skipping"
+                )
+                return None
+            raise UserAuthError(
+                f"[HTTP {resp.status_code}] Access forbidden resolving the files folder for "
+                f"channel '{channel_name}'. The app registration needs Sites.Read.All (and "
+                f"Files.Read.All) to read Teams channel files: {_truncate_body(resp.text)}"
             )
-            return None
+        if resp.status_code == 429:
+            raise RateLimitError(
+                f"Rate limited resolving files folder for channel '{channel_name}'"
+            )
+        if resp.status_code >= 500:
+            raise SourceConnectionNetworkError(
+                f"[HTTP {resp.status_code}] Upstream SharePoint error resolving files folder "
+                f"for channel '{channel_name}'"
+            )
         if resp.status_code >= 400:
             logger.warning(
                 f"failed to resolve files folder for channel '{channel_name}' "
