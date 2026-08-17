@@ -53,6 +53,22 @@ GRAPH_BASE_URL = "https://graph.microsoft.com/v1.0"
 # (The channel is still enumerated/walkable, but its type is opaque without the header.)
 _CHANNELS_PREFER_HEADER = "include-unknown-enum-members"
 
+# Microsoft collaborative-artifact formats stored in SharePoint/OneDrive as Fluid
+# Framework / binary containers: Loop components (.loop), legacy Fluid preview files
+# (.fluid), and Whiteboard (.whiteboard). Their human-readable content lives server-side
+# in the Loop/Fluid/Whiteboard service, not in the downloaded file bytes, so they can
+# never be partitioned and must never be downloaded. Matched case-insensitively by suffix.
+NON_INGESTIBLE_EXTENSIONS: tuple[str, ...] = (".loop", ".fluid", ".whiteboard")
+
+
+def _is_non_ingestible_artifact(name: Optional[str]) -> bool:
+    """True when ``name`` is a Microsoft collaborative-artifact container (Loop / Fluid /
+    Whiteboard). These are opaque Fluid containers with no extractable file content, so
+    they are excluded at index time — never downloaded, never partitioned. The
+    ``isinstance`` guard keeps a non-string (e.g. a test Mock's auto ``.name``) from
+    matching."""
+    return isinstance(name, str) and name.lower().endswith(NON_INGESTIBLE_EXTENSIONS)
+
 
 class SharepointAccessConfig(OnedriveAccessConfig):
     pass
@@ -410,9 +426,20 @@ class SharepointIndexer(OnedriveIndexer):
     async def _emit_drive_items(
         self, drive_items: "list[DriveItem]", access_token: str
     ) -> AsyncIterator[FileData]:
-        """Batch drive items into permission-fetch chunks and yield FileData for each."""
+        """Batch drive items into permission-fetch chunks and yield FileData for each.
+
+        Non-ingestible collaborative artifacts (Loop / Fluid / Whiteboard containers) are
+        dropped here — the single chokepoint shared by the site and Teams crawls — so they
+        are never permission-fetched, downloaded, or partitioned.
+        """
         chunk: list[DriveItem] = []
         for drive_item in drive_items:
+            if _is_non_ingestible_artifact(getattr(drive_item, "name", None)):
+                logger.debug(
+                    "skipping non-ingestible collaborative artifact (never downloaded): %s",
+                    getattr(drive_item, "name", None),
+                )
+                continue
             chunk.append(drive_item)
             if len(chunk) >= PERMISSIONS_BATCH_SIZE:
                 async for fd in self._emit_chunk(chunk, access_token):

@@ -16,12 +16,14 @@ from unstructured_ingest.error import (
 )
 from unstructured_ingest.processes.connectors.onedrive import OnedriveIndexer
 from unstructured_ingest.processes.connectors.sharepoint import (
+    NON_INGESTIBLE_EXTENSIONS,
     SharepointAccessConfig,
     SharepointConnectionConfig,
     SharepointDownloader,
     SharepointDownloaderConfig,
     SharepointIndexer,
     SharepointIndexerConfig,
+    _is_non_ingestible_artifact,
 )
 
 
@@ -1001,3 +1003,142 @@ class TestDownloaderDriveIdResolution:
         with pytest.raises(NotFoundError) as exc_info:
             downloader._fetch_file(self._file_data_with_drive_ref())
         assert exc_info.value.status_code == 404
+
+
+# ---------------------------------------------------------------------------
+# Non-ingestible collaborative artifacts (Loop / Fluid / Whiteboard)
+# ---------------------------------------------------------------------------
+
+
+class TestNonIngestibleArtifactPredicate:
+    def test_constant_is_the_fluid_family(self):
+        assert NON_INGESTIBLE_EXTENSIONS == (".loop", ".fluid", ".whiteboard")
+
+    @pytest.mark.parametrize(
+        "name",
+        [
+            "notes.loop",
+            "legacy.fluid",
+            "board.whiteboard",
+            "NOTES.LOOP",
+            "Legacy.Fluid",
+            "Board.WhiteBoard",
+        ],
+    )
+    def test_matches_artifacts_case_insensitively(self, name):
+        assert _is_non_ingestible_artifact(name) is True
+
+    @pytest.mark.parametrize(
+        "name",
+        [
+            "report.pdf",
+            "data.docx",
+            "notes.txt",
+            "report.loop.pdf",  # only the final suffix counts
+            "loopy.pptx",
+            "loop",  # bare word, no extension
+            "",
+        ],
+    )
+    def test_rejects_normal_files(self, name):
+        assert _is_non_ingestible_artifact(name) is False
+
+    def test_non_string_is_false(self):
+        # Guards against a test/mock object whose truthy auto-attribute would otherwise
+        # match and silently drop a real drive item.
+        assert _is_non_ingestible_artifact(None) is False
+        assert _is_non_ingestible_artifact(Mock()) is False
+
+
+class TestNonIngestibleArtifactFiltering:
+    """Both the site and Teams crawls must drop Loop/Fluid/Whiteboard artifacts before
+    they are permission-fetched or downloaded (shared `_emit_drive_items` chokepoint)."""
+
+    @staticmethod
+    def _named_item(name: str) -> Mock:
+        di = Mock()
+        di.id = name
+        di.name = name
+        return di
+
+    @staticmethod
+    def _perms_for_chunk(chunk, access_token):
+        return {di.id: None for di in chunk}
+
+    def test_team_mode_skips_loop_fluid_whiteboard(self):
+        indexer = _make_team_indexer(team_id="team-1")
+        client = MagicMock()
+        indexer.connection_config.get_client.return_value = client
+
+        items = [
+            self._named_item("doc.pdf"),
+            self._named_item("notes.loop"),
+            self._named_item("legacy.fluid"),
+            self._named_item("board.whiteboard"),
+            self._named_item("sheet.xlsx"),
+        ]
+        (
+            client.drives.__getitem__.return_value.items.__getitem__.return_value.get_files.return_value.execute_query.return_value
+        ) = items
+
+        channels = [{"id": "chA", "displayName": "General", "membershipType": "standard"}]
+
+        async def _capture(drive_item, raw_permissions=None):
+            return FileData(
+                source_identifiers=SourceIdentifiers(
+                    filename=drive_item.id, fullpath=drive_item.id
+                ),
+                connector_type="sharepoint",
+                identifier=drive_item.id,
+            )
+
+        with (
+            patch.object(indexer, "_list_channels_sync", return_value=channels),
+            patch.object(
+                indexer,
+                "_get_channel_files_folder_sync",
+                return_value={"drive_id": "d1", "item_id": "root1"},
+            ),
+            patch.object(indexer, "_fetch_permissions_raw", side_effect=self._perms_for_chunk),
+            patch.object(indexer, "drive_item_to_file_data", new=AsyncMock(side_effect=_capture)),
+        ):
+            results = _drain_run_async(indexer)
+
+        assert [r.identifier for r in results] == ["doc.pdf", "sheet.xlsx"]
+
+    def test_site_mode_skips_loop_fluid_whiteboard(self):
+        conn = Mock(spec=SharepointConnectionConfig)
+        conn.site = "https://test.sharepoint.com/sites/test"
+        conn.get_token.return_value = {"access_token": "tok"}
+        conn.get_client.return_value = Mock()
+        conn._get_drive_item.return_value = Mock()
+
+        idx_config = Mock(spec=SharepointIndexerConfig)
+        idx_config.path = ""
+        idx_config.recursive = False
+        idx_config.team_id = None
+
+        indexer = SharepointIndexer(connection_config=conn, index_config=idx_config)
+
+        items = [
+            self._named_item("doc.pdf"),
+            self._named_item("notes.loop"),
+            self._named_item("legacy.fluid"),
+            self._named_item("board.whiteboard"),
+        ]
+
+        captured: list = []
+
+        async def _capture(drive_item, raw_permissions=None):
+            captured.append(drive_item.id)
+            return Mock()
+
+        with (
+            patch.object(SharepointIndexer, "_get_target_drive_item") as mock_target,
+            patch.object(indexer, "_fetch_permissions_raw", side_effect=self._perms_for_chunk),
+            patch.object(indexer, "drive_item_to_file_data", new=AsyncMock(side_effect=_capture)),
+        ):
+            mock_target.return_value.get_files.return_value.execute_query.return_value = items
+            _drain_run_async(indexer)
+
+        assert captured == ["doc.pdf"]
