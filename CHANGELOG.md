@@ -1,4 +1,4 @@
-## [1.9.3]
+## [1.9.4]
 
 ### Fixes
 
@@ -9,6 +9,12 @@
 - **fix(sftp): `SftpDownloader.connector_type` was a pydantic `FieldInfo`, not a string.** The dataclass assigned `Field(default=CONNECTOR_TYPE, init=False)` where its siblings use a bare literal, so the `FieldInfo` object became the default value. With no explicit `download_dir`, building the default download path raised `TypeError: unsupported operand type(s) for /: 'PosixPath' and 'FieldInfo'`. No other fsspec downloader was affected.
 
 - **fix(logging): strip credentials from URLs written to logs.** `DataSanitizer.sanitize_url` dropped query parameters but returned `netloc` verbatim, and userinfo (`user:password@`) lives in `netloc`. An fsspec-style `remote_url` carrying credentials therefore reached connector error logs in the clear through `log_connection_failed`. The userinfo is now replaced with `***`; it is dropped whole rather than masking only the password, since schemes like `https://<token>@host` carry the secret in the username.
+
+## [1.9.3]
+
+### Fixes
+
+- **fix(qdrant, chroma, astradb): skip elements the embedder left without an embedding.** Elements with empty text are not embedded, and each of these destinations failed differently on them: Chroma rejected the entire batch, Astra DB raised an error asking the user to configure an embedding provider they already had, and Qdrant stored a point with no vector that search can never return. All three now drop those elements during staging. An element that has text but no embedding is kept, since that means no embedder ran at all and each destination's existing error should still surface rather than a workflow silently uploading nothing. Astra DB drops nothing when configured to generate the vectors itself, and Weaviate is unchanged, since both treat a missing vector as a request to vectorize server-side.
 
 ## [1.9.2]
 
