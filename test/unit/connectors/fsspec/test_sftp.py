@@ -11,9 +11,13 @@ from unittest import mock
 
 import pytest
 
+from unstructured_ingest.error import ConnectionError as IngestConnectionError
+from unstructured_ingest.error import UserAuthError
 from unstructured_ingest.processes.connectors.fsspec.sftp import (
     SftpAccessConfig,
     SftpConnectionConfig,
+    SftpDownloader,
+    SftpDownloaderConfig,
     SftpUploader,
     _build_host_key,
     parse_host_public_key,
@@ -40,9 +44,7 @@ def sftp_uploader(mock_sftp_client):
     uploader.connection_config.get_client.return_value.__enter__ = mock.MagicMock(
         return_value=mock_sftp_client
     )
-    uploader.connection_config.get_client.return_value.__exit__ = mock.MagicMock(
-        return_value=False
-    )
+    uploader.connection_config.get_client.return_value.__exit__ = mock.MagicMock(return_value=False)
 
     # Mock upload config
     uploader.upload_config = mock.MagicMock()
@@ -319,6 +321,22 @@ class TestHostPublicKeyValidator:
         assert "host_public_key" not in cfg.get_access_config()
 
 
+class TestSftpDownloaderConnectorType:
+    """connector_type must be the literal string, not a pydantic FieldInfo.
+
+    It feeds the default download path (`.../download/<connector_type>`), so a
+    FieldInfo there raises `TypeError` on `PosixPath / FieldInfo`.
+    """
+
+    def test_default_download_dir_builds(self):
+        downloader = SftpDownloader(
+            connection_config=_make_connection_config(),
+            download_config=SftpDownloaderConfig(remote_url="sftp://host/dir"),
+        )
+        assert downloader.connector_type == "sftp"
+        assert downloader.download_dir.name == "sftp"
+
+
 # --- get_client fakes ------------------------------------------------------
 
 
@@ -376,9 +394,7 @@ class TestGetClientUnpinned:
 
         pytest.importorskip("paramiko")
         pytest.importorskip("fsspec")
-        monkeypatch.setattr(
-            "fsspec.get_filesystem_class", lambda protocol: _FakeSFTPFileSystem
-        )
+        monkeypatch.setattr("fsspec.get_filesystem_class", lambda protocol: _FakeSFTPFileSystem)
         cfg = _make_connection_config(host_public_key=None)
 
         with (
@@ -397,9 +413,7 @@ class TestGetClientPinned:
     def _run(self, monkeypatch, host_public_key, host, port):
         paramiko = pytest.importorskip("paramiko")
         pytest.importorskip("fsspec")
-        monkeypatch.setattr(
-            "fsspec.get_filesystem_class", lambda protocol: _FakeSFTPFileSystem
-        )
+        monkeypatch.setattr("fsspec.get_filesystem_class", lambda protocol: _FakeSFTPFileSystem)
         created = []
 
         def _factory():
@@ -439,3 +453,132 @@ class TestGetClientPinned:
         entry_name, key_type, _ = ssh_client._host_keys.added[0]
         assert key_type == "ssh-rsa"
         assert entry_name == "sftp.example.com"  # no brackets for port 22
+
+    def test_offers_only_the_pinned_key_family(self, monkeypatch):
+        # An "ssh-rsa" key format serves three signature algorithms; a server that
+        # dropped SHA-1 offers only the rsa-sha2-* pair. Without constraining
+        # negotiation, paramiko falls through to an entirely different key type.
+        _, ssh_client, _ = self._run(monkeypatch, RSA_LINE, "sftp.example.com", 22)
+        disabled = ssh_client.connected_with[1]["disabled_algorithms"]["keys"]
+        assert "rsa-sha2-512" not in disabled
+        assert "rsa-sha2-256" not in disabled
+        assert "ecdsa-sha2-nistp256" in disabled
+        assert "ssh-ed25519" in disabled
+
+
+class TestGetClientHostKeyMismatch:
+    """A mismatch must not echo either key back into logs."""
+
+    def test_raises_clean_error_without_key_material(self, monkeypatch):
+        paramiko = pytest.importorskip("paramiko")
+        pytest.importorskip("fsspec")
+        monkeypatch.setattr("fsspec.get_filesystem_class", lambda protocol: _FakeSFTPFileSystem)
+
+        presented = _build_host_key(*parse_host_public_key(ED25519_BLOB))
+        expected = _build_host_key(*parse_host_public_key(RSA_BLOB))
+
+        class _MismatchingSSHClient(_FakeSSHClient):
+            def connect(self, host, **kwargs):
+                raise paramiko.BadHostKeyException(host, presented, expected)
+
+        monkeypatch.setattr(paramiko, "SSHClient", _MismatchingSSHClient)
+        cfg = _make_connection_config(host_public_key=RSA_LINE, host="sftp.example.com", port=22)
+
+        with pytest.raises(UserAuthError) as excinfo, cfg.get_client(protocol="sftp"):
+            pass
+
+        message = str(excinfo.value)
+        assert "public keys do not match" in message
+        assert str(excinfo.value) == (
+            "SFTP host key verification failed for sftp.example.com: public keys do not match"
+        )
+        # Neither the presented nor the expected key may appear.
+        assert presented.get_base64() not in message
+        assert expected.get_base64() not in message
+        # `from None` keeps paramiko's verbose original out of the chained traceback.
+        assert excinfo.value.__cause__ is None
+
+
+class TestGetClientNoAcceptableHostKey:
+    """A server offering nothing in the pinned family must also fail cleanly.
+
+    Restricting `disabled_algorithms` means this path raises paramiko's
+    IncompatiblePeer, not BadHostKeyException.
+    """
+
+    def test_raises_clean_error(self, monkeypatch):
+        paramiko = pytest.importorskip("paramiko")
+        pytest.importorskip("fsspec")
+        monkeypatch.setattr("fsspec.get_filesystem_class", lambda protocol: _FakeSFTPFileSystem)
+
+        class _IncompatibleSSHClient(_FakeSSHClient):
+            def connect(self, host, **kwargs):
+                raise paramiko.IncompatiblePeer("Incompatible ssh peer (no acceptable host key)")
+
+        monkeypatch.setattr(paramiko, "SSHClient", _IncompatibleSSHClient)
+        # Pin ed25519 against a server that only offers RSA/ECDSA.
+        cfg = _make_connection_config(
+            host_public_key=ED25519_LINE, host="sftp.example.com", port=22
+        )
+
+        with pytest.raises(UserAuthError) as excinfo, cfg.get_client(protocol="sftp"):
+            pass
+
+        message = str(excinfo.value)
+        assert "IncompatiblePeer" in message
+        assert "publishes a ssh-ed25519 host key" in message
+        # paramiko's own free text is not echoed; only the allowlisted summary.
+        assert "no acceptable host key" not in message
+        assert excinfo.value.__cause__ is None
+
+
+class TestGetClientGenericSSHException:
+    """Any other paramiko failure is redacted too, not just the three named ones.
+
+    `SSHException("No authentication methods available")` is raised bare from
+    client.py `_auth`, whose frame holds the password as a local.
+    """
+
+    def test_raises_without_paramiko_text_or_frames(self, monkeypatch):
+        paramiko = pytest.importorskip("paramiko")
+        pytest.importorskip("fsspec")
+        monkeypatch.setattr("fsspec.get_filesystem_class", lambda protocol: _FakeSFTPFileSystem)
+
+        class _FailingSSHClient(_FakeSSHClient):
+            def connect(self, host, **kwargs):
+                raise paramiko.SSHException("No authentication methods available")
+
+        monkeypatch.setattr(paramiko, "SSHClient", _FailingSSHClient)
+        cfg = _make_connection_config(host_public_key=RSA_LINE, host="sftp.example.com", port=22)
+
+        with pytest.raises(IngestConnectionError) as excinfo, cfg.get_client(protocol="sftp"):
+            pass
+
+        message = str(excinfo.value)
+        assert "SFTP connection to sftp.example.com failed: SSHException" in message
+        assert "No authentication methods available" not in message
+        assert excinfo.value.__cause__ is None
+
+
+class TestGetClientAuthenticationFailure:
+    """Bad credentials surface as a clean UserAuthError."""
+
+    def test_raises_clean_error(self, monkeypatch):
+        paramiko = pytest.importorskip("paramiko")
+        pytest.importorskip("fsspec")
+        monkeypatch.setattr("fsspec.get_filesystem_class", lambda protocol: _FakeSFTPFileSystem)
+
+        class _RejectingSSHClient(_FakeSSHClient):
+            def connect(self, host, **kwargs):
+                raise paramiko.AuthenticationException("Authentication failed.")
+
+        monkeypatch.setattr(paramiko, "SSHClient", _RejectingSSHClient)
+        cfg = _make_connection_config(host_public_key=RSA_LINE, host="sftp.example.com", port=22)
+
+        with pytest.raises(UserAuthError) as excinfo, cfg.get_client(protocol="sftp"):
+            pass
+
+        assert "did not accept the configured credentials" in str(excinfo.value)
+        # `from None` keeps paramiko's frames -- which hold the password as a local
+        # in client.py `_auth` -- out of the chained traceback.
+        assert excinfo.value.__cause__ is None

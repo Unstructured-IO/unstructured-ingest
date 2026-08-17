@@ -15,6 +15,7 @@ from urllib.parse import urlparse
 from pydantic import Field, Secret, model_validator
 
 from unstructured_ingest.data_types.file_data import FileData, FileDataSourceMetadata
+from unstructured_ingest.error import ConnectionError, UserAuthError, safe_error_summary
 from unstructured_ingest.logger import logger
 from unstructured_ingest.processes.connector_registry import (
     DestinationRegistryEntry,
@@ -50,6 +51,14 @@ def _strip_leading_slash(path: str) -> str:
 
 # Host key types supported for server host-key verification.
 SUPPORTED_HOST_KEY_TYPES: tuple[str, ...] = ("ssh-ed25519", "ssh-rsa")
+# Signature algorithms to offer for a given pinned key format. Only RSA splits the
+# two apart: a single "ssh-rsa" key format serves three signature algorithms
+# (RFC 8332), and a server that has dropped SHA-1 offers only the rsa-sha2-* pair.
+# Every other type names its algorithm identically to its key format.
+_HOST_KEY_ALGORITHMS: dict[str, tuple[str, ...]] = {
+    "ssh-rsa": ("rsa-sha2-512", "rsa-sha2-256", "ssh-rsa"),
+    "ssh-ed25519": ("ssh-ed25519",),
+}
 
 
 def _extract_ssh_key_type(raw: bytes) -> str:
@@ -229,7 +238,8 @@ class SftpConnectionConfig(FsspecConnectionConfig):
             "Server host public key used to verify the server's identity. Accepts a "
             "base64 blob (e.g. 'AAAAC3Nza...'), an OpenSSH '.pub' line, or an "
             "ssh-keyscan/known_hosts line; the key type (ssh-ed25519 / ssh-rsa) is "
-            "auto-detected from the key. When omitted, the server identity is NOT "
+            "auto-detected from the key. Negotiation is constrained to the pinned "
+            "key's algorithm family. When omitted, the server identity is NOT "
             "verified and a warning is logged."
         ),
     )
@@ -304,7 +314,32 @@ class SftpConnectionConfig(FsspecConnectionConfig):
                 ssh_client.get_host_keys().add(entry_name, key_type, host_key)
                 # Reject (never auto-add) an unknown or mismatched server key.
                 ssh_client.set_missing_host_key_policy(paramiko.RejectPolicy())
-                ssh_client.connect(self.host, **self.ssh_kwargs)
+                allowed = _HOST_KEY_ALGORITHMS[key_type]
+                disabled = [alg for alg in paramiko.Transport._preferred_keys if alg not in allowed]
+                try:
+                    ssh_client.connect(
+                        self.host, disabled_algorithms={"keys": disabled}, **self.ssh_kwargs
+                    )
+                except paramiko.BadHostKeyException:
+                    raise UserAuthError(
+                        f"SFTP host key verification failed for {self.host}: "
+                        "public keys do not match"
+                    ) from None
+                except paramiko.AuthenticationException:
+                    raise UserAuthError(
+                        f"Authentication failed for {self.host}: the server did not accept "
+                        "the configured credentials or authentication method"
+                    ) from None
+                except paramiko.IncompatiblePeer as e:
+                    raise UserAuthError(
+                        f"SFTP negotiation failed for {self.host} ({safe_error_summary(e)}); "
+                        f"host key negotiation is constrained to the pinned {key_type} "
+                        f"family, so check that the server publishes a {key_type} host key"
+                    ) from None
+                except paramiko.SSHException as e:
+                    raise ConnectionError(
+                        f"SFTP connection to {self.host} failed: {safe_error_summary(e)}"
+                    ) from None
                 self.client = ssh_client
                 self.ftp = ssh_client.open_sftp()
 
@@ -387,7 +422,7 @@ class SftpDownloaderConfig(FsspecDownloaderConfig):
 class SftpDownloader(FsspecDownloader):
     protocol: str = "sftp"
     connection_config: SftpConnectionConfig
-    connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
+    connector_type: str = CONNECTOR_TYPE
     download_config: Optional[SftpDownloaderConfig] = field(default_factory=SftpDownloaderConfig)
 
     def __post_init__(self):
