@@ -1,3 +1,11 @@
+## [1.10.0]
+
+### Enhancements
+
+- **feat(sharepoint): index and download Microsoft Teams channel files.** The SharePoint connector can now target a Teams team (`team_id`, optionally filtered by `channels`) instead of a site, indexing each channel's files with the existing DriveItem walk, permission batching, and incremental behavior across standard, private, and shared channels. Private/shared channels live on separate sites, so `record_locator` now carries `drive_id`+`item_id` (with a fallback to the old site+path); existing site configs are unchanged, channel enumeration needs the `Team.ReadBasic.All` and `Channel.ReadBasic.All` scopes, and channels whose Files folder isn't provisioned yet are skipped. **Known limitation:** for private/shared channels, captured permissions (and the `permissions_version` digest) don't reflect channel membership, which lives in unresolved SharePoint site groups — full fidelity is a planned follow-up.
+
+- **feat(sharepoint): skip non-ingestible Loop / Fluid / Whiteboard artifacts.** `.loop`, `.fluid`, and `.whiteboard` files are Fluid Framework containers with no extractable bytes, so they're now dropped at index time in both site and Teams modes rather than downloaded and failed.
+
 ## [1.9.4]
 
 ### Fixes
