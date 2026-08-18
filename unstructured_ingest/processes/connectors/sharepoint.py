@@ -4,6 +4,7 @@ import asyncio
 import builtins
 import json
 import logging
+import re
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, AsyncIterator, NoReturn, Optional
 
@@ -148,6 +149,30 @@ _MS_CORRELATION_HEADERS = (
     "WWW-Authenticate",
 )
 
+# Bounds for turning an untrusted Graph error body into a diagnostic token. The body is
+# never trusted: cap how much we'll parse (huge/hostile payloads), and cap + charset-restrict
+# each extracted field so a malformed response can't inject newlines (log forging) or emit an
+# oversized value. Graph codes are camelCase words; request IDs are GUID/opaque tokens — both
+# fit a conservative allowlist.
+_MAX_ERROR_BODY_CHARS = 65536
+_MAX_DETAIL_FIELD_CHARS = 200
+_UNSAFE_DETAIL_CHARS = re.compile(r"[^A-Za-z0-9._:-]")
+
+
+def _clean_detail_field(value: Any) -> Optional[str]:
+    """Coerce an extracted Graph field into a short, safe token (or ``None``).
+
+    Allowlisting the JSON *key* is not enough: the value still comes from an untrusted body,
+    so a malformed/hostile response could place an oversized or newline-bearing string in
+    ``code``/``request-id``. Require a string, drop anything outside a conservative allowlist
+    (which removes newlines and control characters), and cap the length.
+    """
+    if not isinstance(value, str):
+        return None
+    cleaned = _UNSAFE_DETAIL_CHARS.sub("", value)[:_MAX_DETAIL_FIELD_CHARS]
+    return cleaned or None
+
+
 def _safe_graph_detail(body: Optional[str]) -> str:
     """Summarize an upstream Graph/SharePoint error body WITHOUT echoing its raw content.
 
@@ -159,21 +184,26 @@ def _safe_graph_detail(body: Optional[str]) -> str:
     Graph error bodies are JSON shaped like
     ``{"error": {"code": "...", "message": "...", "innerError": {"request-id": "..."}}}``.
     Only the allowlisted, non-sensitive fields are returned — the enum-like ``code`` (e.g.
-    ``accessDenied``, ``itemNotFound``) and the opaque request/correlation id. Returns
-    ``"no additional detail"`` when nothing safe can be extracted (e.g. a non-JSON gateway
-    error page); the HTTP status is already carried on the caller's message.
+    ``accessDenied``, ``itemNotFound``) and the opaque request/correlation id, each sanitized
+    via ``_clean_detail_field``. Returns ``"no additional detail"`` when nothing safe can be
+    extracted (e.g. a non-JSON gateway error page); the HTTP status is already carried on the
+    caller's message.
+
+    Robust against a hostile body: oversized payloads are not parsed, and both the
+    ``ValueError`` family (``json``'s ``JSONDecodeError`` — caught as ``builtins.ValueError``
+    because this module imports a custom ``ValueError`` that would otherwise shadow it) and a
+    ``RecursionError`` from deeply nested JSON are swallowed to the safe fallback.
     """
     code = request_id = None
-    if body:
+    if body and len(body) <= _MAX_ERROR_BODY_CHARS:
         try:
             error = (json.loads(body) or {}).get("error") or {}
-            code = error.get("code")
+            code = _clean_detail_field(error.get("code"))
             inner = error.get("innerError") or {}
-            request_id = inner.get("request-id") or inner.get("client-request-id")
-        # NB: this module imports a custom ``ValueError`` from ``unstructured_ingest.error``,
-        # which would otherwise shadow the builtin and let ``json``'s ``JSONDecodeError``
-        # (a builtin ``ValueError`` subclass) escape. Use ``builtins.ValueError`` explicitly.
-        except (builtins.ValueError, AttributeError, TypeError):
+            request_id = _clean_detail_field(
+                inner.get("request-id") or inner.get("client-request-id")
+            )
+        except (builtins.ValueError, AttributeError, TypeError, builtins.RecursionError):
             pass
     parts = []
     if code:
@@ -236,17 +266,21 @@ def _handle_client_request_exception(e: ClientRequestException, context: str) ->
     every upstream failure as ``SourceConnectionError("Site not found")``.
 
     The chosen typed class keeps useful semantics (auth vs throttle vs not-found, and which
-    errors retry), but the real HTTP status code and response body are *also* passed through
-    on the raised error itself — the ``status_code`` is stamped on the instance (shadowing the
-    class default, e.g. so a 403 surfaces as 403 rather than ``UserAuthError``'s default 401)
-    and a truncated body is appended to the message — so callers/users see the true condition,
-    not just the logs.
+    errors retry), but the real HTTP status code is *also* passed through on the raised error
+    itself — the ``status_code`` is stamped on the instance (shadowing the class default, e.g.
+    so a 403 surfaces as 403 rather than ``UserAuthError``'s default 401). The raw response
+    body is **not** surfaced (per the ``safe_error_summary`` policy); instead an allowlisted,
+    sanitized detail (the Graph ``error.code`` and request/correlation id, via
+    ``_safe_graph_detail``) is appended to the message and logged, so callers/users see the
+    true condition without echoing untrusted provider content.
     """
     response = getattr(e, "response", None)
     status_code = getattr(response, "status_code", None)
     body = getattr(response, "text", None) if response is not None else None
     headers = (getattr(response, "headers", None) or {}) if response is not None else {}
     retry_after = _parse_retry_after(headers)
+    # Parse the body once and reuse for both the log and the raised message.
+    detail = _safe_graph_detail(body)
 
     # Preserve the real HTTP signal BEFORE applying any label.
     if response is not None:
@@ -255,7 +289,7 @@ def _handle_client_request_exception(e: ClientRequestException, context: str) ->
             "SharePoint upstream error for %s: status_code=%s detail=%s correlation=%s",
             context,
             status_code,
-            _safe_graph_detail(body),
+            detail,
             correlation,
         )
     else:
@@ -263,7 +297,6 @@ def _handle_client_request_exception(e: ClientRequestException, context: str) ->
 
     def _raise(error_cls: type[UnstructuredIngestError], summary: str) -> NoReturn:
         prefix = f"[HTTP {status_code}] " if status_code is not None else ""
-        detail = _safe_graph_detail(body)
         message = (
             f"{prefix}{summary}: {detail}"
             if detail != "no additional detail"

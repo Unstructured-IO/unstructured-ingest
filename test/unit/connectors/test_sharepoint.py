@@ -367,6 +367,23 @@ def test_fetch_file_does_not_log_raw_body(
     assert "code=accessDenied" in caplog.text
 
 
+def test_handle_exception_parses_body_once(mock_client, sharepoint_downloader, file_data):
+    # The body is parsed once and the detail reused for both the log and the raised message,
+    # not JSON-parsed twice per error.
+    import unstructured_ingest.processes.connectors.sharepoint as sp_mod
+
+    body = json.dumps({"error": {"code": "accessDenied", "innerError": {"request-id": "r1"}}})
+    mock_client.sites.get_by_url.return_value.get.return_value.execute_query.side_effect = (
+        _client_request_exception(403, text=body)
+    )
+    with (
+        patch.object(sp_mod, "_safe_graph_detail", side_effect=sp_mod._safe_graph_detail) as spy,
+        pytest.raises(UserAuthError),
+    ):
+        sharepoint_downloader._fetch_file(file_data)
+    assert spy.call_count == 1
+
+
 # A throttle's Retry-After is stamped on the typed error so the downloader's retry can
 # honor the server's requested backoff (the retry sees the typed error, not the raw
 # ClientRequestException). Tested on the mapper directly to avoid a real wait loop.
@@ -866,6 +883,56 @@ class TestSafeGraphDetail:
         from unstructured_ingest.processes.connectors.sharepoint import _safe_graph_detail
 
         assert _safe_graph_detail("[1, 2, 3]") == "no additional detail"
+
+    def test_deeply_nested_body_does_not_raise(self):
+        # Deeply nested JSON makes json.loads raise RecursionError, which is NOT a builtin
+        # ValueError subclass — it must be swallowed to the safe fallback, never escape and
+        # replace the typed SharePoint error mid-handling.
+        from unstructured_ingest.processes.connectors.sharepoint import _safe_graph_detail
+
+        assert _safe_graph_detail("[" * 20000) == "no additional detail"
+
+    def test_oversized_body_is_not_parsed(self):
+        # A pathologically large body isn't parsed at all (bounded work); safe fallback.
+        from unstructured_ingest.processes.connectors.sharepoint import (
+            _MAX_ERROR_BODY_CHARS,
+            _safe_graph_detail,
+        )
+
+        big = json.dumps({"error": {"code": "accessDenied"}}) + (" " * _MAX_ERROR_BODY_CHARS)
+        assert _safe_graph_detail(big) == "no additional detail"
+
+    def test_hostile_values_stripped_of_newlines_and_bounded(self):
+        # Allowlisting the key isn't enough: the value is untrusted. Newlines (log forging)
+        # and oversized content must be removed/capped, not emitted verbatim.
+        from unstructured_ingest.processes.connectors.sharepoint import (
+            _MAX_DETAIL_FIELD_CHARS,
+            _safe_graph_detail,
+        )
+
+        body = json.dumps(
+            {
+                "error": {
+                    "code": "accessDenied\nForged-Log-Line " + ("x" * 1000),
+                    "innerError": {"request-id": "req\n123 injected"},
+                }
+            }
+        )
+        detail = _safe_graph_detail(body)
+        assert "\n" not in detail  # no log forging
+        # Spaces inside the untrusted values are stripped (the only space is the ", " joiner).
+        assert detail.startswith("code=accessDeniedForged-Log-Line")
+        assert "request-id=req123injected" in detail
+        # Each field is length-capped.
+        assert len(detail) <= 2 * _MAX_DETAIL_FIELD_CHARS + len("code=, request-id=") + 2
+
+    def test_non_string_values_ignored(self):
+        from unstructured_ingest.processes.connectors.sharepoint import _safe_graph_detail
+
+        body = json.dumps(
+            {"error": {"code": 12345, "innerError": {"request-id": ["not", "a", "string"]}}}
+        )
+        assert _safe_graph_detail(body) == "no additional detail"
 
 
 class TestGraphGet:
