@@ -857,6 +857,65 @@ class TestListChannels:
             indexer._list_channels_sync("tok")
 
 
+class TestPrecheckTeam:
+    def test_probe_403_raises_auth_error(self):
+        # Missing Sites.Read.All while channel enumeration works must surface here, not as
+        # an empty crawl later.
+        indexer = _make_team_indexer()
+        with (
+            patch.object(indexer, "_graph_get", return_value=_graph_response(403, text="denied")),
+            pytest.raises(UserAuthError, match="Sites.Read.All"),
+        ):
+            indexer._probe_files_read_scope_sync("tok")
+
+    def test_probe_200_passes(self):
+        indexer = _make_team_indexer()
+        with patch.object(
+            indexer, "_graph_get", return_value=_graph_response(200, {"id": "root"})
+        ):
+            indexer._probe_files_read_scope_sync("tok")  # no raise
+
+    def test_probe_429_raises_rate_limit(self):
+        indexer = _make_team_indexer()
+        with (
+            patch.object(indexer, "_graph_get", return_value=_graph_response(429)),
+            pytest.raises(RateLimitError),
+        ):
+            indexer._probe_files_read_scope_sync("tok")
+
+    def test_probe_non_auth_error_does_not_block(self, caplog):
+        # A non-auth hiccup (e.g. odd 404 on the group drive) must not block a connection
+        # already validated for enumeration; the run-time paths remain the backstop.
+        import logging
+
+        indexer = _make_team_indexer()
+        with (
+            patch.object(indexer, "_graph_get", return_value=_graph_response(404, text="no drive")),
+            caplog.at_level(logging.WARNING),
+        ):
+            indexer._probe_files_read_scope_sync("tok")  # no raise
+        assert "file-read scope" in caplog.text
+
+    def test_precheck_runs_enumeration_then_read_scope_probe(self):
+        # Enumeration succeeds (first _graph_get) but the file-read probe 403s (second) ->
+        # precheck fails fast.
+        indexer = _make_team_indexer()
+        channels_resp = _graph_response(200, {"value": [{"id": "c1", "displayName": "General"}]})
+        drive_resp = _graph_response(403, text="denied")
+        with (
+            patch.object(indexer, "_graph_get", side_effect=[channels_resp, drive_resp]),
+            pytest.raises(UserAuthError, match="Sites.Read.All"),
+        ):
+            indexer._precheck_team()
+
+    def test_precheck_success_when_both_probes_pass(self):
+        indexer = _make_team_indexer()
+        channels_resp = _graph_response(200, {"value": [{"id": "c1", "displayName": "General"}]})
+        drive_resp = _graph_response(200, {"id": "root"})
+        with patch.object(indexer, "_graph_get", side_effect=[channels_resp, drive_resp]):
+            indexer._precheck_team()  # no raise
+
+
 class TestChannelFilesFolder:
     def test_returns_drive_and_item_id(self):
         indexer = _make_team_indexer()

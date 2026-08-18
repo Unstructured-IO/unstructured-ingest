@@ -371,10 +371,16 @@ class SharepointIndexer(OnedriveIndexer):
             raise UserError(f"Failed to validate SharePoint connection: {str(e)}")
 
     def _precheck_team(self) -> None:
-        """Validate the team is reachable and the Teams enumeration scopes are granted.
+        """Validate the team is reachable and the required scopes are granted.
 
-        Listing channels exercises Team.ReadBasic.All / Channel.ReadBasic.All and the team
-        id in one call, and raises the typed auth/not-found errors from _list_channels_sync.
+        Two probes, together giving team mode the same up-front guarantee site mode's
+        precheck already provides:
+        - listing channels exercises Team.ReadBasic.All / Channel.ReadBasic.All and the team
+          id, raising the typed auth/not-found errors from _list_channels_sync;
+        - reading the team's default document library exercises the file-read scope
+          (Sites.Read.All / Files.Read.All) that filesFolder resolution and downloads depend
+          on, so a missing grant fails fast here instead of turning every channel into a
+          successful empty crawl at run time.
         """
         token_resp = self.connection_config.get_token()
         access_token = token_resp.get("access_token") if isinstance(token_resp, dict) else None
@@ -382,9 +388,45 @@ class SharepointIndexer(OnedriveIndexer):
             raise SourceConnectionError("failed to acquire access token for Teams precheck")
         # Raises UserAuthError (missing scope / forbidden), NotFoundError (bad team), etc.
         self._list_channels_sync(access_token)
+        self._probe_files_read_scope_sync(access_token)
         logger.info(
             f"Teams connection validated successfully for team: {self.index_config.team_id}"
         )
+
+    def _probe_files_read_scope_sync(self, access_token: str) -> None:
+        """Confirm the app can actually read files, not just enumerate channels.
+
+        Reads the team's default document library (the group drive), which is provisioned at
+        team creation and — unlike a channel's filesFolder — is NOT subject to on-demand
+        provisioning. That makes it a reliable, provisioning-independent probe of the file-read
+        scope: a fresh team 404s on every channel filesFolder, so filesFolder can't be used to
+        tell "missing scope" from "not provisioned yet", but the group drive can.
+
+        A 401/403 here means the file-read grant is missing (every channel would otherwise
+        crawl empty), so we fail fast. This is a strong-but-not-perfect gate: an app narrowed
+        by an Application Access Policy could pass here yet still be denied a private/shared
+        channel's separate site, so the run-time filesFolder handling stays the backstop and
+        any non-auth hiccup here is logged and allowed through rather than blocking a
+        connection we've already validated for enumeration.
+        """
+        team_id = self.index_config.team_id
+        resp = self._graph_get(access_token, f"/groups/{team_id}/drive/root")
+        if resp.status_code in (401, 403):
+            raise UserAuthError(
+                f"[HTTP {resp.status_code}] The app can enumerate channels but cannot read files "
+                f"for team '{team_id}'. Grant the Sites.Read.All (or Files.Read.All) application "
+                f"scope so channel files can be indexed and downloaded: {_truncate_body(resp.text)}"
+            )
+        if resp.status_code == 429:
+            raise RateLimitError(f"Rate limited validating file-read scope for team '{team_id}'")
+        if resp.status_code >= 400:
+            # Not an auth failure (e.g. an unexpected 404 on the group drive, or a transient
+            # 5xx). Don't block a connection already validated for enumeration — the run-time
+            # paths surface genuine read failures.
+            logger.warning(
+                f"could not fully validate file-read scope for team '{team_id}' "
+                f"(HTTP {resp.status_code}); proceeding: {_truncate_body(resp.text)}"
+            )
 
     def drive_item_to_file_data_sync(
         self,
