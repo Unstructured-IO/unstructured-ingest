@@ -672,10 +672,11 @@ class SharepointIndexer(OnedriveIndexer):
 
         resp = None
         for attempt in range(1, _GRAPH_MAX_ATTEMPTS + 1):
+            last_attempt = attempt >= _GRAPH_MAX_ATTEMPTS
             try:
                 resp = requests.get(full_url, headers=headers, timeout=60)
             except requests.exceptions.RequestException as exc:
-                if attempt >= _GRAPH_MAX_ATTEMPTS:
+                if last_attempt:
                     # Transient network/timeout, retries exhausted — a retriable typed error so
                     # the run retries, rather than a raw requests exception aborting the crawl.
                     raise SourceConnectionNetworkError(
@@ -685,15 +686,13 @@ class SharepointIndexer(OnedriveIndexer):
                 time.sleep(_graph_backoff_seconds(attempt, None))
                 continue
 
-            if resp.status_code == 429 or resp.status_code >= 500:
-                if attempt >= _GRAPH_MAX_ATTEMPTS:
-                    # Persistent throttle / upstream error — hand the response back so the
-                    # caller maps it to a typed error stamped with the real status.
-                    return resp
+            # Retry transient statuses until the last attempt, then hand the (still-throttled /
+            # 5xx) response back so the caller maps it to a typed error with the real status.
+            if (resp.status_code == 429 or resp.status_code >= 500) and not last_attempt:
                 time.sleep(_graph_backoff_seconds(attempt, _parse_retry_after(resp.headers)))
                 continue
 
-            return resp
+            break
         return resp
 
     def _list_channels_sync(self, access_token: str) -> list[dict]:
