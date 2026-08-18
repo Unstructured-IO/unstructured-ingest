@@ -1,3 +1,9 @@
+## [1.10.1]
+
+### Fixes
+
+- **fix(sharepoint): surface skipped Teams channels in a per-run summary.** A Teams crawl skips a channel whose files folder isn't provisioned or returns a forbidden shared-channel 403, but those skips were only inline log lines a long run could bury — so a run that finished with zero errors could still be silently missing an entire channel's files (e.g. a cross-tenant shared channel, or an app scoped away from a channel's own site by an Application Access Policy, which is indistinguishable from the 403 alone). `_run_team_async` now emits one consolidated WARNING at the end naming every skipped channel with its reason and an `indexed N of M` count, so an incomplete crawl is visible rather than hidden.
+
 ## [1.10.0]
 
 ### Enhancements
