@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import asyncio
 import builtins
+import json
 import logging
+import re
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, AsyncIterator, NoReturn, Optional
 
@@ -147,17 +149,68 @@ _MS_CORRELATION_HEADERS = (
     "WWW-Authenticate",
 )
 
-# Cap the amount of upstream response body carried on the raised error message. Enough to
-# diagnose (SharePoint/Graph error bodies are small JSON) without dumping an unbounded payload.
-_MAX_BODY_CHARS = 500
+# Bounds for turning an untrusted Graph error body into a diagnostic token. The body is
+# never trusted: cap how much we'll parse (huge/hostile payloads), and cap + charset-restrict
+# each extracted field so a malformed response can't inject newlines (log forging) or emit an
+# oversized value. Graph codes are camelCase words; request IDs are GUID/opaque tokens — both
+# fit a conservative allowlist.
+_MAX_ERROR_BODY_CHARS = 65536
+_MAX_DETAIL_FIELD_CHARS = 200
+_UNSAFE_DETAIL_CHARS = re.compile(r"[^A-Za-z0-9._:-]")
 
 
-def _truncate_body(body: Optional[str]) -> Optional[str]:
-    """Cap an upstream response body to ``_MAX_BODY_CHARS`` for both logs and error
-    messages, so a large payload isn't written unbounded (and repeatedly on retries)."""
-    if not body:
-        return body
-    return body if len(body) <= _MAX_BODY_CHARS else f"{body[:_MAX_BODY_CHARS]}…"
+def _clean_detail_field(value: Any) -> Optional[str]:
+    """Coerce an extracted Graph field into a short, safe token (or ``None``).
+
+    Allowlisting the JSON *key* is not enough: the value still comes from an untrusted body,
+    so a malformed/hostile response could place an oversized or newline-bearing string in
+    ``code``/``request-id``. Require a string, drop anything outside a conservative allowlist
+    (which removes newlines and control characters), and cap the length.
+    """
+    if not isinstance(value, str):
+        return None
+    cleaned = _UNSAFE_DETAIL_CHARS.sub("", value)[:_MAX_DETAIL_FIELD_CHARS]
+    return cleaned or None
+
+
+def _safe_graph_detail(body: Optional[str]) -> str:
+    """Summarize an upstream Graph/SharePoint error body WITHOUT echoing its raw content.
+
+    The repo's error policy (see ``safe_error_summary``) is that upstream response bodies
+    "routinely embed credentials, connection strings, or request payloads, so [they are]
+    never included." A raw truncation is not redaction, so we do not surface the body (or the
+    free-text ``message``, which can echo request content) at all.
+
+    Graph error bodies are JSON shaped like
+    ``{"error": {"code": "...", "message": "...", "innerError": {"request-id": "..."}}}``.
+    Only the allowlisted, non-sensitive fields are returned — the enum-like ``code`` (e.g.
+    ``accessDenied``, ``itemNotFound``) and the opaque request/correlation id, each sanitized
+    via ``_clean_detail_field``. Returns ``"no additional detail"`` when nothing safe can be
+    extracted (e.g. a non-JSON gateway error page); the HTTP status is already carried on the
+    caller's message.
+
+    Robust against a hostile body: oversized payloads are not parsed, and both the
+    ``ValueError`` family (``json``'s ``JSONDecodeError`` — caught as ``builtins.ValueError``
+    because this module imports a custom ``ValueError`` that would otherwise shadow it) and a
+    ``RecursionError`` from deeply nested JSON are swallowed to the safe fallback.
+    """
+    code = request_id = None
+    if body and len(body) <= _MAX_ERROR_BODY_CHARS:
+        try:
+            error = (json.loads(body) or {}).get("error") or {}
+            code = _clean_detail_field(error.get("code"))
+            inner = error.get("innerError") or {}
+            request_id = _clean_detail_field(
+                inner.get("request-id") or inner.get("client-request-id")
+            )
+        except (builtins.ValueError, AttributeError, TypeError, builtins.RecursionError):
+            pass
+    parts = []
+    if code:
+        parts.append(f"code={code}")
+    if request_id:
+        parts.append(f"request-id={request_id}")
+    return ", ".join(parts) if parts else "no additional detail"
 
 
 # Upper bound on how long we'll honor a throttle's Retry-After, so a pathological or
@@ -213,34 +266,42 @@ def _handle_client_request_exception(e: ClientRequestException, context: str) ->
     every upstream failure as ``SourceConnectionError("Site not found")``.
 
     The chosen typed class keeps useful semantics (auth vs throttle vs not-found, and which
-    errors retry), but the real HTTP status code and response body are *also* passed through
-    on the raised error itself — the ``status_code`` is stamped on the instance (shadowing the
-    class default, e.g. so a 403 surfaces as 403 rather than ``UserAuthError``'s default 401)
-    and a truncated body is appended to the message — so callers/users see the true condition,
-    not just the logs.
+    errors retry), but the real HTTP status code is *also* passed through on the raised error
+    itself — the ``status_code`` is stamped on the instance (shadowing the class default, e.g.
+    so a 403 surfaces as 403 rather than ``UserAuthError``'s default 401). The raw response
+    body is **not** surfaced (per the ``safe_error_summary`` policy); instead an allowlisted,
+    sanitized detail (the Graph ``error.code`` and request/correlation id, via
+    ``_safe_graph_detail``) is appended to the message and logged, so callers/users see the
+    true condition without echoing untrusted provider content.
     """
     response = getattr(e, "response", None)
     status_code = getattr(response, "status_code", None)
     body = getattr(response, "text", None) if response is not None else None
     headers = (getattr(response, "headers", None) or {}) if response is not None else {}
     retry_after = _parse_retry_after(headers)
+    # Parse the body once and reuse for both the log and the raised message.
+    detail = _safe_graph_detail(body)
 
     # Preserve the real HTTP signal BEFORE applying any label.
     if response is not None:
         correlation = {k: headers.get(k) for k in _MS_CORRELATION_HEADERS if headers.get(k)}
         logger.error(
-            "SharePoint upstream error for %s: status_code=%s body=%r correlation=%s",
+            "SharePoint upstream error for %s: status_code=%s detail=%s correlation=%s",
             context,
             status_code,
-            _truncate_body(body),
+            detail,
             correlation,
         )
     else:
-        logger.error("SharePoint upstream error for %s: %s", context, e)
+        logger.error("SharePoint upstream error for %s: %s", context, safe_error_summary(e))
 
     def _raise(error_cls: type[UnstructuredIngestError], summary: str) -> NoReturn:
         prefix = f"[HTTP {status_code}] " if status_code is not None else ""
-        message = f"{prefix}{summary}: {_truncate_body(body)}" if body else f"{prefix}{summary}"
+        message = (
+            f"{prefix}{summary}: {detail}"
+            if detail != "no additional detail"
+            else f"{prefix}{summary}"
+        )
         err = error_cls(message)
         # Shadow the class-level default with the real upstream status so it flows through to
         # whatever surfaces the error (e.g. 403 stays a UserAuthError but reports HTTP 403).
@@ -470,7 +531,7 @@ class SharepointIndexer(OnedriveIndexer):
                 f"[HTTP {resp.status_code}] The app can enumerate channels but cannot read "
                 f"files for team '{team_id}'. Grant the Sites.Read.All (or Files.Read.All) "
                 f"application scope so channel files can be indexed and downloaded: "
-                f"{_truncate_body(resp.text)}",
+                f"{_safe_graph_detail(resp.text)}",
                 resp,
             )
         if resp.status_code == 429:
@@ -485,7 +546,7 @@ class SharepointIndexer(OnedriveIndexer):
             # paths surface genuine read failures.
             logger.warning(
                 f"could not fully validate file-read scope for team '{team_id}' "
-                f"(HTTP {resp.status_code}); proceeding: {_truncate_body(resp.text)}"
+                f"(HTTP {resp.status_code}); proceeding: {_safe_graph_detail(resp.text)}"
             )
 
     def drive_item_to_file_data_sync(
@@ -785,7 +846,7 @@ class SharepointIndexer(OnedriveIndexer):
                     UserAuthError,
                     f"[HTTP {resp.status_code}] Access forbidden enumerating channels for team "
                     f"'{team_id}'. The app registration needs the Team.ReadBasic.All and "
-                    f"Channel.ReadBasic.All application scopes: {_truncate_body(resp.text)}",
+                    f"Channel.ReadBasic.All application scopes: {_safe_graph_detail(resp.text)}",
                     resp,
                 )
             if resp.status_code == 404:
@@ -800,14 +861,14 @@ class SharepointIndexer(OnedriveIndexer):
                 raise _graph_error(
                     SourceConnectionNetworkError,
                     f"[HTTP {resp.status_code}] Upstream SharePoint error enumerating channels "
-                    f"for team '{team_id}': {_truncate_body(resp.text)}",
+                    f"for team '{team_id}': {_safe_graph_detail(resp.text)}",
                     resp,
                 )
             if resp.status_code >= 400:
                 raise _graph_error(
                     UserError,
                     f"[HTTP {resp.status_code}] Failed to enumerate channels for team "
-                    f"'{team_id}': {_truncate_body(resp.text)}",
+                    f"'{team_id}': {_safe_graph_detail(resp.text)}",
                     resp,
                 )
             body = resp.json()
@@ -876,7 +937,7 @@ class SharepointIndexer(OnedriveIndexer):
                 UserAuthError,
                 f"[HTTP {resp.status_code}] Access forbidden resolving the files folder for "
                 f"channel '{channel_name}'. The app registration needs Sites.Read.All (and "
-                f"Files.Read.All) to read Teams channel files: {_truncate_body(resp.text)}",
+                f"Files.Read.All) to read Teams channel files: {_safe_graph_detail(resp.text)}",
                 resp,
             )
         if resp.status_code == 429:
@@ -895,7 +956,7 @@ class SharepointIndexer(OnedriveIndexer):
         if resp.status_code >= 400:
             logger.warning(
                 f"failed to resolve files folder for channel '{channel_name}' "
-                f"(HTTP {resp.status_code}); skipping: {_truncate_body(resp.text)}"
+                f"(HTTP {resp.status_code}); skipping: {_safe_graph_detail(resp.text)}"
             )
             return None, _ChannelSkip(
                 f"unexpected HTTP {resp.status_code} resolving files folder", suspicious=True
