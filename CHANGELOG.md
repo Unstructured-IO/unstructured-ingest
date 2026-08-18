@@ -1,3 +1,9 @@
+## [1.10.2]
+
+### Fixes
+
+- **fix(sharepoint): stop echoing raw Microsoft Graph response bodies into errors and logs.** The Teams/SharePoint error paths interpolated the upstream Graph response body into raised error messages and logs after only a 500-char truncation — but truncation is not redaction, and the repo's own error policy (`safe_error_summary`) is that upstream response bodies are never surfaced because they can carry credentials or request payloads. Those paths now emit only allowlisted, non-sensitive fields — the Graph `error.code` (e.g. `accessDenied`) and the opaque request/correlation id — and never the raw body or free-text message. This also fixes a latent shadowing bug: the module imports a custom `ValueError`, so a non-JSON error body would have escaped the `except` and raised `JSONDecodeError` mid-error-handling.
+
 ## [1.10.1]
 
 ### Fixes
