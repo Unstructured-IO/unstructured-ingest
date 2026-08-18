@@ -1242,6 +1242,66 @@ class TestRunAsyncTeamMode:
         # A suspicious skip (possible silent miss / misconfig) must escalate to WARNING.
         assert summary[0].levelno == logging.WARNING
 
+    def test_summary_emitted_on_early_termination(self, caplog):
+        # The summary lives in a `finally`, so it must still fire when the consumer abandons
+        # the generator partway (early break / downstream error / cancellation -> GeneratorExit).
+        # Post-loop code would otherwise be skipped, losing the very visibility this adds.
+        indexer = _make_team_indexer(team_id="team-1")
+        client = MagicMock()
+        indexer.connection_config.get_client.return_value = client
+
+        di1 = Mock()
+        di1.id = "f1"
+        di2 = Mock()
+        di2.id = "f2"
+        (
+            client.drives.__getitem__.return_value.items.__getitem__.return_value.get_files.return_value.execute_query.return_value
+        ) = [di1, di2]
+
+        # Skipped channel is processed first (recorded before any yield); the second channel
+        # yields, and we abandon the generator mid-stream.
+        channels = [
+            {"id": "chSkip", "displayName": "Unprovisioned", "membershipType": "standard"},
+            {"id": "chA", "displayName": "General", "membershipType": "standard"},
+        ]
+
+        def _files_folder(access_token, channel_id, channel_name, membership_type=None):
+            if channel_id == "chA":
+                return {"drive_id": "d1", "item_id": "root1"}, None
+            return None, _ChannelSkip(
+                "files folder not provisioned (its Files tab has never been opened)",
+                suspicious=False,
+            )
+
+        async def _capture(drive_item, raw_permissions=None):
+            return FileData(
+                source_identifiers=SourceIdentifiers(
+                    filename=drive_item.id, fullpath=drive_item.id
+                ),
+                connector_type="sharepoint",
+                identifier=drive_item.id,
+            )
+
+        async def _run_and_stop_early():
+            gen = indexer.run_async()
+            first = await gen.__anext__()  # take one file, then abandon the crawl
+            await gen.aclose()  # GeneratorExit -> _run_team_async's finally
+            return first
+
+        with (
+            caplog.at_level(logging.INFO),
+            patch.object(indexer, "_list_channels_sync", return_value=channels),
+            patch.object(indexer, "_get_channel_files_folder_sync", side_effect=_files_folder),
+            patch.object(indexer, "_fetch_permissions_raw", return_value={"f1": None, "f2": None}),
+            patch.object(indexer, "drive_item_to_file_data", new=AsyncMock(side_effect=_capture)),
+        ):
+            first = asyncio.run(_run_and_stop_early())
+
+        assert first.identifier == "f1"
+        # Despite abandoning the generator after one item, the skip summary still fired.
+        summary = [r for r in caplog.records if "'Unprovisioned'" in r.getMessage()]
+        assert summary, "summary must be emitted even when iteration ends early"
+
 
 class TestTeamRecordLocator:
     def test_drive_item_to_file_data_sync_adds_drive_and_item_id(self):

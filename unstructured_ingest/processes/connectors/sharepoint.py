@@ -614,42 +614,48 @@ class SharepointIndexer(OnedriveIndexer):
 
         indexed = 0
         skipped: list[tuple[str, _ChannelSkip]] = []
-        for channel in channels:
-            channel_id = channel.get("id")
-            channel_name = channel.get("displayName") or channel_id
-            membership_type = channel.get("membershipType")
-            files_folder, skip = await asyncio.to_thread(
-                self._get_channel_files_folder_sync,
-                access_token,
-                channel_id,
-                channel_name,
-                membership_type,
-            )
-            if not files_folder:
-                # Benign per-channel skip (never aborts the crawl). Record it so the
-                # end-of-run summary makes the omission visible — a clean run must not
-                # silently hide a channel whose files were never indexed.
-                skipped.append(
-                    (channel_name, skip or _ChannelSkip("unknown reason", suspicious=True))
+        # The summary must survive early exits: this is an async generator, so code placed
+        # after the loop is skipped if the consumer breaks early, raises downstream after some
+        # files were yielded, or cancels us (GeneratorExit). Those are exactly the runs where a
+        # silently-missing channel matters most, so emit from ``finally`` — it reports whatever
+        # skips were seen before iteration ended (and is a no-op when nothing was skipped).
+        try:
+            for channel in channels:
+                channel_id = channel.get("id")
+                channel_name = channel.get("displayName") or channel_id
+                membership_type = channel.get("membershipType")
+                files_folder, skip = await asyncio.to_thread(
+                    self._get_channel_files_folder_sync,
+                    access_token,
+                    channel_id,
+                    channel_name,
+                    membership_type,
                 )
-                continue
+                if not files_folder:
+                    # Benign per-channel skip (never aborts the crawl). Record it so the
+                    # end-of-run summary makes the omission visible — a clean run must not
+                    # silently hide a channel whose files were never indexed.
+                    skipped.append(
+                        (channel_name, skip or _ChannelSkip("unknown reason", suspicious=True))
+                    )
+                    continue
 
-            indexed += 1
-            folder = client.drives[files_folder["drive_id"]].items[files_folder["item_id"]]
-            try:
-                drive_items = await asyncio.to_thread(self._list_channel_files, folder)
-            except ClientRequestException as e:
-                # Listing files after the folder resolved can still fail for real reasons
-                # (auth / throttle / upstream). Map to a typed error and propagate — a
-                # standard/private 401/403 or a 429/5xx here is a genuine failure, not a
-                # channel to silently drop. (Verified-benign skips happen only at folder
-                # resolution: unprovisioned 404s and forbidden shared channels.)
-                _handle_client_request_exception(e, f"Teams channel '{channel_name}' files")
+                indexed += 1
+                folder = client.drives[files_folder["drive_id"]].items[files_folder["item_id"]]
+                try:
+                    drive_items = await asyncio.to_thread(self._list_channel_files, folder)
+                except ClientRequestException as e:
+                    # Listing files after the folder resolved can still fail for real reasons
+                    # (auth / throttle / upstream). Map to a typed error and propagate — a
+                    # standard/private 401/403 or a 429/5xx here is a genuine failure, not a
+                    # channel to silently drop. (Verified-benign skips happen only at folder
+                    # resolution: unprovisioned 404s and forbidden shared channels.)
+                    _handle_client_request_exception(e, f"Teams channel '{channel_name}' files")
 
-            async for fd in self._emit_drive_items(drive_items, access_token):
-                yield fd
-
-        self._log_skipped_channels_summary(team_id, indexed, len(channels), skipped)
+                async for fd in self._emit_drive_items(drive_items, access_token):
+                    yield fd
+        finally:
+            self._log_skipped_channels_summary(team_id, indexed, len(channels), skipped)
 
     @staticmethod
     def _log_skipped_channels_summary(
