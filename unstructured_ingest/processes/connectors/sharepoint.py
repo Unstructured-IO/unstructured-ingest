@@ -291,6 +291,21 @@ def _graph_error(
     return err
 
 
+@dataclass(frozen=True)
+class _ChannelSkip:
+    """A benign, per-channel reason for skipping a channel during a Teams crawl.
+
+    ``suspicious`` calibrates the end-of-run summary's severity: an expected/harmless skip
+    (a not-yet-provisioned channel) is INFO, while a skip that *could* mean silently missing
+    files (a forbidden channel that may be an app scoped away from its site, or an unexpected
+    response) is WARNING. This keeps the WARNING meaningful — it fires only when a skip is
+    worth investigating — instead of crying wolf on every unopened channel.
+    """
+
+    reason: str
+    suspicious: bool
+
+
 # Bounded retry for the raw Graph REST calls (channel enumeration, filesFolder resolution, the
 # precheck scope probe). The office365 SDK path gets retries via the downloader's tenacity
 # wrapper; these hand-rolled ``requests`` calls need their own so a single throttle / 5xx /
@@ -597,34 +612,96 @@ class SharepointIndexer(OnedriveIndexer):
             logger.warning(f"no channels to index for team '{team_id}'")
             return
 
-        for channel in channels:
-            channel_id = channel.get("id")
-            channel_name = channel.get("displayName") or channel_id
-            membership_type = channel.get("membershipType")
-            files_folder = await asyncio.to_thread(
-                self._get_channel_files_folder_sync,
-                access_token,
-                channel_id,
-                channel_name,
-                membership_type,
+        indexed = 0
+        skipped: list[tuple[str, _ChannelSkip]] = []
+        # The summary must survive early exits: this is an async generator, so code placed
+        # after the loop is skipped if the consumer breaks early, raises downstream after some
+        # files were yielded, or cancels us (GeneratorExit). Those are exactly the runs where a
+        # silently-missing channel matters most, so emit from ``finally`` — it reports whatever
+        # skips were seen before iteration ended (and is a no-op when nothing was skipped).
+        try:
+            for channel in channels:
+                channel_id = channel.get("id")
+                channel_name = channel.get("displayName") or channel_id
+                membership_type = channel.get("membershipType")
+                files_folder, skip = await asyncio.to_thread(
+                    self._get_channel_files_folder_sync,
+                    access_token,
+                    channel_id,
+                    channel_name,
+                    membership_type,
+                )
+                if not files_folder:
+                    # Benign per-channel skip (never aborts the crawl). Record it so the
+                    # end-of-run summary makes the omission visible — a clean run must not
+                    # silently hide a channel whose files were never indexed.
+                    skipped.append(
+                        (channel_name, skip or _ChannelSkip("unknown reason", suspicious=True))
+                    )
+                    continue
+
+                indexed += 1
+                folder = client.drives[files_folder["drive_id"]].items[files_folder["item_id"]]
+                try:
+                    drive_items = await asyncio.to_thread(self._list_channel_files, folder)
+                except ClientRequestException as e:
+                    # Listing files after the folder resolved can still fail for real reasons
+                    # (auth / throttle / upstream). Map to a typed error and propagate — a
+                    # standard/private 401/403 or a 429/5xx here is a genuine failure, not a
+                    # channel to silently drop. (Verified-benign skips happen only at folder
+                    # resolution: unprovisioned 404s and forbidden shared channels.)
+                    _handle_client_request_exception(e, f"Teams channel '{channel_name}' files")
+
+                async for fd in self._emit_drive_items(drive_items, access_token):
+                    yield fd
+        finally:
+            self._log_skipped_channels_summary(team_id, indexed, len(channels), skipped)
+
+    @staticmethod
+    def _log_skipped_channels_summary(
+        team_id: Optional[str], indexed: int, total: int, skipped: list[tuple[str, "_ChannelSkip"]]
+    ) -> None:
+        """Emit one consolidated end-of-run summary naming every channel skipped during the crawl.
+
+        Individual skips are also logged inline, but a long crawl buries them; a single summary
+        (count + names + reason) ensures a run that completed "successfully" can't quietly hide
+        a channel whose files were never indexed.
+
+        Severity is calibrated so the WARNING stays meaningful: if any skip is suspicious — a
+        forbidden channel (possibly an app scoped away from its site by an Application Access
+        Policy) or an unexpected response — the summary is a WARNING worth investigating. If
+        every skip is an expected, benign not-yet-provisioned channel, it's an INFO note (open
+        the channel's Files tab to include it) rather than an alarm that fires on every run.
+        """
+        if not skipped:
+            return
+        detail = "; ".join(f"'{name}' ({skip.reason})" for name, skip in skipped)
+        prefix = (
+            "Teams crawl for team '%s' indexed %d of %d channel(s); "
+            "skipped %d with no files indexed: %s."
+        )
+        if any(skip.suspicious for _, skip in skipped):
+            logger.warning(
+                prefix + " At least one skip may mean files are silently missing — confirm each "
+                "is expected (e.g. a cross-tenant shared or unprovisioned channel) and not an "
+                "access misconfiguration (e.g. an Application Access Policy scoping the app away "
+                "from a channel's site).",
+                team_id,
+                indexed,
+                total,
+                len(skipped),
+                detail,
             )
-            if not files_folder:
-                # Not provisioned / unreachable — best-effort skip, never abort the crawl.
-                continue
-
-            folder = client.drives[files_folder["drive_id"]].items[files_folder["item_id"]]
-            try:
-                drive_items = await asyncio.to_thread(self._list_channel_files, folder)
-            except ClientRequestException as e:
-                # Listing files after the folder resolved can still fail for real reasons
-                # (auth / throttle / upstream). Map to a typed error and propagate — a
-                # standard/private 401/403 or a 429/5xx here is a genuine failure, not a
-                # channel to silently drop. (Verified-benign skips happen only at folder
-                # resolution: unprovisioned 404s and forbidden shared channels.)
-                _handle_client_request_exception(e, f"Teams channel '{channel_name}' files")
-
-            async for fd in self._emit_drive_items(drive_items, access_token):
-                yield fd
+        else:
+            logger.info(
+                prefix + " These are not yet provisioned; open each channel's Files tab to "
+                "include it in a future run.",
+                team_id,
+                indexed,
+                total,
+                len(skipped),
+                detail,
+            )
 
     def _list_channel_files(self, folder: "DriveItem") -> "list[DriveItem]":
         return folder.get_files(recursive=self.index_config.recursive).execute_query()
@@ -745,13 +822,17 @@ class SharepointIndexer(OnedriveIndexer):
         channel_id: str,
         channel_name: str,
         membership_type: Optional[str] = None,
-    ) -> Optional[dict]:
-        """Resolve a channel's files folder to its {drive_id, item_id}.
+    ) -> tuple[Optional[dict], Optional[_ChannelSkip]]:
+        """Resolve a channel's files folder.
 
-        Returns None (skip the channel) only for benign, per-channel conditions: the
-        on-demand-provisioning 404 ("Folder location for this channel is not ready yet",
-        which fires until the channel's Files tab is first opened) and a forbidden *shared*
-        channel (which can legitimately live in an external tenant we can't reach).
+        Returns ``(folder, None)`` with ``folder == {"drive_id", "item_id"}`` when resolved,
+        or ``(None, _ChannelSkip)`` when the channel is skipped for a benign, per-channel
+        condition: the on-demand-provisioning 404 ("Folder location for this channel is not
+        ready yet", which fires until the channel's Files tab is first opened) and a forbidden
+        *shared* channel (which can legitimately live in an external tenant we can't reach).
+        The skip carries a reason and a ``suspicious`` flag; both feed the caller's end-of-run
+        summary so a clean-looking run can't quietly hide a channel whose files were never
+        indexed, while keeping the summary's severity meaningful.
 
         A 401/403 on a standard/private channel is NOT skipped: it signals a real permission
         gap (e.g. the app is missing Sites.Read.All), which must surface as UserAuthError
@@ -768,7 +849,12 @@ class SharepointIndexer(OnedriveIndexer):
                 f"channel '{channel_name}' files folder is not provisioned yet "
                 f"(open the channel's Files tab to provision it); skipping"
             )
-            return None
+            # Expected/benign: an unopened channel provisions its folder on first Files-tab
+            # access. Not worth a WARNING on every run.
+            return None, _ChannelSkip(
+                "files folder not provisioned (its Files tab has never been opened)",
+                suspicious=False,
+            )
         if resp.status_code in (401, 403):
             # Only a shared channel can legitimately be cross-tenant/unreachable. A 403 on a
             # standard or private channel means we lack the SharePoint scope, so fail loudly
@@ -778,7 +864,14 @@ class SharepointIndexer(OnedriveIndexer):
                     f"access forbidden to files folder for shared channel '{channel_name}' "
                     f"(may be a cross-tenant shared channel); skipping"
                 )
-                return None
+                # Ambiguous: a benign cross-tenant shared channel and an app scoped away from
+                # this channel's site by an Application Access Policy give the identical 403.
+                # Flag it suspicious so the run summary WARNs — this is the silent-miss case.
+                return None, _ChannelSkip(
+                    f"access forbidden (HTTP {resp.status_code}) — possibly a cross-tenant "
+                    "shared channel, or the app is scoped away from this channel's site",
+                    suspicious=True,
+                )
             raise _graph_error(
                 UserAuthError,
                 f"[HTTP {resp.status_code}] Access forbidden resolving the files folder for "
@@ -804,7 +897,9 @@ class SharepointIndexer(OnedriveIndexer):
                 f"failed to resolve files folder for channel '{channel_name}' "
                 f"(HTTP {resp.status_code}); skipping: {_truncate_body(resp.text)}"
             )
-            return None
+            return None, _ChannelSkip(
+                f"unexpected HTTP {resp.status_code} resolving files folder", suspicious=True
+            )
         body = resp.json()
         drive_id = (body.get("parentReference") or {}).get("driveId")
         item_id = body.get("id")
@@ -812,8 +907,10 @@ class SharepointIndexer(OnedriveIndexer):
             logger.warning(
                 f"channel '{channel_name}' files folder response missing drive/item id; skipping"
             )
-            return None
-        return {"drive_id": drive_id, "item_id": item_id}
+            return None, _ChannelSkip(
+                "files folder response missing drive/item id", suspicious=True
+            )
+        return {"drive_id": drive_id, "item_id": item_id}, None
 
 
 class SharepointDownloaderConfig(OnedriveDownloaderConfig):

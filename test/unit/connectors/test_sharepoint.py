@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import pytest
@@ -24,6 +25,7 @@ from unstructured_ingest.processes.connectors.sharepoint import (
     SharepointDownloaderConfig,
     SharepointIndexer,
     SharepointIndexerConfig,
+    _ChannelSkip,
     _graph_backoff_seconds,
     _is_non_ingestible_artifact,
 )
@@ -985,8 +987,9 @@ class TestChannelFilesFolder:
         indexer = _make_team_indexer()
         body = {"id": "item1", "parentReference": {"driveId": "drive1"}}
         with patch.object(indexer, "_graph_get", return_value=_graph_response(200, body)):
-            result = indexer._get_channel_files_folder_sync("tok", "c1", "General")
-        assert result == {"drive_id": "drive1", "item_id": "item1"}
+            folder, skip = indexer._get_channel_files_folder_sync("tok", "c1", "General")
+        assert folder == {"drive_id": "drive1", "item_id": "item1"}
+        assert skip is None
 
     def test_404_not_provisioned_is_skipped(self):
         # On-demand provisioning: filesFolder 404s until the Files tab is opened (D7).
@@ -996,18 +999,24 @@ class TestChannelFilesFolder:
             "_graph_get",
             return_value=_graph_response(404, text="Folder location for this channel is not ready"),
         ):
-            assert indexer._get_channel_files_folder_sync("tok", "c1", "General") is None
+            folder, skip = indexer._get_channel_files_folder_sync("tok", "c1", "General")
+        assert folder is None
+        assert "provision" in skip.reason
+        # Benign/expected — must not escalate to a WARNING every run.
+        assert skip.suspicious is False
 
     def test_403_shared_channel_is_skipped(self):
         # A forbidden *shared* channel can legitimately be cross-tenant → skip, don't abort.
         indexer = _make_team_indexer()
         with patch.object(indexer, "_graph_get", return_value=_graph_response(403)):
-            assert (
-                indexer._get_channel_files_folder_sync(
-                    "tok", "c1", "Shared", membership_type="shared"
-                )
-                is None
+            folder, skip = indexer._get_channel_files_folder_sync(
+                "tok", "c1", "Shared", membership_type="shared"
             )
+        assert folder is None
+        # Reason must flag the ambiguity (cross-tenant vs app scoped away from the site)...
+        assert "forbidden" in skip.reason and "scoped away" in skip.reason
+        # ...and be suspicious, because it could be a real silent-miss (misconfig).
+        assert skip.suspicious is True
 
     def test_403_standard_channel_raises_auth_error(self):
         # A 403 on a standard/private channel means a real scope gap (e.g. missing
@@ -1062,7 +1071,10 @@ class TestChannelFilesFolder:
         with patch.object(
             indexer, "_graph_get", return_value=_graph_response(200, {"id": "item1"})
         ):
-            assert indexer._get_channel_files_folder_sync("tok", "c1", "General") is None
+            folder, skip = indexer._get_channel_files_folder_sync("tok", "c1", "General")
+        assert folder is None
+        assert "missing drive/item id" in skip.reason
+        assert skip.suspicious is True
 
 
 class TestFilterChannels:
@@ -1087,7 +1099,7 @@ class TestFilterChannels:
 
 
 class TestRunAsyncTeamMode:
-    def test_indexes_files_across_channels_and_skips_unprovisioned(self):
+    def test_indexes_files_across_channels_and_skips_unprovisioned(self, caplog):
         indexer = _make_team_indexer(team_id="team-1")
         client = MagicMock()
         indexer.connection_config.get_client.return_value = client
@@ -1106,8 +1118,13 @@ class TestRunAsyncTeamMode:
         ]
 
         def _files_folder(access_token, channel_id, channel_name, membership_type=None):
-            # chA resolves; chB is not provisioned -> skip
-            return {"drive_id": "d1", "item_id": "root1"} if channel_id == "chA" else None
+            # chA resolves; chB is not provisioned -> benign skip (folder None, with a reason)
+            if channel_id == "chA":
+                return {"drive_id": "d1", "item_id": "root1"}, None
+            return None, _ChannelSkip(
+                "files folder not provisioned (its Files tab has never been opened)",
+                suspicious=False,
+            )
 
         async def _capture(drive_item, raw_permissions=None):
             return FileData(
@@ -1119,6 +1136,7 @@ class TestRunAsyncTeamMode:
             )
 
         with (
+            caplog.at_level(logging.INFO),
             patch.object(indexer, "_list_channels_sync", return_value=channels),
             patch.object(indexer, "_get_channel_files_folder_sync", side_effect=_files_folder),
             patch.object(indexer, "_fetch_permissions_raw", return_value={"f1": None, "f2": None}),
@@ -1128,6 +1146,15 @@ class TestRunAsyncTeamMode:
 
         # Only chA's two files; chB skipped because its files folder isn't provisioned.
         assert [r.identifier for r in results] == ["f1", "f2"]
+
+        # The skipped channel must be surfaced in a consolidated end-of-run summary (by name),
+        # not left as only an inline log line a completed run can bury.
+        summary = [r for r in caplog.records if "skipped 1" in r.getMessage()]
+        assert summary, "expected an end-of-run skipped-channel summary"
+        assert "'Private'" in summary[0].getMessage()
+        # A purely benign (not-provisioned) skip must be INFO, not a WARNING that fires every
+        # run and trains people to ignore it.
+        assert summary[0].levelno == logging.INFO
 
         # Pin the cross-site addressing: the provisioned channel's *own* resolved
         # drive_id/item_id must be used. With a bare MagicMock, client.drives[x].items[y]
@@ -1155,7 +1182,7 @@ class TestRunAsyncTeamMode:
             patch.object(
                 indexer,
                 "_get_channel_files_folder_sync",
-                return_value={"drive_id": "d1", "item_id": "root1"},
+                return_value=({"drive_id": "d1", "item_id": "root1"}, None),
             ),
             patch.object(
                 indexer, "_list_channel_files", side_effect=_client_request_exception(403)
@@ -1174,7 +1201,7 @@ class TestRunAsyncTeamMode:
             patch.object(
                 indexer,
                 "_get_channel_files_folder_sync",
-                return_value={"drive_id": "d1", "item_id": "root1"},
+                return_value=({"drive_id": "d1", "item_id": "root1"}, None),
             ),
             patch.object(
                 indexer, "_list_channel_files", side_effect=_client_request_exception(429)
@@ -1183,6 +1210,97 @@ class TestRunAsyncTeamMode:
         ):
             _drain_run_async(indexer)
         assert exc_info.value.status_code == 429
+
+    def test_forbidden_shared_channel_is_named_in_run_summary(self, caplog):
+        # A forbidden shared channel is a benign skip (possibly cross-tenant), but it could
+        # equally be an app scoped away from that channel's site by an Application Access
+        # Policy. Either way it must be surfaced by name in the run summary so a "successful"
+        # run can't quietly omit an entire channel's files with only an inline log line.
+        indexer = _make_team_indexer(team_id="team-1")
+        indexer.connection_config.get_client.return_value = MagicMock()
+        channels = [{"id": "chS", "displayName": "ExternalShared", "membershipType": "shared"}]
+
+        def _files_folder(access_token, channel_id, channel_name, membership_type=None):
+            return None, _ChannelSkip(
+                "access forbidden (HTTP 403) — possibly a cross-tenant shared channel, or the "
+                "app is scoped away from this channel's site",
+                suspicious=True,
+            )
+
+        with (
+            caplog.at_level(logging.INFO),
+            patch.object(indexer, "_list_channels_sync", return_value=channels),
+            patch.object(indexer, "_get_channel_files_folder_sync", side_effect=_files_folder),
+        ):
+            results = _drain_run_async(indexer)
+
+        assert results == []
+        summary = [r for r in caplog.records if "indexed 0 of 1" in r.getMessage()]
+        assert summary, "expected an end-of-run skipped-channel summary"
+        assert "'ExternalShared'" in summary[0].getMessage()
+        assert "scoped away" in summary[0].getMessage()
+        # A suspicious skip (possible silent miss / misconfig) must escalate to WARNING.
+        assert summary[0].levelno == logging.WARNING
+
+    def test_summary_emitted_on_early_termination(self, caplog):
+        # The summary lives in a `finally`, so it must still fire when the consumer abandons
+        # the generator partway (early break / downstream error / cancellation -> GeneratorExit).
+        # Post-loop code would otherwise be skipped, losing the very visibility this adds.
+        indexer = _make_team_indexer(team_id="team-1")
+        client = MagicMock()
+        indexer.connection_config.get_client.return_value = client
+
+        di1 = Mock()
+        di1.id = "f1"
+        di2 = Mock()
+        di2.id = "f2"
+        (
+            client.drives.__getitem__.return_value.items.__getitem__.return_value.get_files.return_value.execute_query.return_value
+        ) = [di1, di2]
+
+        # Skipped channel is processed first (recorded before any yield); the second channel
+        # yields, and we abandon the generator mid-stream.
+        channels = [
+            {"id": "chSkip", "displayName": "Unprovisioned", "membershipType": "standard"},
+            {"id": "chA", "displayName": "General", "membershipType": "standard"},
+        ]
+
+        def _files_folder(access_token, channel_id, channel_name, membership_type=None):
+            if channel_id == "chA":
+                return {"drive_id": "d1", "item_id": "root1"}, None
+            return None, _ChannelSkip(
+                "files folder not provisioned (its Files tab has never been opened)",
+                suspicious=False,
+            )
+
+        async def _capture(drive_item, raw_permissions=None):
+            return FileData(
+                source_identifiers=SourceIdentifiers(
+                    filename=drive_item.id, fullpath=drive_item.id
+                ),
+                connector_type="sharepoint",
+                identifier=drive_item.id,
+            )
+
+        async def _run_and_stop_early():
+            gen = indexer.run_async()
+            first = await gen.__anext__()  # take one file, then abandon the crawl
+            await gen.aclose()  # GeneratorExit -> _run_team_async's finally
+            return first
+
+        with (
+            caplog.at_level(logging.INFO),
+            patch.object(indexer, "_list_channels_sync", return_value=channels),
+            patch.object(indexer, "_get_channel_files_folder_sync", side_effect=_files_folder),
+            patch.object(indexer, "_fetch_permissions_raw", return_value={"f1": None, "f2": None}),
+            patch.object(indexer, "drive_item_to_file_data", new=AsyncMock(side_effect=_capture)),
+        ):
+            first = asyncio.run(_run_and_stop_early())
+
+        assert first.identifier == "f1"
+        # Despite abandoning the generator after one item, the skip summary still fired.
+        summary = [r for r in caplog.records if "'Unprovisioned'" in r.getMessage()]
+        assert summary, "summary must be emitted even when iteration ends early"
 
 
 class TestTeamRecordLocator:
@@ -1396,7 +1514,7 @@ class TestNonIngestibleArtifactFiltering:
             patch.object(
                 indexer,
                 "_get_channel_files_folder_sync",
-                return_value={"drive_id": "d1", "item_id": "root1"},
+                return_value=({"drive_id": "d1", "item_id": "root1"}, None),
             ),
             patch.object(indexer, "_fetch_permissions_raw", side_effect=self._perms_for_chunk),
             patch.object(indexer, "drive_item_to_file_data", new=AsyncMock(side_effect=_capture)),
