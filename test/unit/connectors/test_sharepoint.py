@@ -16,6 +16,7 @@ from unstructured_ingest.error import (
 )
 from unstructured_ingest.processes.connectors.onedrive import OnedriveIndexer
 from unstructured_ingest.processes.connectors.sharepoint import (
+    _GRAPH_MAX_ATTEMPTS,
     NON_INGESTIBLE_EXTENSIONS,
     SharepointAccessConfig,
     SharepointConnectionConfig,
@@ -23,6 +24,7 @@ from unstructured_ingest.processes.connectors.sharepoint import (
     SharepointDownloaderConfig,
     SharepointIndexer,
     SharepointIndexerConfig,
+    _graph_backoff_seconds,
     _is_non_ingestible_artifact,
 )
 
@@ -734,11 +736,14 @@ def test_flush_missing_permission_entry_defaults_to_none():
 # ---------------------------------------------------------------------------
 
 
-def _graph_response(status_code: int, json_body: dict = None, text: str = "") -> Mock:
+def _graph_response(
+    status_code: int, json_body: dict = None, text: str = "", headers: dict = None
+) -> Mock:
     resp = Mock()
     resp.status_code = status_code
     resp.json.return_value = json_body or {}
     resp.text = text
+    resp.headers = headers or {}
     return resp
 
 
@@ -790,7 +795,7 @@ class TestTargetingValidation:
 class TestGraphGet:
     def test_sets_prefer_and_auth_headers(self):
         indexer = _make_team_indexer()
-        with patch("requests.get") as mock_get:
+        with patch("requests.get", return_value=_graph_response(200)) as mock_get:
             indexer._graph_get("tok", "/teams/x/channels", prefer="include-unknown-enum-members")
         assert mock_get.call_args[0][0] == "https://graph.microsoft.com/v1.0/teams/x/channels"
         headers = mock_get.call_args.kwargs["headers"]
@@ -799,22 +804,67 @@ class TestGraphGet:
 
     def test_passes_absolute_url_through(self):
         indexer = _make_team_indexer()
-        with patch("requests.get") as mock_get:
+        with patch("requests.get", return_value=_graph_response(200)) as mock_get:
             indexer._graph_get("tok", "https://graph.microsoft.com/v1.0/next-page")
         assert mock_get.call_args[0][0] == "https://graph.microsoft.com/v1.0/next-page"
         assert "Prefer" not in mock_get.call_args.kwargs["headers"]
 
-    def test_network_error_becomes_retriable_connection_error(self):
+    def test_network_error_retries_then_raises_connection_error(self):
         # A raw requests network error/timeout must not escape uncaught (which would abort
-        # an in-flight multi-channel crawl); it is a retriable typed connection error.
+        # an in-flight multi-channel crawl); it is retried a bounded number of times and then
+        # surfaced as a retriable typed connection error.
         import requests
 
         indexer = _make_team_indexer()
         with (
-            patch("requests.get", side_effect=requests.exceptions.ConnectionError("boom")),
+            patch("requests.get", side_effect=requests.exceptions.ConnectionError("boom")) as mget,
+            patch("time.sleep"),
             pytest.raises(SourceConnectionNetworkError),
         ):
             indexer._graph_get("tok", "/teams/x/channels")
+        assert mget.call_count == _GRAPH_MAX_ATTEMPTS
+
+    def test_retries_429_then_returns_success(self):
+        # A transient throttle is retried at the request level before propagating.
+        indexer = _make_team_indexer()
+        responses = [_graph_response(429), _graph_response(429), _graph_response(200, {"ok": True})]
+        with (
+            patch("requests.get", side_effect=responses) as mget,
+            patch("time.sleep"),
+        ):
+            resp = indexer._graph_get("tok", "/teams/x/channels")
+        assert resp.status_code == 200
+        assert mget.call_count == 3
+
+    def test_persistent_429_returned_after_retries_for_caller_to_map(self):
+        # After exhausting retries, the throttled response is handed back so the caller maps
+        # it to a typed RateLimitError with the real status.
+        indexer = _make_team_indexer()
+        with (
+            patch("requests.get", return_value=_graph_response(429)) as mget,
+            patch("time.sleep"),
+        ):
+            resp = indexer._graph_get("tok", "/teams/x/channels")
+        assert resp.status_code == 429
+        assert mget.call_count == _GRAPH_MAX_ATTEMPTS
+
+    def test_5xx_is_retried(self):
+        indexer = _make_team_indexer()
+        responses = [_graph_response(503), _graph_response(200, {"ok": True})]
+        with (
+            patch("requests.get", side_effect=responses) as mget,
+            patch("time.sleep"),
+        ):
+            resp = indexer._graph_get("tok", "/teams/x/channels")
+        assert resp.status_code == 200
+        assert mget.call_count == 2
+
+    def test_backoff_honors_retry_after_when_longer(self):
+        # Exponential base for attempt 1 is 2.0s; a longer Retry-After wins, a shorter loses.
+        assert _graph_backoff_seconds(1, retry_after=30.0) == 30.0
+        assert _graph_backoff_seconds(1, retry_after=0.5) == 2.0
+        # Capped so a hostile header can't stall indefinitely.
+        assert _graph_backoff_seconds(1, retry_after=10_000.0) == 300.0
 
 
 class TestListChannels:
@@ -836,25 +886,38 @@ class TestListChannels:
         indexer = _make_team_indexer()
         with (
             patch.object(indexer, "_graph_get", return_value=_graph_response(403, text="denied")),
-            pytest.raises(UserAuthError, match="Channel.ReadBasic.All"),
+            pytest.raises(UserAuthError, match="Channel.ReadBasic.All") as exc_info,
         ):
             indexer._list_channels_sync("tok")
+        # The real HTTP status must be preserved (not UserAuthError's default 401).
+        assert exc_info.value.status_code == 403
 
     def test_404_maps_to_not_found(self):
         indexer = _make_team_indexer()
         with (
             patch.object(indexer, "_graph_get", return_value=_graph_response(404)),
-            pytest.raises(NotFoundError, match="Team not found"),
+            pytest.raises(NotFoundError, match="Team not found") as exc_info,
         ):
             indexer._list_channels_sync("tok")
+        assert exc_info.value.status_code == 404
 
     def test_429_maps_to_rate_limit(self):
         indexer = _make_team_indexer()
         with (
             patch.object(indexer, "_graph_get", return_value=_graph_response(429)),
-            pytest.raises(RateLimitError),
+            pytest.raises(RateLimitError) as exc_info,
         ):
             indexer._list_channels_sync("tok")
+        assert exc_info.value.status_code == 429
+
+    def test_5xx_maps_to_connection_error(self):
+        indexer = _make_team_indexer()
+        with (
+            patch.object(indexer, "_graph_get", return_value=_graph_response(503, text="down")),
+            pytest.raises(SourceConnectionNetworkError) as exc_info,
+        ):
+            indexer._list_channels_sync("tok")
+        assert exc_info.value.status_code == 503
 
 
 class TestPrecheckTeam:
@@ -864,9 +927,10 @@ class TestPrecheckTeam:
         indexer = _make_team_indexer()
         with (
             patch.object(indexer, "_graph_get", return_value=_graph_response(403, text="denied")),
-            pytest.raises(UserAuthError, match="Sites.Read.All"),
+            pytest.raises(UserAuthError, match="Sites.Read.All") as exc_info,
         ):
             indexer._probe_files_read_scope_sync("tok")
+        assert exc_info.value.status_code == 403
 
     def test_probe_200_passes(self):
         indexer = _make_team_indexer()
@@ -951,20 +1015,23 @@ class TestChannelFilesFolder:
         indexer = _make_team_indexer()
         with (
             patch.object(indexer, "_graph_get", return_value=_graph_response(403, text="denied")),
-            pytest.raises(UserAuthError, match="Sites.Read.All"),
+            pytest.raises(UserAuthError, match="Sites.Read.All") as exc_info,
         ):
             indexer._get_channel_files_folder_sync(
                 "tok", "c1", "General", membership_type="standard"
             )
+        # 403 must surface as 403, not UserAuthError's default 401.
+        assert exc_info.value.status_code == 403
 
     def test_403_unknown_membership_raises_auth_error(self):
         # No membership type given → treat conservatively (not a known-safe shared channel).
         indexer = _make_team_indexer()
         with (
             patch.object(indexer, "_graph_get", return_value=_graph_response(401)),
-            pytest.raises(UserAuthError),
+            pytest.raises(UserAuthError) as exc_info,
         ):
             indexer._get_channel_files_folder_sync("tok", "c1", "General")
+        assert exc_info.value.status_code == 401
 
     def test_429_raises_rate_limit(self):
         # Throttling must be retriable (consistent with channel enumeration), not a
@@ -972,21 +1039,23 @@ class TestChannelFilesFolder:
         indexer = _make_team_indexer()
         with (
             patch.object(indexer, "_graph_get", return_value=_graph_response(429)),
-            pytest.raises(RateLimitError),
+            pytest.raises(RateLimitError) as exc_info,
         ):
             indexer._get_channel_files_folder_sync(
                 "tok", "c1", "General", membership_type="standard"
             )
+        assert exc_info.value.status_code == 429
 
     def test_5xx_raises_connection_error(self):
         indexer = _make_team_indexer()
         with (
             patch.object(indexer, "_graph_get", return_value=_graph_response(503)),
-            pytest.raises(SourceConnectionNetworkError),
+            pytest.raises(SourceConnectionNetworkError) as exc_info,
         ):
             indexer._get_channel_files_folder_sync(
                 "tok", "c1", "General", membership_type="private"
             )
+        assert exc_info.value.status_code == 503
 
     def test_missing_drive_id_is_skipped(self):
         indexer = _make_team_indexer()
@@ -1074,6 +1143,46 @@ class TestRunAsyncTeamMode:
         )
         with pytest.raises(UserError, match="not both"):
             _drain_run_async(indexer)
+
+    def test_listing_failure_propagates_typed_error_not_silent_skip(self):
+        # A real failure while listing a channel's files (after the folder resolved) must map
+        # to a typed error and propagate — not silently skip the channel and continue.
+        indexer = _make_team_indexer(team_id="team-1")
+        indexer.connection_config.get_client.return_value = MagicMock()
+        channels = [{"id": "chA", "displayName": "General", "membershipType": "standard"}]
+        with (
+            patch.object(indexer, "_list_channels_sync", return_value=channels),
+            patch.object(
+                indexer,
+                "_get_channel_files_folder_sync",
+                return_value={"drive_id": "d1", "item_id": "root1"},
+            ),
+            patch.object(
+                indexer, "_list_channel_files", side_effect=_client_request_exception(403)
+            ),
+            pytest.raises(UserAuthError) as exc_info,
+        ):
+            _drain_run_async(indexer)
+        assert exc_info.value.status_code == 403
+
+    def test_listing_throttle_propagates_rate_limit(self):
+        indexer = _make_team_indexer(team_id="team-1")
+        indexer.connection_config.get_client.return_value = MagicMock()
+        channels = [{"id": "chA", "displayName": "General", "membershipType": "standard"}]
+        with (
+            patch.object(indexer, "_list_channels_sync", return_value=channels),
+            patch.object(
+                indexer,
+                "_get_channel_files_folder_sync",
+                return_value={"drive_id": "d1", "item_id": "root1"},
+            ),
+            patch.object(
+                indexer, "_list_channel_files", side_effect=_client_request_exception(429)
+            ),
+            pytest.raises(RateLimitError) as exc_info,
+        ):
+            _drain_run_async(indexer)
+        assert exc_info.value.status_code == 429
 
 
 class TestTeamRecordLocator:

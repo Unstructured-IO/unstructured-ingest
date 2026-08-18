@@ -270,6 +270,44 @@ def _handle_client_request_exception(e: ClientRequestException, context: str) ->
     _raise(UserError, f"Failed to access {context}")
 
 
+def _graph_error(
+    error_cls: type[UnstructuredIngestError], message: str, resp: Any
+) -> UnstructuredIngestError:
+    """Build a typed error from a raw Graph ``requests`` response, stamping the real HTTP
+    status (and any ``Retry-After``) onto the instance.
+
+    This is the requests-based analogue of what ``_handle_client_request_exception`` does for
+    the office365 SDK path. Without it, a hand-built ``UserAuthError`` for a 403 would surface
+    as its class-default status 401 and a 5xx as 400 — misleading status-based retry handling
+    and API consumers.
+    """
+    err = error_cls(message)
+    status_code = getattr(resp, "status_code", None)
+    if status_code is not None:
+        err.status_code = status_code
+    retry_after = _parse_retry_after(getattr(resp, "headers", None))
+    if retry_after is not None:
+        err.retry_after = retry_after
+    return err
+
+
+# Bounded retry for the raw Graph REST calls (channel enumeration, filesFolder resolution, the
+# precheck scope probe). The office365 SDK path gets retries via the downloader's tenacity
+# wrapper; these hand-rolled ``requests`` calls need their own so a single throttle / 5xx /
+# transient network blip retries the request before the error propagates and retries the run.
+_GRAPH_MAX_ATTEMPTS = 4
+_GRAPH_BACKOFF_BASE = 2.0
+
+
+def _graph_backoff_seconds(attempt: int, retry_after: Optional[float]) -> float:
+    """Exponential backoff for a Graph retry, honoring a server ``Retry-After`` when it is
+    longer than the exponential value; both capped at ``_MAX_RETRY_AFTER_WAIT``."""
+    base = min(_GRAPH_BACKOFF_BASE * (2 ** (attempt - 1)), _MAX_RETRY_AFTER_WAIT)
+    if retry_after is not None:
+        return min(max(retry_after, base), _MAX_RETRY_AFTER_WAIT)
+    return base
+
+
 @dataclass
 class SharepointIndexer(OnedriveIndexer):
     connection_config: SharepointConnectionConfig
@@ -412,13 +450,20 @@ class SharepointIndexer(OnedriveIndexer):
         team_id = self.index_config.team_id
         resp = self._graph_get(access_token, f"/groups/{team_id}/drive/root")
         if resp.status_code in (401, 403):
-            raise UserAuthError(
-                f"[HTTP {resp.status_code}] The app can enumerate channels but cannot read files "
-                f"for team '{team_id}'. Grant the Sites.Read.All (or Files.Read.All) application "
-                f"scope so channel files can be indexed and downloaded: {_truncate_body(resp.text)}"
+            raise _graph_error(
+                UserAuthError,
+                f"[HTTP {resp.status_code}] The app can enumerate channels but cannot read "
+                f"files for team '{team_id}'. Grant the Sites.Read.All (or Files.Read.All) "
+                f"application scope so channel files can be indexed and downloaded: "
+                f"{_truncate_body(resp.text)}",
+                resp,
             )
         if resp.status_code == 429:
-            raise RateLimitError(f"Rate limited validating file-read scope for team '{team_id}'")
+            raise _graph_error(
+                RateLimitError,
+                f"Rate limited validating file-read scope for team '{team_id}'",
+                resp,
+            )
         if resp.status_code >= 400:
             # Not an auth failure (e.g. an unexpected 404 on the group drive, or a transient
             # 5xx). Don't block a connection already validated for enumeration — the run-time
@@ -571,11 +616,12 @@ class SharepointIndexer(OnedriveIndexer):
             try:
                 drive_items = await asyncio.to_thread(self._list_channel_files, folder)
             except ClientRequestException as e:
-                logger.warning(
-                    f"skipping channel '{channel_name}': failed to list files: "
-                    f"{safe_error_summary(e)}"
-                )
-                continue
+                # Listing files after the folder resolved can still fail for real reasons
+                # (auth / throttle / upstream). Map to a typed error and propagate — a
+                # standard/private 401/403 or a 429/5xx here is a genuine failure, not a
+                # channel to silently drop. (Verified-benign skips happen only at folder
+                # resolution: unprovisioned 404s and forbidden shared channels.)
+                _handle_client_request_exception(e, f"Teams channel '{channel_name}' files")
 
             async for fd in self._emit_drive_items(drive_items, access_token):
                 yield fd
@@ -606,22 +652,49 @@ class SharepointIndexer(OnedriveIndexer):
 
     @requires_dependencies(["requests"], extras="sharepoint")
     def _graph_get(self, access_token: str, url: str, prefer: Optional[str] = None):
+        """GET a Graph REST URL with bounded retry.
+
+        Retries transient failures — throttling (429), upstream 5xx, and network/timeout
+        errors — up to ``_GRAPH_MAX_ATTEMPTS``, backing off and honoring ``Retry-After``, so a
+        single blip doesn't propagate. After exhaustion a network error raises a retriable
+        ``SourceConnectionNetworkError``; a still-throttled/5xx response is returned so the
+        caller maps it to a typed error carrying the real status. Non-transient responses
+        (2xx, 401, 403, 404, ...) are returned immediately for the caller to interpret.
+        """
+        import time
+
         import requests
 
         headers = {"Authorization": f"Bearer {access_token}"}
         if prefer:
             headers["Prefer"] = prefer
         full_url = url if url.startswith("http") else f"{GRAPH_BASE_URL}{url}"
-        try:
-            return requests.get(full_url, headers=headers, timeout=60)
-        except requests.exceptions.RequestException as exc:
-            # A transient network error / timeout is retriable — surface it as a typed
-            # connection error so the run is retried, rather than letting a raw requests
-            # exception abort the whole crawl (e.g. partway through a multi-channel Teams
-            # walk). Applies to both channel enumeration and filesFolder resolution.
-            raise SourceConnectionNetworkError(
-                f"network error calling Microsoft Graph ({url}): {safe_error_summary(exc)}"
-            ) from exc
+
+        resp = None
+        for attempt in range(1, _GRAPH_MAX_ATTEMPTS + 1):
+            try:
+                resp = requests.get(full_url, headers=headers, timeout=60)
+            except requests.exceptions.RequestException as exc:
+                if attempt >= _GRAPH_MAX_ATTEMPTS:
+                    # Transient network/timeout, retries exhausted — a retriable typed error so
+                    # the run retries, rather than a raw requests exception aborting the crawl.
+                    raise SourceConnectionNetworkError(
+                        f"network error calling Microsoft Graph ({url}) after {attempt} "
+                        f"attempt(s): {safe_error_summary(exc)}"
+                    ) from exc
+                time.sleep(_graph_backoff_seconds(attempt, None))
+                continue
+
+            if resp.status_code == 429 or resp.status_code >= 500:
+                if attempt >= _GRAPH_MAX_ATTEMPTS:
+                    # Persistent throttle / upstream error — hand the response back so the
+                    # caller maps it to a typed error stamped with the real status.
+                    return resp
+                time.sleep(_graph_backoff_seconds(attempt, _parse_retry_after(resp.headers)))
+                continue
+
+            return resp
+        return resp
 
     def _list_channels_sync(self, access_token: str) -> list[dict]:
         """Enumerate a team's channels via Graph (paginated), sending the Prefer header so
@@ -632,19 +705,34 @@ class SharepointIndexer(OnedriveIndexer):
         while url:
             resp = self._graph_get(access_token, url, prefer=_CHANNELS_PREFER_HEADER)
             if resp.status_code in (401, 403):
-                raise UserAuthError(
+                raise _graph_error(
+                    UserAuthError,
                     f"[HTTP {resp.status_code}] Access forbidden enumerating channels for team "
                     f"'{team_id}'. The app registration needs the Team.ReadBasic.All and "
-                    f"Channel.ReadBasic.All application scopes: {_truncate_body(resp.text)}"
+                    f"Channel.ReadBasic.All application scopes: {_truncate_body(resp.text)}",
+                    resp,
                 )
             if resp.status_code == 404:
-                raise NotFoundError(f"Team not found: '{team_id}'")
+                raise _graph_error(NotFoundError, f"Team not found: '{team_id}'", resp)
             if resp.status_code == 429:
-                raise RateLimitError(f"Rate limited enumerating channels for team '{team_id}'")
+                raise _graph_error(
+                    RateLimitError,
+                    f"Rate limited enumerating channels for team '{team_id}'",
+                    resp,
+                )
+            if resp.status_code >= 500:
+                raise _graph_error(
+                    SourceConnectionNetworkError,
+                    f"[HTTP {resp.status_code}] Upstream SharePoint error enumerating channels "
+                    f"for team '{team_id}': {_truncate_body(resp.text)}",
+                    resp,
+                )
             if resp.status_code >= 400:
-                raise UserError(
+                raise _graph_error(
+                    UserError,
                     f"[HTTP {resp.status_code}] Failed to enumerate channels for team "
-                    f"'{team_id}': {_truncate_body(resp.text)}"
+                    f"'{team_id}': {_truncate_body(resp.text)}",
+                    resp,
                 )
             body = resp.json()
             channels.extend(body.get("value", []))
@@ -692,19 +780,25 @@ class SharepointIndexer(OnedriveIndexer):
                     f"(may be a cross-tenant shared channel); skipping"
                 )
                 return None
-            raise UserAuthError(
+            raise _graph_error(
+                UserAuthError,
                 f"[HTTP {resp.status_code}] Access forbidden resolving the files folder for "
                 f"channel '{channel_name}'. The app registration needs Sites.Read.All (and "
-                f"Files.Read.All) to read Teams channel files: {_truncate_body(resp.text)}"
+                f"Files.Read.All) to read Teams channel files: {_truncate_body(resp.text)}",
+                resp,
             )
         if resp.status_code == 429:
-            raise RateLimitError(
-                f"Rate limited resolving files folder for channel '{channel_name}'"
+            raise _graph_error(
+                RateLimitError,
+                f"Rate limited resolving files folder for channel '{channel_name}'",
+                resp,
             )
         if resp.status_code >= 500:
-            raise SourceConnectionNetworkError(
+            raise _graph_error(
+                SourceConnectionNetworkError,
                 f"[HTTP {resp.status_code}] Upstream SharePoint error resolving files folder "
-                f"for channel '{channel_name}'"
+                f"for channel '{channel_name}'",
+                resp,
             )
         if resp.status_code >= 400:
             logger.warning(
