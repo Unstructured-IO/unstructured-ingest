@@ -1,5 +1,8 @@
 CHANGELOG.md
   s_e828d16f2a8ac9::t_38de0f78e8565c 2-6
+  s_ea1f6623d550ab::t_adef69ae7cfbc2 1
+unstructured_ingest/__version__.py
+  s_ea1f6623d550ab::t_873a90e84f75a6 1
 ---
 {
   "schema_version": "authorship/3.0.0",
@@ -19,6 +22,14 @@ CHANGELOG.md
       "agent_id": {
         "tool": "claude",
         "id": "673ed226-4040-4a32-b7de-8d566868c93f",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulkarayan <pk@unstructured.io>"
+    },
+    "s_ea1f6623d550ab": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "50541373-687c-4dba-9c63-68c544efc839",
         "model": "claude-opus-4-8"
       },
       "human_author": "paulkarayan <pk@unstructured.io>"
