@@ -1,0 +1,19 @@
+unstructured_ingest/processes/connectors/vectara.py
+  s_7f4842b4def1c7::t_d8363ef049fe95 47
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "1c0b36a292ba4592a102f9e733302ab4662e6d76",
+  "prompts": {},
+  "sessions": {
+    "s_7f4842b4def1c7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a8a631ef-611b-444f-a2cd-a8218190fca1",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Trevor Bossert <alanboss@gmail.com>"
+    }
+  }
+}
