@@ -164,6 +164,7 @@ test = [
     "networkx",
     "htmlBuilder",
     "office365-rest-python-client",
+    "pymilvus",
 ]
 
 [project.scripts]
