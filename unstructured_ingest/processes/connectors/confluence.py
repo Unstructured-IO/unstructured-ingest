@@ -633,12 +633,11 @@ class ConfluenceIndexer(Indexer):
 
 
 class ConfluenceDownloaderConfig(HtmlMixin, DownloaderConfig):
-    # DEPRECATED (PLU-534): permissions are now resolved at index time, so this cap is
-    # read from ConfluenceIndexerConfig instead and this field is unused. Kept to avoid
-    # breaking existing serialized configs; remove once the FE moves it to the index step.
+    # Unused by the downloader since PLU-534 (permissions are resolved at index time),
+    # but kept identical to ConfluenceIndexerConfig.max_num_metadata_permissions so the
+    # shared CLI option stays consistent and existing serialized configs keep working.
     max_num_metadata_permissions: int = Field(
-        250,
-        description="Deprecated; use ConfluenceIndexerConfig.max_num_metadata_permissions",
+        250, description="Approximate maximum number of permissions included in metadata"
     )
 
     @requires_dependencies(["bs4"])
