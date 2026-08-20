@@ -57,19 +57,36 @@ def _iso8601_to_epoch_str(iso_date: Optional[str]) -> Optional[str]:
     return str(parser.parse(iso_date).timestamp())
 
 
+# Confluence principals fall into three kinds. "access-class" covers the built-in
+# categories (ALL_LICENSED_USERS, ALL_PRODUCT_ADMINS, anonymous, ...) that appear on
+# essentially every space; earlier code assumed only user/group and raised KeyError on
+# these, which was swallowed and produced blank permissions_data (PLU-625). Unknown
+# principal types are skipped rather than crashing the whole parse.
+_PRINCIPAL_TYPE_TO_BUCKET = {
+    "user": "users",
+    "group": "groups",
+    "access-class": "access_classes",
+}
+
+
+def _empty_permission_buckets() -> dict[str, set]:
+    return {"users": set(), "groups": set(), "access_classes": set()}
+
+
 def _parse_permissions(
     doc_permissions: dict,
     space_permissions: list,
     max_num_metadata_permissions: int,
 ) -> dict[str, dict]:
     """
-    Parses document and space permissions to determine final user/group roles.
+    Parses document and space permissions to determine final user/group/access-class roles.
 
     :param doc_permissions: dict containing document-level restrictions
     - doc_permissions type in Confluence: ContentRestrictionArray
     :param space_permissions: list of space-level permission assignments
     - space_permissions type in Confluence: list of SpacePermissionAssignment
-    :return: dict with operation as keys and each maps to dict with "users" and "groups"
+    :return: dict with operation as keys, each mapping to dict with "users", "groups",
+      and "access_classes"
 
     Get document permissions. If they exist, they will override space level permissions.
     Otherwise, apply relevant space permissions (read, administer, delete)
@@ -93,24 +110,29 @@ def _parse_permissions(
     )
 
     permissions_by_role = {
-        "read": {"users": set(), "groups": set()},
-        "update": {"users": set(), "groups": set()},
-        "delete": {"users": set(), "groups": set()},
+        "read": _empty_permission_buckets(),
+        "update": _empty_permission_buckets(),
+        "delete": _empty_permission_buckets(),
     }
 
     total_permissions = 0
 
     for action, permissions in doc_permissions.items():
+        if action not in permissions_by_role:
+            continue
         restrictions_dict = permissions.get("restrictions", {})
 
         for entity_type, entity_data in restrictions_dict.items():
-            for entity in entity_data.get("results"):
+            bucket = _PRINCIPAL_TYPE_TO_BUCKET.get(entity_type)
+            if bucket is None:
+                continue
+            for entity in entity_data.get("results") or []:
                 entity_id = entity["accountId"] if entity_type == "user" else entity["id"]
-                permissions_by_role[action][f"{entity_type}s"].add(entity_id)
+                permissions_by_role[action][bucket].add(entity_id)
                 total_permissions += 1
                 # edit permission implies view permission
                 if action == "update":
-                    permissions_by_role["read"][f"{entity_type}s"].add(entity_id)
+                    permissions_by_role["read"][bucket].add(entity_id)
                     # total_permissions += 1
                     # ^ omitting to not double count an entity.
                     # may result in a higher total count than max_num_metadata_permissions
@@ -121,6 +143,11 @@ def _parse_permissions(
             space_target_type = space_perm["operation"]["targetType"]
             space_entity_id = space_perm["principal"]["id"]
             space_entity_type = space_perm["principal"]["type"]
+            bucket = _PRINCIPAL_TYPE_TO_BUCKET.get(space_entity_type)
+            if bucket is None:
+                # Unknown principal type (not user/group/access-class); skip rather than
+                # crash the whole parse (PLU-625).
+                continue
 
             # Apply space-level view permissions if no page restrictions exist
             if (
@@ -128,16 +155,16 @@ def _parse_permissions(
                 and space_operation == "read"
                 and not page_view_restricted
             ):
-                permissions_by_role["read"][f"{space_entity_type}s"].add(space_entity_id)
+                permissions_by_role["read"][bucket].add(space_entity_id)
                 total_permissions += 1
 
             # Administer permission includes view + edit. Apply if not page restricted
             elif space_target_type == "space" and space_operation == "administer":
                 if not page_view_restricted:
-                    permissions_by_role["read"][f"{space_entity_type}s"].add(space_entity_id)
+                    permissions_by_role["read"][bucket].add(space_entity_id)
                     total_permissions += 1
                     if not page_edit_restricted:
-                        permissions_by_role["update"][f"{space_entity_type}s"].add(space_entity_id)
+                        permissions_by_role["update"][bucket].add(space_entity_id)
                         # total_permissions += 1
                         # ^ omitting to not double count an entity.
                         # may result in a higher total count than max_num_metadata_permissions
@@ -146,9 +173,9 @@ def _parse_permissions(
             elif (
                 space_target_type == "page"
                 and space_operation == "delete"
-                and space_entity_id in permissions_by_role["read"][f"{space_entity_type}s"]
+                and space_entity_id in permissions_by_role["read"][bucket]
             ):
-                permissions_by_role["delete"][f"{space_entity_type}s"].add(space_entity_id)
+                permissions_by_role["delete"][bucket].add(space_entity_id)
                 total_permissions += 1
 
     # turn sets into sorted lists for consistency and json serialization

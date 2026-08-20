@@ -168,12 +168,8 @@ def test_indexer_oauth_file_data_uses_cloud_identity():
     assert file_data.identifier == "456"
     assert file_data.source_identifiers.fullpath == "cloud-123/ENG/456.html"
     assert file_data.metadata.url == "https://example.atlassian.net/wiki/pages/456"
-    assert file_data.metadata.date_created == str(
-        parser.parse("2026-05-28T10:00:00Z").timestamp()
-    )
-    assert file_data.metadata.date_modified == str(
-        parser.parse("2026-05-28T11:00:00Z").timestamp()
-    )
+    assert file_data.metadata.date_created == str(parser.parse("2026-05-28T10:00:00Z").timestamp())
+    assert file_data.metadata.date_modified == str(parser.parse("2026-05-28T11:00:00Z").timestamp())
     assert file_data.metadata.version == "7"
     assert file_data.metadata.record_locator["cloud_id"] == "cloud-123"
     assert file_data.additional_metadata["site_url"] == "https://example.atlassian.net/wiki"
@@ -381,10 +377,7 @@ def test_precheck_with_spaces_uses_v2_spaces(monkeypatch, connection_config):
         result = indexer.precheck()
         calls = [
             mock.call("api/v2/spaces", params={"limit": 1}),
-            *[
-                mock.call("api/v2/spaces", params={"limit": 1, "keys": [space]})
-                for space in spaces
-            ],
+            *[mock.call("api/v2/spaces", params={"limit": 1, "keys": [space]}) for space in spaces],
         ]
         mock_client.get.assert_has_calls(calls, any_order=False)
         assert result is True
@@ -484,6 +477,7 @@ def test_downloader_error_redacts_secret(tmp_path, connection_config):
     # The page identifier and the sanitized summary survive for troubleshooting.
     assert "123" in message
     assert "Exception" in message
+
 
 # --- PLU-534: ACL digest (permissions_version) ---------------------------------
 
@@ -599,9 +593,11 @@ def test_indexer_emits_permissions_version(connection_config):
         {"update": {"users": [], "groups": []}},
         {"delete": {"users": [], "groups": []}},
     ]
-    with mock.patch.object(indexer, "_get_space_ids_and_keys", return_value=[("ENG", 987)]), \
-        mock.patch.object(indexer, "_get_docs_ids_within_one_space", return_value=docs), \
-        mock.patch(f"{CONFLUENCE_MODULE}.get_permissions_data", return_value=permissions_data):
+    with (
+        mock.patch.object(indexer, "_get_space_ids_and_keys", return_value=[("ENG", 987)]),
+        mock.patch.object(indexer, "_get_docs_ids_within_one_space", return_value=docs),
+        mock.patch(f"{CONFLUENCE_MODULE}.get_permissions_data", return_value=permissions_data),
+    ):
         results = list(indexer.run())
 
     assert len(results) == 1
@@ -613,9 +609,11 @@ def test_indexer_emits_permissions_version(connection_config):
 
 def test_indexer_permissions_unavailable_leaves_version_unset(connection_config):
     indexer, docs = _indexer_with_docs(connection_config, [_DOC])
-    with mock.patch.object(indexer, "_get_space_ids_and_keys", return_value=[("ENG", 987)]), \
-        mock.patch.object(indexer, "_get_docs_ids_within_one_space", return_value=docs), \
-        mock.patch(f"{CONFLUENCE_MODULE}.get_permissions_data", return_value=None):
+    with (
+        mock.patch.object(indexer, "_get_space_ids_and_keys", return_value=[("ENG", 987)]),
+        mock.patch.object(indexer, "_get_docs_ids_within_one_space", return_value=docs),
+        mock.patch(f"{CONFLUENCE_MODULE}.get_permissions_data", return_value=None),
+    ):
         results = list(indexer.run())
 
     assert len(results) == 1
@@ -624,3 +622,87 @@ def test_indexer_permissions_unavailable_leaves_version_unset(connection_config)
     assert fd.metadata.version == "7"
     assert fd.metadata.permissions_data is None
     assert fd.metadata.permissions_version is None
+
+
+# --- PLU-625: access-class principals must not crash the permission parser ---------
+
+
+def _run_get_permissions_data(connection_config, space_permissions, doc_restrictions):
+    mock_client = mock.MagicMock()
+    mock_client.get.return_value = {"results": space_permissions, "_links": {}}
+    mock_client.get_all_restrictions_for_content.return_value = doc_restrictions
+    with mock.patch.object(type(connection_config), "get_client", mock.MagicMock()):
+        type(connection_config).get_client.return_value.__enter__.return_value = mock_client
+        return get_permissions_data(
+            connection_config=connection_config,
+            doc_id="123",
+            space_id=987,
+            cache=OrderedDict(),
+            max_num_metadata_permissions=250,
+        )
+
+
+_NO_PAGE_RESTRICTION = {
+    "read": {"restrictions": {"user": {"results": []}, "group": {"results": []}}},
+    "update": {"restrictions": {"user": {"results": []}, "group": {"results": []}}},
+}
+
+
+def test_parse_handles_access_class_space_permissions(connection_config):
+    # ALL_PRODUCT_ADMINS is an access-class principal present on essentially every space.
+    # Before PLU-625 this raised KeyError (access-classs bucket) -> swallowed -> None.
+    space_permissions = [
+        {
+            "operation": {"key": "administer", "targetType": "space"},
+            "principal": {"id": "ALL_PRODUCT_ADMINS", "type": "access-class"},
+        },
+        {
+            "operation": {"key": "delete", "targetType": "page"},
+            "principal": {"id": "ALL_PRODUCT_ADMINS", "type": "access-class"},
+        },
+    ]
+    result = _run_get_permissions_data(connection_config, space_permissions, _NO_PAGE_RESTRICTION)
+
+    assert result is not None  # would be None (KeyError swallowed) before the fix
+    read = next(entry["read"] for entry in result if "read" in entry)
+    # access-class captured in its own bucket, alongside users/groups
+    assert set(read.keys()) == {"users", "groups", "access_classes"}
+    assert "ALL_PRODUCT_ADMINS" in read["access_classes"]
+    delete = next(entry["delete"] for entry in result if "delete" in entry)
+    assert "ALL_PRODUCT_ADMINS" in delete["access_classes"]
+
+
+def test_page_restriction_survives_access_class_space_permissions(connection_config):
+    # The regression: a page IS restricted to a named user, but the space also carries
+    # an access-class delete/page perm whose branch condition evaluated the missing
+    # bucket -> KeyError -> the whole parse threw and discarded the page restriction too.
+    space_permissions = [
+        {
+            "operation": {"key": "delete", "targetType": "page"},
+            "principal": {"id": "ALL_PRODUCT_ADMINS", "type": "access-class"},
+        },
+    ]
+    doc_restrictions = {
+        "read": {
+            "restrictions": {"user": {"results": [{"accountId": "u1"}]}, "group": {"results": []}}
+        },
+        "update": {"restrictions": {"user": {"results": []}, "group": {"results": []}}},
+    }
+    result = _run_get_permissions_data(connection_config, space_permissions, doc_restrictions)
+
+    assert result is not None  # previously None
+    read = next(entry["read"] for entry in result if "read" in entry)
+    # the explicit page restriction is preserved (it was being discarded by the crash)
+    assert "u1" in read["users"]
+
+
+def test_parse_skips_unknown_principal_type(connection_config):
+    # A principal type we don't model should be skipped, not crash.
+    space_permissions = [
+        {
+            "operation": {"key": "administer", "targetType": "space"},
+            "principal": {"id": "weird", "type": "some-future-type"},
+        },
+    ]
+    result = _run_get_permissions_data(connection_config, space_permissions, _NO_PAGE_RESTRICTION)
+    assert result is not None

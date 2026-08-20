@@ -4,6 +4,10 @@
 
 - **feat(confluence): enable incremental + emit an ACL digest (PLU-534).** Confluence was in no incremental allowlist, so it reprocessed every page on every run. The indexer now emits the content version (page `version.number`) and a per-file `permissions_version` ACL digest at index time, so under incremental (`reprocess_all=false`, `reprocess_on_permission_change=true`) an unchanged page is skipped and an ACL-only change (page restriction / space permission) reprocesses it. The permission fetch/parse moved from the downloader into module-level functions the indexer calls (single implementation); the digest follows the None-vs-`[]` contract (an unavailable fetch leaves the ACL fields unset so the comparison is skipped; a genuinely empty ACL yields a real digest). The now-redundant download-time permission fetch is removed, and `ConfluenceDownloaderConfig.max_num_metadata_permissions` is deprecated in favor of the same field on `ConfluenceIndexerConfig`.
 
+### Fixes
+
+- **fix(confluence): parse ACL `access-class` principals instead of crashing (PLU-625).** The permission parser assumed every principal was a `user` or `group` and raised `KeyError` on Confluence's built-in `access-class` principals (`ALL_LICENSED_USERS`, `ALL_PRODUCT_ADMINS`, …), which appear on essentially every space. The exception was swallowed, so `permissions_data` came back blank for every space — and, because the crash happened after page restrictions were already parsed, it discarded those too, so even explicitly-restricted pages emitted no ACL. Principals are now bucketed by type into `users` / `groups` / `access_classes` (unknown types skipped), so the parser no longer crashes, page restrictions survive, and access-class grants are captured in the digest.
+
 ## [1.10.3]
 
 ### Fixes
