@@ -1,3 +1,4 @@
+from collections import OrderedDict
 from unittest import mock
 
 import pytest
@@ -16,7 +17,9 @@ from unstructured_ingest.processes.connectors.confluence import (
     ConfluenceDownloaderConfig,
     ConfluenceIndexer,
     ConfluenceIndexerConfig,
+    get_permissions_data,
 )
+from unstructured_ingest.utils.acl import compute_permissions_version
 
 
 @pytest.fixture
@@ -336,9 +339,10 @@ def test_downloader_uses_v2_page_api(tmp_path, connection_config):
 
     with mock.patch.object(type(connection_config), "get_client", mock.MagicMock()):
         type(connection_config).get_client.return_value.__enter__.return_value = mock_client
-        with mock.patch.object(downloader, "_get_permissions_for_space", return_value=None):
-            response = downloader.run(file_data)
+        response = downloader.run(file_data)
 
+    # PLU-534: the downloader no longer fetches permissions (resolved at index time),
+    # so the only client.get is the v2 page fetch.
     mock_client.get.assert_called_once_with(
         "api/v2/pages/123",
         params={"body-format": "view", "include-version": "true"},
@@ -480,3 +484,143 @@ def test_downloader_error_redacts_secret(tmp_path, connection_config):
     # The page identifier and the sanitized summary survive for troubleshooting.
     assert "123" in message
     assert "Exception" in message
+
+# --- PLU-534: ACL digest (permissions_version) ---------------------------------
+
+CONFLUENCE_MODULE = "unstructured_ingest.processes.connectors.confluence"
+
+
+def test_get_permissions_data_none_when_space_fetch_unavailable(connection_config):
+    # A failed space-permission fetch is "unavailable", not "empty": return None so
+    # the caller leaves the ACL fields unset rather than fabricating an empty ACL.
+    mock_client = mock.MagicMock()
+    mock_client.get.side_effect = Exception("boom")
+
+    with mock.patch.object(type(connection_config), "get_client", mock.MagicMock()):
+        type(connection_config).get_client.return_value.__enter__.return_value = mock_client
+        result = get_permissions_data(
+            connection_config=connection_config,
+            doc_id="123",
+            space_id=987,
+            cache=OrderedDict(),
+            max_num_metadata_permissions=250,
+        )
+
+    assert result is None
+
+
+def test_get_permissions_data_returns_normalized_permissions(connection_config):
+    space_permissions = [
+        {
+            "operation": {"key": "read", "targetType": "space"},
+            "principal": {"id": "u-space", "type": "user"},
+        },
+    ]
+    mock_client = mock.MagicMock()
+    mock_client.get.return_value = {"results": space_permissions, "_links": {}}
+    mock_client.get_all_restrictions_for_content.return_value = {
+        "read": {
+            "restrictions": {
+                "user": {"results": [{"accountId": "u1"}]},
+                "group": {"results": []},
+            }
+        },
+        "update": {"restrictions": {"user": {"results": []}, "group": {"results": []}}},
+    }
+
+    with mock.patch.object(type(connection_config), "get_client", mock.MagicMock()):
+        type(connection_config).get_client.return_value.__enter__.return_value = mock_client
+        result = get_permissions_data(
+            connection_config=connection_config,
+            doc_id="123",
+            space_id=987,
+            cache=OrderedDict(),
+            max_num_metadata_permissions=250,
+        )
+
+    assert result is not None
+    assert [next(iter(entry)) for entry in result] == ["read", "update", "delete"]
+    read = next(entry["read"] for entry in result if "read" in entry)
+    # page-level read restriction is captured
+    assert "u1" in read["users"]
+
+
+def test_get_permissions_data_is_order_independent(connection_config):
+    # Determinism: the same permissions in a different API order must produce the
+    # same normalized result (and therefore the same digest).
+    def run_with_user_order(user_results):
+        mock_client = mock.MagicMock()
+        mock_client.get.return_value = {"results": [], "_links": {}}
+        mock_client.get_all_restrictions_for_content.return_value = {
+            "read": {
+                "restrictions": {
+                    "user": {"results": user_results},
+                    "group": {"results": []},
+                }
+            },
+        }
+        with mock.patch.object(type(connection_config), "get_client", mock.MagicMock()):
+            type(connection_config).get_client.return_value.__enter__.return_value = mock_client
+            return get_permissions_data(
+                connection_config=connection_config,
+                doc_id="123",
+                space_id=987,
+                cache=OrderedDict(),
+                max_num_metadata_permissions=250,
+            )
+
+    a = run_with_user_order([{"accountId": "u1"}, {"accountId": "u2"}])
+    b = run_with_user_order([{"accountId": "u2"}, {"accountId": "u1"}])
+    assert a == b
+    assert compute_permissions_version(a) == compute_permissions_version(b)
+
+
+def _indexer_with_docs(connection_config, docs):
+    indexer = ConfluenceIndexer(
+        connection_config=connection_config,
+        index_config=ConfluenceIndexerConfig(spaces=["ENG"]),
+    )
+    return indexer, docs
+
+
+_DOC = {
+    "space_id": 987,
+    "doc_id": "123",
+    "date_created": None,
+    "date_modified": None,
+    "version_number": 7,
+}
+
+
+def test_indexer_emits_permissions_version(connection_config):
+    indexer, docs = _indexer_with_docs(connection_config, [_DOC])
+    permissions_data = [
+        {"read": {"users": ["u1"], "groups": ["g1"]}},
+        {"update": {"users": [], "groups": []}},
+        {"delete": {"users": [], "groups": []}},
+    ]
+    with mock.patch.object(indexer, "_get_space_ids_and_keys", return_value=[("ENG", 987)]), \
+        mock.patch.object(indexer, "_get_docs_ids_within_one_space", return_value=docs), \
+        mock.patch(f"{CONFLUENCE_MODULE}.get_permissions_data", return_value=permissions_data):
+        results = list(indexer.run())
+
+    assert len(results) == 1
+    fd = results[0]
+    assert fd.metadata.version == "7"
+    assert fd.metadata.permissions_data == permissions_data
+    assert fd.metadata.permissions_version == compute_permissions_version(permissions_data)
+
+
+def test_indexer_permissions_unavailable_leaves_version_unset(connection_config):
+    indexer, docs = _indexer_with_docs(connection_config, [_DOC])
+    with mock.patch.object(indexer, "_get_space_ids_and_keys", return_value=[("ENG", 987)]), \
+        mock.patch.object(indexer, "_get_docs_ids_within_one_space", return_value=docs), \
+        mock.patch(f"{CONFLUENCE_MODULE}.get_permissions_data", return_value=None):
+        results = list(indexer.run())
+
+    assert len(results) == 1
+    fd = results[0]
+    # content version still emitted; ACL fields left unset so the compare is skipped
+    assert fd.metadata.version == "7"
+    assert fd.metadata.permissions_data is None
+    assert fd.metadata.permissions_version is None
