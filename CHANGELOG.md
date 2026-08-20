@@ -1,3 +1,9 @@
+## [1.10.4]
+
+### Enhancements
+
+- **feat(confluence): enable incremental + emit an ACL digest (PLU-534).** Confluence was in no incremental allowlist, so it reprocessed every page on every run. The indexer now emits the content version (page `version.number`) and a per-file `permissions_version` ACL digest at index time, so under incremental (`reprocess_all=false`, `reprocess_on_permission_change=true`) an unchanged page is skipped and an ACL-only change (page restriction / space permission) reprocesses it. The permission fetch/parse moved from the downloader into module-level functions the indexer calls (single implementation); the digest follows the None-vs-`[]` contract (an unavailable fetch leaves the ACL fields unset so the comparison is skipped; a genuinely empty ACL yields a real digest). The now-redundant download-time permission fetch is removed, and `ConfluenceDownloaderConfig.max_num_metadata_permissions` is deprecated in favor of the same field on `ConfluenceIndexerConfig`.
+
 ## [1.10.3]
 
 ### Fixes
