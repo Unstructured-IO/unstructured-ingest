@@ -95,18 +95,12 @@ def _parse_permissions(
     # Separate flags to track if view or edit is restricted at the page level
     page_view_restricted = bool(
         doc_permissions.get("read", {}).get("restrictions", {}).get("user", {}).get("results")
-        or doc_permissions.get("read", {})
-        .get("restrictions", {})
-        .get("group", {})
-        .get("results")
+        or doc_permissions.get("read", {}).get("restrictions", {}).get("group", {}).get("results")
     )
 
     page_edit_restricted = bool(
         doc_permissions.get("update", {}).get("restrictions", {}).get("user", {}).get("results")
-        or doc_permissions.get("update", {})
-        .get("restrictions", {})
-        .get("group", {})
-        .get("results")
+        or doc_permissions.get("update", {}).get("restrictions", {}).get("group", {}).get("results")
     )
 
     permissions_by_role = {
@@ -186,6 +180,28 @@ def _parse_permissions(
     return permissions_by_role
 
 
+def _next_page_path(response: dict) -> Optional[str]:
+    """Return the relative path for a Confluence v2 ``_links.next`` cursor page, or None.
+
+    Strips the ``/wiki/`` context path and preserves the query so the result can be
+    passed straight back to ``client.get``. Shared by the space-permissions fetch and
+    the indexer's page listing so both paginate identically.
+    """
+    next_link = response.get("_links", {}).get("next")
+    if not next_link:
+        return None
+
+    parsed_next_link = urlparse(next_link)
+    next_path = parsed_next_link.path or next_link
+    if "/wiki/" in next_path:
+        next_path = next_path.split("/wiki/", maxsplit=1)[1]
+    else:
+        next_path = next_path.lstrip("/")
+    if parsed_next_link.query:
+        next_path = f"{next_path}?{parsed_next_link.query}"
+    return next_path
+
+
 def _get_space_permissions(
     connection_config: "ConfluenceConnectionConfig",
     space_id: int,
@@ -208,11 +224,12 @@ def _get_space_permissions(
             # certain operations, so adding a limit here would result in too little data.
             space_permissions = []
             space_permissions_result = client.get(f"/api/v2/spaces/{space_id}/permissions")
-            space_permissions.extend(space_permissions_result["results"])
-            if space_permissions_result["_links"].get("next"):  # pagination
-                while space_permissions_result.get("next"):
-                    space_permissions_result = client.get(space_permissions_result["next"])
-                    space_permissions.extend(space_permissions_result["results"])
+            space_permissions.extend(space_permissions_result.get("results", []))
+            next_path = _next_page_path(space_permissions_result)
+            while next_path:  # follow every _links.next cursor page
+                space_permissions_result = client.get(next_path)
+                space_permissions.extend(space_permissions_result.get("results", []))
+                next_path = _next_page_path(space_permissions_result)
 
             if len(cache) >= cache_max_size:
                 cache.popitem(last=False)  # LRU/FIFO eviction
@@ -263,7 +280,10 @@ def get_permissions_data(
     ``permissions_version`` digest.
     """
     space_perm = _get_space_permissions(connection_config, space_id, cache)
-    if not space_perm:
+    # None means the space fetch was unavailable this run -> leave ACL fields unset.
+    # An empty list is a valid state (no space-level grants) and must still resolve
+    # page-level restrictions and emit a digest, so guard on None, not falsiness.
+    if space_perm is None:
         return None
     return _get_doc_permissions_data(
         connection_config, doc_id, space_perm, max_num_metadata_permissions
@@ -398,19 +418,7 @@ class ConfluenceIndexer(Indexer):
 
     @staticmethod
     def _get_next_page_path(response: dict) -> Optional[str]:
-        next_link = response.get("_links", {}).get("next")
-        if not next_link:
-            return None
-
-        parsed_next_link = urlparse(next_link)
-        next_path = parsed_next_link.path or next_link
-        if "/wiki/" in next_path:
-            next_path = next_path.split("/wiki/", maxsplit=1)[1]
-        else:
-            next_path = next_path.lstrip("/")
-        if parsed_next_link.query:
-            next_path = f"{next_path}?{parsed_next_link.query}"
-        return next_path
+        return _next_page_path(response)
 
     def _paginate_v2_results(
         self,
@@ -581,6 +589,10 @@ class ConfluenceIndexer(Indexer):
     def run(self) -> Generator[FileData, None, None]:
         from time import time
 
+        # The space-permissions LRU cache is scoped to a single index run; clear it
+        # here so a reused indexer instance cannot serve a stale ACL from a prior run
+        # and emit an unchanged digest after permissions changed.
+        self._permissions_cache.clear()
         space_ids_and_keys = self._get_space_ids_and_keys()
         for space_key, space_id in space_ids_and_keys:
             doc_ids = self._get_docs_ids_within_one_space(space_id)

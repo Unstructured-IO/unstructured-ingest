@@ -544,7 +544,17 @@ def test_get_permissions_data_is_order_independent(connection_config):
     # same normalized result (and therefore the same digest).
     def run_with_user_order(user_results):
         mock_client = mock.MagicMock()
-        mock_client.get.return_value = {"results": [], "_links": {}}
+        # Non-empty space perm so parsing/normalization actually runs (an empty space
+        # response would make the test assert nothing about ordering).
+        mock_client.get.return_value = {
+            "results": [
+                {
+                    "operation": {"key": "read", "targetType": "space"},
+                    "principal": {"id": "space-user", "type": "user"},
+                }
+            ],
+            "_links": {},
+        }
         mock_client.get_all_restrictions_for_content.return_value = {
             "read": {
                 "restrictions": {
@@ -622,6 +632,25 @@ def test_indexer_permissions_unavailable_leaves_version_unset(connection_config)
     assert fd.metadata.version == "7"
     assert fd.metadata.permissions_data is None
     assert fd.metadata.permissions_version is None
+
+
+def test_indexer_emits_digest_for_empty_permissions(connection_config):
+    # Empty-but-present ACL ([]) is a real state (no grants), distinct from unavailable
+    # (None). It must still emit permissions_data == [] and a real digest so a later
+    # revocation-to-empty is detected rather than dropped as "unavailable".
+    indexer, docs = _indexer_with_docs(connection_config, [_DOC])
+    with (
+        mock.patch.object(indexer, "_get_space_ids_and_keys", return_value=[("ENG", 987)]),
+        mock.patch.object(indexer, "_get_docs_ids_within_one_space", return_value=docs),
+        mock.patch(f"{CONFLUENCE_MODULE}.get_permissions_data", return_value=[]),
+    ):
+        results = list(indexer.run())
+
+    assert len(results) == 1
+    fd = results[0]
+    assert fd.metadata.version == "7"
+    assert fd.metadata.permissions_data == []
+    assert fd.metadata.permissions_version == compute_permissions_version([])
 
 
 # --- PLU-625: access-class principals must not crash the permission parser ---------
@@ -706,3 +735,10 @@ def test_parse_skips_unknown_principal_type(connection_config):
     ]
     result = _run_get_permissions_data(connection_config, space_permissions, _NO_PAGE_RESTRICTION)
     assert result is not None
+    # the unknown principal is skipped, not silently bucketed under some role
+    assert all(
+        "weird" not in principal_ids
+        for role in result
+        for buckets in role.values()
+        for principal_ids in buckets.values()
+    )
