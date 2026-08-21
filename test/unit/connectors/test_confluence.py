@@ -17,6 +17,8 @@ from unstructured_ingest.processes.connectors.confluence import (
     ConfluenceDownloaderConfig,
     ConfluenceIndexer,
     ConfluenceIndexerConfig,
+    _get_space_permissions,
+    _next_page_path,
     get_permissions_data,
 )
 from unstructured_ingest.utils.acl import compute_permissions_version
@@ -742,3 +744,95 @@ def test_parse_skips_unknown_principal_type(connection_config):
         for buckets in role.values()
         for principal_ids in buckets.values()
     )
+
+
+# --- space-permission pagination, malformed pages, and per-run cache (PLU-534 review) ---
+
+
+def _space_perm(principal_id, key="read"):
+    return {
+        "operation": {"key": key, "targetType": "space"},
+        "principal": {"id": principal_id, "type": "user"},
+    }
+
+
+def _patched_client(connection_config, mock_client):
+    patcher = mock.patch.object(type(connection_config), "get_client", mock.MagicMock())
+    patcher.start()
+    type(connection_config).get_client.return_value.__enter__.return_value = mock_client
+    return patcher
+
+
+def test_next_page_path_normalizes_wiki_prefix_and_query():
+    resp = {"_links": {"next": "/wiki/api/v2/spaces/987/permissions?cursor=abc"}}
+    assert _next_page_path(resp) == "api/v2/spaces/987/permissions?cursor=abc"
+    assert _next_page_path({"_links": {}}) is None
+    assert _next_page_path({}) is None
+
+
+def test_get_space_permissions_paginates_and_normalizes_cursor(connection_config):
+    page1 = {
+        "results": [_space_perm("u1")],
+        "_links": {"next": "/wiki/api/v2/spaces/987/permissions?cursor=abc"},
+    }
+    page2 = {"results": [_space_perm("u2")], "_links": {}}
+    mock_client = mock.MagicMock()
+    mock_client.get.side_effect = [page1, page2]
+    patcher = _patched_client(connection_config, mock_client)
+    try:
+        result = _get_space_permissions(connection_config, 987, OrderedDict())
+    finally:
+        patcher.stop()
+
+    # every _links.next page is accumulated, not just the first
+    assert [p["principal"]["id"] for p in result] == ["u1", "u2"]
+    # the cursor URL is normalized (/wiki/ stripped, query kept) before the next GET
+    assert mock_client.get.call_args_list[1].args[0] == "api/v2/spaces/987/permissions?cursor=abc"
+
+
+def test_get_space_permissions_none_on_malformed_initial_page(connection_config):
+    # A 200 whose body omits `results` must not fabricate an empty ACL.
+    mock_client = mock.MagicMock()
+    mock_client.get.return_value = {"_links": {}}
+    cache = OrderedDict()
+    patcher = _patched_client(connection_config, mock_client)
+    try:
+        result = _get_space_permissions(connection_config, 987, cache)
+    finally:
+        patcher.stop()
+
+    assert result is None
+    assert 987 not in cache  # failures are never cached
+
+
+def test_get_space_permissions_none_on_malformed_cursor_page(connection_config):
+    # A malformed later page discards the partial result rather than returning a
+    # truncated ACL that would look like a revocation of the missing pages.
+    page1 = {
+        "results": [_space_perm("u1")],
+        "_links": {"next": "/wiki/api/v2/spaces/987/permissions?cursor=abc"},
+    }
+    bad_cursor_page = {"_links": {}}
+    mock_client = mock.MagicMock()
+    mock_client.get.side_effect = [page1, bad_cursor_page]
+    cache = OrderedDict()
+    patcher = _patched_client(connection_config, mock_client)
+    try:
+        result = _get_space_permissions(connection_config, 987, cache)
+    finally:
+        patcher.stop()
+
+    assert result is None
+    assert 987 not in cache
+
+
+def test_indexer_clears_permissions_cache_at_run_start(connection_config):
+    # A reused indexer instance must not serve a prior run's space ACL.
+    indexer = ConfluenceIndexer(
+        connection_config=connection_config,
+        index_config=ConfluenceIndexerConfig(spaces=["ENG"]),
+    )
+    indexer._permissions_cache[987] = [_space_perm("stale-user")]
+    with mock.patch.object(indexer, "_get_space_ids_and_keys", return_value=[]):
+        list(indexer.run())
+    assert 987 not in indexer._permissions_cache

@@ -224,12 +224,24 @@ def _get_space_permissions(
             # certain operations, so adding a limit here would result in too little data.
             space_permissions = []
             space_permissions_result = client.get(f"/api/v2/spaces/{space_id}/permissions")
-            space_permissions.extend(space_permissions_result.get("results", []))
-            next_path = _next_page_path(space_permissions_result)
-            while next_path:  # follow every _links.next cursor page
-                space_permissions_result = client.get(next_path)
-                space_permissions.extend(space_permissions_result.get("results", []))
+            page_results = space_permissions_result.get("results")
+            while True:  # follow every _links.next cursor page
+                if not isinstance(page_results, list):
+                    # A 200 whose body omits `results` is a failure masquerading as
+                    # success. Treat the whole fetch as unavailable (return None, not
+                    # cached) rather than fabricating an empty ACL, which the indexer
+                    # would emit as a digest and record as a permission revocation.
+                    logger.warning(
+                        f"Malformed space-permissions response for space {space_id}; "
+                        "treating permissions as unavailable this run"
+                    )
+                    return None
+                space_permissions.extend(page_results)
                 next_path = _next_page_path(space_permissions_result)
+                if not next_path:
+                    break
+                space_permissions_result = client.get(next_path)
+                page_results = space_permissions_result.get("results")
 
             if len(cache) >= cache_max_size:
                 cache.popitem(last=False)  # LRU/FIFO eviction
