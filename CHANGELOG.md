@@ -1,8 +1,52 @@
-## [1.10.0]
+## [1.11.0]
 
 ### Enhancements
 
 - **feat: annotate connectors with location capability markers.** `RegistryEntry` now carries opt-in capability markers (`location_shape`, `location_identity`, `supports_recursion`, and `emits_record_version`) plus per-field `x-runtime-eligible` schema hints, so consumers can identify a connector's target location shape, the settings paths that identify that location, and its recursion/record-version semantics. Markers default to unannotated (`location_shape=None`) so a connector without them is never mistaken for an explicit declaration and consumers fall back to their existing defaults. Markers are applied across the fsspec, SQL, search-index, and API-folder connector families.
+
+## [1.10.4]
+
+### Fixes
+
+- **chore(ci): bump `anthropics/claude-code-action` to `v1`.** Moves the `@claude` workflow off the deprecated `@beta` pin and migrates the tool allowlist to the current Claude Code CLI tool names (`Read`/`Glob`/`Grep`).
+
+## [1.10.3]
+
+### Fixes
+
+- **fix(milvus): classify client-caused gRPC errors as client errors.** A Milvus destination fed bad or expired customer credentials surfaced the gRPC `UNAUTHENTICATED` (and `PERMISSION_DENIED`/`INVALID_ARGUMENT`/`NOT_FOUND`) failure as a platform `DestinationConnectionError`/`WriteError`, counting a customer misconfiguration against the Job Completions SLO. The key wire reality (pymilvus 2.6.9): codes in `decorators.IGNORE_RETRY_CODES` — `UNAUTHENTICATED`, `PERMISSION_DENIED`, `INVALID_ARGUMENT` — are re-raised as the RAW `grpc.RpcError`, never wrapped in a `MilvusException`, so catching only `MilvusException` missed the entire customer-credential set. The classifier now resolves the `grpc.StatusCode` from BOTH a raw `grpc.RpcError` (`.code()`) and a `MilvusException` (`.code`, including the sync retry-storm path where pymilvus stores the raw `.code` method), mapping `UNAUTHENTICATED` -> `UserAuthError` (401) and `PERMISSION_DENIED`/`INVALID_ARGUMENT`/`NOT_FOUND` -> `UserError` (422); every other code stays a platform error. It is wired into `precheck()`, `insert_results()`, `delete_by_record_id()`, `_prepare_data_for_insert()`, and the missing-collection branch of `precheck()` (now a `UserError` instead of a platform `DestinationConnectionError`). `precheck()` also drops its `@DestinationConnectionError.wrap` decorator, which would otherwise re-wrap the reclassified error back into a platform error; the wrapper's catch-all fallback is reproduced inline so non-Milvus failures still raise `DestinationConnectionError`.
+
+## [1.10.2]
+
+### Fixes
+
+- **fix(sharepoint): stop echoing raw Microsoft Graph response bodies into errors and logs.** The Teams/SharePoint error paths interpolated the upstream Graph response body into raised error messages and logs after only a 500-char truncation — but truncation is not redaction, and the repo's own error policy (`safe_error_summary`) is that upstream response bodies are never surfaced because they can carry credentials or request payloads. Those paths now emit only allowlisted, non-sensitive fields — the Graph `error.code` (e.g. `accessDenied`) and the opaque request/correlation id — and never the raw body or free-text message. The extracted values are themselves treated as untrusted: each must be a string, is stripped to a conservative character allowlist (removing newlines to prevent log forging), and is length-capped; oversized bodies aren't parsed. This also fixes latent robustness bugs where a hostile body could crash the error handler: the module imports a custom `ValueError`, so `json`'s `JSONDecodeError` (a builtin `ValueError` subclass) would have escaped the `except`, and deeply nested JSON raises `RecursionError` — both are now caught and fall back to `no additional detail`.
+
+## [1.10.1]
+
+### Fixes
+
+- **fix(sharepoint): surface skipped Teams channels in a per-run summary.** A Teams crawl skips a channel whose files folder isn't provisioned or returns a forbidden shared-channel 403, but those skips were only inline log lines a long run could bury — so a run that finished with zero errors could still be silently missing an entire channel's files (e.g. a cross-tenant shared channel, or an app scoped away from a channel's own site by an Application Access Policy, which is indistinguishable from the 403 alone). `_run_team_async` now emits one consolidated summary at the end naming every skipped channel with its reason and an `indexed N of M` count. Severity is calibrated so it stays meaningful: a suspicious skip (a forbidden channel or unexpected response — a possible silent miss) is a WARNING worth investigating, while a purely benign not-yet-provisioned channel is an INFO note rather than an alarm that fires on every run.
+
+## [1.10.0]
+
+### Enhancements
+
+- **feat(sharepoint): index and download Microsoft Teams channel files.** The SharePoint connector can now target a Teams team (`team_id`, optionally filtered by `channels`) instead of a site, indexing each channel's files with the existing DriveItem walk, permission batching, and incremental behavior across standard, private, and shared channels. Private/shared channels live on separate sites, so `record_locator` now carries `drive_id`+`item_id` (with a fallback to the old site+path); existing site configs are unchanged, channel enumeration needs the `Team.ReadBasic.All` and `Channel.ReadBasic.All` scopes, and channels whose Files folder isn't provisioned yet are skipped. **Known limitation:** for private/shared channels, captured permissions (and the `permissions_version` digest) don't reflect channel membership, which lives in unresolved SharePoint site groups — full fidelity is a planned follow-up.
+
+- **feat(sharepoint): skip non-ingestible Loop / Fluid / Whiteboard artifacts.** `.loop`, `.fluid`, and `.whiteboard` files are Fluid Framework containers with no extractable bytes, so they're now dropped at index time in both site and Teams modes rather than downloaded and failed.
+
+## [1.9.4]
+
+### Fixes
+
+- **fix(sftp): constrain host-key negotiation to the pinned key's algorithm family.** SSH separates a key's *format* (`ssh-rsa` — what a key blob or `known_hosts` entry names) from the *public key algorithm* negotiated in KEXINIT (`ssh-rsa`, `rsa-sha2-256`, `rsa-sha2-512`; RFC 8332). `paramiko.SSHClient` only moves the literal known-hosts name to the front of its preference list, so against a server that has dropped SHA-1 `ssh-rsa` — Azure Blob Storage SFTP, among others — the pin matched nothing and negotiation fell through to the next mutual algorithm, normally `ecdsa-sha2-nistp256`. A correct `host_public_key` then failed with a host-key mismatch reporting an ECDSA key. `get_client` now passes `disabled_algorithms` so only the pinned key's family is offered. This also makes the `paramiko<5` cap from 1.9.2 non-load-bearing for such servers.
+
+- **fix(sftp): report host-key and authentication failures without echoing keys.** `BadHostKeyException.__str__` embeds both host keys in full, and printing the key the server just presented invites pasting it into `host_public_key` — which would trust whatever answered and defeat the pin. When `host_public_key` is set, that exception and `AuthenticationException` are now re-raised as `UserAuthError` with a short message and `from None`, which also keeps paramiko's frames — holding the password as a local in `client.py` `_auth` — out of the chained traceback. The remaining `SSHException` hierarchy is translated too: `IncompatiblePeer` gets a dedicated message, since constraining the offered algorithms means a server that publishes no host key in the pinned family now fails during negotiation rather than as a mismatch, and everything else — including the bare `SSHException("No authentication methods available")` that `_auth` raises from that same frame — becomes a `ConnectionError` carrying only `safe_error_summary`.
+
+- **fix(sftp): `SftpDownloader.connector_type` was a pydantic `FieldInfo`, not a string.** The dataclass assigned `Field(default=CONNECTOR_TYPE, init=False)` where its siblings use a bare literal, so the `FieldInfo` object became the default value. With no explicit `download_dir`, building the default download path raised `TypeError: unsupported operand type(s) for /: 'PosixPath' and 'FieldInfo'`. No other fsspec downloader was affected.
+
+- **fix(logging): strip credentials from URLs written to logs.** `DataSanitizer.sanitize_url` dropped query parameters but returned `netloc` verbatim, and userinfo (`user:password@`) lives in `netloc`. An fsspec-style `remote_url` carrying credentials therefore reached connector error logs in the clear through `log_connection_failed`. The userinfo is now replaced with `***`; it is dropped whole rather than masking only the password, since schemes like `https://<token>@host` carry the secret in the username.
 
 ## [1.9.3]
 
