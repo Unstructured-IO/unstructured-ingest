@@ -10,6 +10,7 @@ from unstructured_ingest.data_types.file_data import FileData
 from unstructured_ingest.logger import logger
 from unstructured_ingest.processes.connector_registry import (
     DestinationRegistryEntry,
+    LocationShape,
     SourceRegistryEntry,
 )
 from unstructured_ingest.processes.connectors.sql.sql import (
@@ -69,8 +70,14 @@ class SnowflakeConnectionConfig(SQLConnectionConfig):
     database: str = Field(
         default=None,
         description="Database name.",
+        json_schema_extra={"x-runtime-eligible": True},
     )
-    db_schema: str = Field(default=None, description="Database schema.", alias="schema")
+    db_schema: str = Field(
+        default=None,
+        description="Database schema.",
+        alias="schema",
+        json_schema_extra={"x-runtime-eligible": True},
+    )
     role: str = Field(
         default=None,
         description="Database role.",
@@ -112,7 +119,7 @@ class SnowflakeConnectionConfig(SQLConnectionConfig):
 
 
 class SnowflakeIndexerConfig(SQLIndexerConfig):
-    pass
+    table_name: str = Field(json_schema_extra={"x-runtime-eligible": True})
 
 
 @dataclass
@@ -329,6 +336,13 @@ snowflake_source_entry = SourceRegistryEntry(
     indexer=SnowflakeIndexer,
     downloader_config=SnowflakeDownloaderConfig,
     downloader=SnowflakeDownloader,
+    location_shape=LocationShape.SQL_TABLE,
+    location_identity=(
+        "connector_config.database",
+        "connector_config.schema",
+        "indexer_config.table_name",
+    ),
+    supports_recursion=False,
 )
 
 snowflake_destination_entry = DestinationRegistryEntry(
@@ -337,4 +351,11 @@ snowflake_destination_entry = DestinationRegistryEntry(
     uploader_config=SnowflakeUploaderConfig,
     upload_stager=SnowflakeUploadStager,
     upload_stager_config=SnowflakeUploadStagerConfig,
+    location_shape=LocationShape.SQL_TABLE,
+    location_identity=(
+        "connector_config.database",
+        "connector_config.schema",
+        "uploader_config.table_name",
+    ),
+    supports_recursion=False,
 )

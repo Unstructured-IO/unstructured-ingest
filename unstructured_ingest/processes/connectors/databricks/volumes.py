@@ -39,15 +39,24 @@ if TYPE_CHECKING:
 
 
 class DatabricksPathMixin(BaseModel):
-    volume: str = Field(description="Name of volume in the Unity Catalog")
-    catalog: str = Field(description="Name of the catalog in the Databricks Unity Catalog service")
+    volume: str = Field(
+        description="Name of volume in the Unity Catalog",
+        json_schema_extra={"x-runtime-eligible": True},
+    )
+    catalog: str = Field(
+        description="Name of the catalog in the Databricks Unity Catalog service",
+        json_schema_extra={"x-runtime-eligible": True},
+    )
     volume_path: Optional[str] = Field(
-        default=None, description="Optional path within the volume to write to"
+        default=None,
+        description="Optional path within the volume to write to",
+        json_schema_extra={"x-runtime-eligible": True},
     )
     databricks_schema: str = Field(
         default="default",
         alias="schema",
         description="Schema associated with the volume to write to in the Unity Catalog service",
+        json_schema_extra={"x-runtime-eligible": True},
     )
 
     @property

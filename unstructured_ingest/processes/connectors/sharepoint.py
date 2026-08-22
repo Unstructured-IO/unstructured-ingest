@@ -26,6 +26,7 @@ from unstructured_ingest.error import (
 )
 from unstructured_ingest.logger import logger
 from unstructured_ingest.processes.connector_registry import (
+    LocationShape,
     SourceRegistryEntry,
 )
 from unstructured_ingest.processes.connectors.onedrive import (
@@ -91,6 +92,7 @@ class SharepointConnectionConfig(OnedriveConnectionConfig):
                     This requires the app to be registered at a tenant level. \
                     Optional when indexing a Microsoft Teams team instead (set \
                     team_id on the indexer config); provide either a site or a team_id.",
+        json_schema_extra={"x-runtime-eligible": True},
     )
     library: Optional[str] = Field(
         default=None,
@@ -123,7 +125,7 @@ class SharepointConnectionConfig(OnedriveConnectionConfig):
 
 class SharepointIndexerConfig(OnedriveIndexerConfig):
     # TODO: We can probably make path non-optional on OnedriveIndexerConfig once tested
-    path: str = Field(default="")
+    path: str = Field(default="", json_schema_extra={"x-runtime-eligible": True})
     team_id: Optional[str] = Field(
         default=None,
         description="Microsoft Teams team (group) ID whose channel files should be indexed. "
@@ -1101,4 +1103,12 @@ sharepoint_source_entry = SourceRegistryEntry(
     indexer=SharepointIndexer,
     downloader_config=SharepointDownloaderConfig,
     downloader=SharepointDownloader,
+    location_shape=LocationShape.API_FOLDER,
+    location_identity=(
+        "connector_config.site",
+        "connector_config.library",
+        "indexer_config.path",
+    ),
+    emits_record_version=True,
+    supports_recursion=True,
 )

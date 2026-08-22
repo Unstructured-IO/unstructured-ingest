@@ -24,7 +24,10 @@ from unstructured_ingest.interfaces import (
     UploadStagerConfig,
 )
 from unstructured_ingest.logger import logger
-from unstructured_ingest.processes.connector_registry import DestinationRegistryEntry
+from unstructured_ingest.processes.connector_registry import (
+    DestinationRegistryEntry,
+    LocationShape,
+)
 from unstructured_ingest.utils.constants import RECORD_ID_LABEL
 from unstructured_ingest.utils.data_prep import get_data_df, get_json_data
 from unstructured_ingest.utils.dep_check import requires_dependencies
@@ -62,6 +65,7 @@ class DeltaTableConnectionConfig(ConnectionConfig):
             "Local path or path to the target folder in the S3 bucket, "
             "formatted as s3://my-bucket/my-folder/"
         ),
+        json_schema_extra={"x-runtime-eligible": True},
     )
 
     def update_storage_options(self, storage_options: dict[str, str]) -> None:
@@ -318,4 +322,6 @@ delta_table_destination_entry = DestinationRegistryEntry(
     uploader_config=DeltaTableUploaderConfig,
     upload_stager=DeltaTableUploadStager,
     upload_stager_config=DeltaTableUploadStagerConfig,
+    location_shape=LocationShape.FSSPEC_URL,
+    location_identity=("connector_config.table_uri",),
 )

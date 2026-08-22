@@ -23,7 +23,10 @@ from unstructured_ingest.interfaces import (
     IndexerConfig,
 )
 from unstructured_ingest.logger import logger
-from unstructured_ingest.processes.connector_registry import SourceRegistryEntry
+from unstructured_ingest.processes.connector_registry import (
+    LocationShape,
+    SourceRegistryEntry,
+)
 from unstructured_ingest.utils.dep_check import requires_dependencies
 
 MAX_EMAILS_PER_FOLDER = 1_000_000  # Maximum number of emails per folder
@@ -138,14 +141,19 @@ class OutlookConnectionConfig(ConnectionConfig):
 class OutlookIndexerConfig(IndexerConfig):
     outlook_folders: list[str] = Field(
         description="Folders to download email messages from. Do not specify subfolders. "
-        "Use quotes if there are spaces in folder names."
+        "Use quotes if there are spaces in folder names.",
+        json_schema_extra={"x-runtime-eligible": True},
     )
     recursive: bool = Field(
         default=False,
         description="Recursively download files in their respective folders otherwise stop at the"
         " files in provided folder level.",
+        json_schema_extra={"x-runtime-eligible": True},
     )
-    user_email: str = Field(description="Outlook email to download messages from.")
+    user_email: str = Field(
+        description="Outlook email to download messages from.",
+        json_schema_extra={"x-runtime-eligible": True},
+    )
 
 
 @dataclass
@@ -299,4 +307,8 @@ outlook_source_entry = SourceRegistryEntry(
     downloader=OutlookDownloader,
     downloader_config=OutlookDownloaderConfig,
     connection_config=OutlookConnectionConfig,
+    location_shape=LocationShape.API_FOLDER,
+    location_identity=("indexer_config.user_email", "indexer_config.outlook_folders"),
+    emits_record_version=True,
+    supports_recursion=True,
 )

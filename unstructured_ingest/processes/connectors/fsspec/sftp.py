@@ -19,6 +19,7 @@ from unstructured_ingest.error import ConnectionError, UserAuthError, safe_error
 from unstructured_ingest.logger import logger
 from unstructured_ingest.processes.connector_registry import (
     DestinationRegistryEntry,
+    LocationShape,
     SourceRegistryEntry,
 )
 from unstructured_ingest.processes.connectors.fsspec.fsspec import (
@@ -500,12 +501,15 @@ class SftpUploader(FsspecUploader):
             raise self.wrap_error(e=e)
 
 
+# sftp does not emit a per-record version, so emits_record_version stays False.
 sftp_source_entry = SourceRegistryEntry(
     indexer=SftpIndexer,
     indexer_config=SftpIndexerConfig,
     downloader=SftpDownloader,
     downloader_config=SftpDownloaderConfig,
     connection_config=SftpConnectionConfig,
+    location_shape=LocationShape.FSSPEC_URL,
+    location_identity=("indexer_config.remote_url",),
 )
 
 sftp_destination_entry = DestinationRegistryEntry(
@@ -514,4 +518,6 @@ sftp_destination_entry = DestinationRegistryEntry(
     connection_config=SftpConnectionConfig,
     upload_stager_config=BlobStoreUploadStagerConfig,
     upload_stager=BlobStoreUploadStager,
+    location_shape=LocationShape.FSSPEC_URL,
+    location_identity=("uploader_config.remote_url",),
 )
