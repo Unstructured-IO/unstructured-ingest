@@ -1,0 +1,36 @@
+unstructured_ingest/processes/connectors/fsspec/gcs.py
+  s_4ece04c2966b57::t_0a55bd18332e33 3
+  s_4ece04c2966b57::t_d2d6b29b2817e3 134-148,150,152-158,160-166,168
+test/unit/connectors/fsspec/test_gcs.py
+  s_4ece04c2966b57::t_2e89037e204bb4 84,89-109
+unstructured_ingest/processes/connectors/confluence.py
+  s_4ece04c2966b57::t_42099d79d844d7 642
+unstructured_ingest/processes/connectors/couchbase.py
+  s_4ece04c2966b57::t_de79eb9241db69 229
+unstructured_ingest/processes/connectors/jira.py
+  s_4ece04c2966b57::t_a0ed62c58f302f 487
+unstructured_ingest/processes/connectors/ibm_watsonx/ibm_watsonx_s3.py
+  s_4ece04c2966b57::t_21e65eedc2e7ea 388-390
+  s_4ece04c2966b57::t_c9ec41c4ac69b9 339,341,343-345
+  s_4ece04c2966b57::t_7bd381a98aaa38 350,354-356
+test/unit/connectors/test_confluence.py
+  s_4ece04c2966b57::t_13014250add55f 444-482
+test/unit/connectors/test_jira.py
+  s_4ece04c2966b57::t_07e32146c227af 344-378
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.19",
+  "base_commit_sha": "210a2c2410d17c754a640c06aded9a353672d177",
+  "prompts": {},
+  "sessions": {
+    "s_4ece04c2966b57": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a255c3c4-7793-40fc-bc81-405fb84acb8f",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulkarayan <pk@unstructured.io>"
+    }
+  }
+}

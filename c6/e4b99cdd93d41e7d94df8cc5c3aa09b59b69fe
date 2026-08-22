@@ -1,0 +1,40 @@
+test/unit/processes/connectors/test_vector_destination_skips_unembedded.py
+  s_7f4842b4def1c7::t_9acb8561dff27c 1-164
+unstructured_ingest/processes/connectors/qdrant/qdrant.py
+  s_7f4842b4def1c7::t_9acb8561dff27c 80-87
+CHANGELOG.md
+  s_7f4842b4def1c7::t_9acb8561dff27c 7-17
+  s_69d569c05959d5::t_cd509ab30fa574 18
+unstructured_ingest/processes/connectors/chroma.py
+  s_7f4842b4def1c7::t_9acb8561dff27c 114-121
+unstructured_ingest/processes/connectors/astradb.py
+  s_7f4842b4def1c7::t_9acb8561dff27c 352-361
+pyproject.toml
+  s_7f4842b4def1c7::t_9acb8561dff27c 84
+uv.lock
+  s_7f4842b4def1c7::t_3dbb3d0416682b 7449
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "c6e4b99cdd93d41e7d94df8cc5c3aa09b59b69fe",
+  "prompts": {},
+  "sessions": {
+    "s_69d569c05959d5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7891b849-b47f-4025-809b-bbc998244b28",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Trevor Bossert <alanboss@gmail.com>"
+    },
+    "s_7f4842b4def1c7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a8a631ef-611b-444f-a2cd-a8218190fca1",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Trevor Bossert <alanboss@gmail.com>"
+    }
+  }
+}

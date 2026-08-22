@@ -1,0 +1,28 @@
+test/unit/connectors/fsspec/test_gcs.py
+  s_4ece04c2966b57::t_94de8ac9a1e023 9
+  s_4ece04c2966b57::t_db17ed58a01235 67-100
+unstructured_ingest/processes/connectors/ibm_watsonx/ibm_watsonx_s3.py
+  s_4ece04c2966b57::t_bde51efd0b9d0c 348
+  s_4ece04c2966b57::t_a4e5c3b26893c4 335-339,341
+unstructured_ingest/processes/connectors/fsspec/gcs.py
+  s_4ece04c2966b57::t_705bfe0f36183d 136-143,145-151
+test/unit/connectors/ibm_watsonx/test_ibm_watsonx_s3.py
+  s_4ece04c2966b57::t_da4064937af88e 810-869
+  s_4ece04c2966b57::t_7997ed22a930f0 12-18
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.19",
+  "base_commit_sha": "46969f6d63b1aeeb3922e56b1e8bbb5509cee571",
+  "prompts": {},
+  "sessions": {
+    "s_4ece04c2966b57": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a255c3c4-7793-40fc-bc81-405fb84acb8f",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulkarayan <pk@unstructured.io>"
+    }
+  }
+}

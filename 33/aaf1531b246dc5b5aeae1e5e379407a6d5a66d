@@ -1,0 +1,23 @@
+test/unit/embed/test_vertexai.py
+  s_88f5e039d48824::t_51e67fc27bf33b 146-172
+  s_88f5e039d48824::t_d419946bf60585 11
+unstructured_ingest/embed/vertexai.py
+  s_88f5e039d48824::t_9ae11f9406ee05 166-175
+  s_88f5e039d48824::t_fbe4f155138ab1 176-181
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "33aaf1531b246dc5b5aeae1e5e379407a6d5a66d",
+  "prompts": {},
+  "sessions": {
+    "s_88f5e039d48824": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "abd23ca1-87cc-4d2f-9d2e-16aa42f63726",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulkarayan <pk@unstructured.io>"
+    }
+  }
+}

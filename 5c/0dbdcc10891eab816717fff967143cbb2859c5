@@ -1,0 +1,24 @@
+test/unit/cli/test_utils.py
+  s_233093dc6687b4::t_fe8c844d790dfd 5,8,15-17
+  s_233093dc6687b4::t_f6c8dc3a6a8b44 22-23
+  s_233093dc6687b4::t_b6e20835400911 7,12-14,18-21
+unstructured_ingest/cli/utils/model_conversion.py
+  s_233093dc6687b4::t_584006c2a57a82 131,134-139
+  s_233093dc6687b4::t_ff1636ec966bad 132-133,140
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "5c0dbdcc10891eab816717fff967143cbb2859c5",
+  "prompts": {},
+  "sessions": {
+    "s_233093dc6687b4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9858509e-c242-4567-92f4-fa8516232a87",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": null
+    }
+  }
+}

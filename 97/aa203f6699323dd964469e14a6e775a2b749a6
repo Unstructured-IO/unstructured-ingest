@@ -1,0 +1,43 @@
+unstructured_ingest/processes/connectors/confluence.py
+  s_6801f431a48564::t_cf4ad3a5c4ee7d 695
+unstructured_ingest/processes/connectors/outlook.py
+  s_6801f431a48564::t_03cb41212fdcdf 312-313
+unstructured_ingest/processes/connectors/kafka/cloud.py
+  s_6801f431a48564::t_378cb9b271792e 117-121
+  s_6801f431a48564::t_c24487ab7f7f6a 130-134
+unstructured_ingest/processes/connectors/sql/vastdb.py
+  s_6801f431a48564::t_0f880b996732cb 257-261
+  s_6801f431a48564::t_0701c53064c4b4 86
+unstructured_ingest/processes/connectors/sql/singlestore.py
+  s_6801f431a48564::t_173a93109dc8b1 180
+  s_6801f431a48564::t_d917407854cb90 85
+unstructured_ingest/processes/connectors/salesforce.py
+  s_6801f431a48564::t_187a7e96a0af9f 310
+unstructured_ingest/processes/connectors/elasticsearch/opensearch.py
+  s_6801f431a48564::t_1212676868834d 577
+unstructured_ingest/processes/connectors/duckdb/motherduck.py
+  s_6801f431a48564::t_c5b371fb8bb573 136-140
+unstructured_ingest/processes/connectors/redisdb.py
+  s_6801f431a48564::t_e7073af38776de 223-227
+unstructured_ingest/processes/connectors/onedrive.py
+  s_6801f431a48564::t_8ee450742f1cf1 792
+  s_6801f431a48564::t_8ed5f5771c2ac1 804
+unstructured_ingest/processes/connectors/vectara.py
+  s_6801f431a48564::t_e30ade517957b6 354
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.11",
+  "base_commit_sha": "97aa203f6699323dd964469e14a6e775a2b749a6",
+  "prompts": {},
+  "sessions": {
+    "s_6801f431a48564": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9f7ac434-a2a1-4c6a-b231-39cc7d67a5f7",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Trevor Bossert <alanboss@gmail.com>"
+    }
+  }
+}

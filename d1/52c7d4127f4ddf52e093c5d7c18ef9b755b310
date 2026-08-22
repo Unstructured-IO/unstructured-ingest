@@ -1,0 +1,43 @@
+test/unit/connectors/fsspec/test_box.py
+  s_7f682e0f06a699::t_41294ef8179d66 59-76,78-89,91-100
+  s_7f682e0f06a699::t_a55a532b7ee215 77
+  s_7f682e0f06a699::t_4bde1301c06334 90
+test/unit/connectors/fsspec/test_gcs.py
+  s_7f682e0f06a699::t_443a80320092f4 28
+  s_7f682e0f06a699::t_7cd9931d57120d 42
+  s_7f682e0f06a699::t_65470a0ff7f3a3 1-27,29-41,43-50
+test/unit/connectors/ibm_watsonx/test_ibm_watsonx_s3.py
+  s_7f682e0f06a699::t_12745d695389d2 600-660
+  s_7f682e0f06a699::t_79d2a8f08b2b6a 11
+unstructured_ingest/__version__.py
+  s_7f682e0f06a699::t_f44eb843dc1112 1
+CHANGELOG.md
+  s_7f682e0f06a699::t_f44eb843dc1112 1-6
+test/unit/connectors/fsspec/test_azure.py
+  s_7f682e0f06a699::t_e20c1fc1ba64ee 58-69,71-83,85-98,100-111
+  s_7f682e0f06a699::t_e41df537b937fd 99
+  s_7f682e0f06a699::t_1919658b7d6e3a 1
+  s_7f682e0f06a699::t_bb4180a7f84108 70
+  s_7f682e0f06a699::t_9c4979288bab9f 84
+test/unit/connectors/fsspec/test_dropbox.py
+  s_7f682e0f06a699::t_96018a99087e6c 42
+  s_7f682e0f06a699::t_d9cf032d07bdbd 56
+  s_7f682e0f06a699::t_3bfb66260ebee3 1-27,29-41,43-55,57-64
+  s_7f682e0f06a699::t_4e3fd9098c81ab 28
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "d152c7d4127f4ddf52e093c5d7c18ef9b755b310",
+  "prompts": {},
+  "sessions": {
+    "s_7f682e0f06a699": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d8bc9139-e708-46cf-8312-972bb2d5402b",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": null
+    }
+  }
+}

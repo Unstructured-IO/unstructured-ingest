@@ -1,0 +1,46 @@
+unstructured_ingest/processes/connectors/confluence.py
+  s_1a18e8e51887e4::t_7b29afc9f19528 8,52-58,342-357,368-371,373-375,672-673
+unstructured_ingest/utils/databricks.py
+  s_1a18e8e51887e4::t_7b29afc9f19528 12-23
+unstructured_ingest/processes/connectors/databricks/volumes_table.py
+  s_1a18e8e51887e4::t_7b29afc9f19528 33,209,221-225,246-249
+CHANGELOG.md
+  s_1a18e8e51887e4::t_7b29afc9f19528 8-36
+  s_1a18e8e51887e4::t_b1629fc13925a9 1,6-7
+unstructured_ingest/processes/connectors/jira.py
+  s_1a18e8e51887e4::t_7b29afc9f19528 8,43-50,257,268,298,330,333-334,336,474-475,509,523,536-549
+unstructured_ingest/processes/connectors/sharepoint.py
+  s_1a18e8e51887e4::t_dadd60cecb997d 309
+  s_1a18e8e51887e4::t_7b29afc9f19528 4,7,16,19,100-232,245-246,249,251-254,340,348,355-362,364,387-396,420-429,432,438-442,448-469
+  s_1a18e8e51887e4::t_683a484a4327ed 270
+test/unit/utils/test_databricks.py
+  s_1a18e8e51887e4::t_7b29afc9f19528 1-75
+unstructured_ingest/__version__.py
+  s_1a18e8e51887e4::t_64410c2627a353 1
+test/unit/connectors/test_confluence.py
+  s_1a18e8e51887e4::t_7b29afc9f19528 4,149-157,168-174,254-269,296-302,347-352
+test/unit/connectors/databricks/test_volumes_table.py
+  s_1a18e8e51887e4::t_7b29afc9f19528 229-307,489-650
+  s_1a18e8e51887e4::t_c468faa0c84044 651-652
+test/unit/connectors/test_jira.py
+  s_1a18e8e51887e4::t_7b29afc9f19528 2,84,96-101,105-149,182-343
+test/unit/connectors/test_sharepoint.py
+  s_1a18e8e51887e4::t_7b29afc9f19528 8-9,12-13,208-574,609-610,615,640,657
+  s_1a18e8e51887e4::t_74f5ea074d88c2 184,202
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.13",
+  "base_commit_sha": "e92b6fc650ecb8da8f44ae8c13aaa197be0ac4f5",
+  "prompts": {},
+  "sessions": {
+    "s_1a18e8e51887e4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "bc68d943-e464-47d7-905b-f8dd2acb0a4b",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulkarayan <pk@unstructured.io>"
+    }
+  }
+}

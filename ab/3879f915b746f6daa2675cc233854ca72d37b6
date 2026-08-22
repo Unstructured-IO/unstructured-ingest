@@ -1,0 +1,20 @@
+unstructured_ingest/processes/connectors/fsspec/gcs.py
+  s_1a18e8e51887e4::t_958cdf8303a1bd 103-110
+  s_1a18e8e51887e4::t_08532a81bbd740 3
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.13",
+  "base_commit_sha": "ab3879f915b746f6daa2675cc233854ca72d37b6",
+  "prompts": {},
+  "sessions": {
+    "s_1a18e8e51887e4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "bc68d943-e464-47d7-905b-f8dd2acb0a4b",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulkarayan <pk@unstructured.io>"
+    }
+  }
+}

@@ -1,0 +1,32 @@
+unstructured_ingest/processes/connectors/databricks/volumes_table.py
+  s_0faad4d627d1e3::t_f06fbd2861be3c 34,218,230-234,255-258
+unstructured_ingest/utils/databricks.py
+  s_0faad4d627d1e3::t_f06fbd2861be3c 12-23
+test/unit/utils/test_databricks.py
+  s_0faad4d627d1e3::t_f06fbd2861be3c 1-75
+CHANGELOG.md
+  s_0faad4d627d1e3::t_f06fbd2861be3c 9-11
+  s_0faad4d627d1e3::t_9419cea12badc9 1,7-8
+  s_0faad4d627d1e3::t_9a5065303c4bbd 12
+test/unit/connectors/databricks/test_volumes_table.py
+  s_0faad4d627d1e3::t_f06fbd2861be3c 229-307,489-650
+  s_0faad4d627d1e3::t_da2afeca555a28 651-652
+unstructured_ingest/__version__.py
+  s_0faad4d627d1e3::t_6c9b662d253f1d 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "38f9d7d8a9a159bdbb712165d243fbc752288b27",
+  "prompts": {},
+  "sessions": {
+    "s_0faad4d627d1e3": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "2934835b-0877-4d5d-a7d5-d3f64d69bcb1",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Trevor Bossert <alanboss@gmail.com>"
+    }
+  }
+}

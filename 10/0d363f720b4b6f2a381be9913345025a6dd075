@@ -1,0 +1,36 @@
+CHANGELOG.md
+  s_cd3ad937f7e8a8::t_f9c3040f1595ed 7-11
+  s_cd3ad937f7e8a8::t_342a5fd2b435a9 1
+  s_cd3ad937f7e8a8::t_dac0be6d811491 12
+unstructured_ingest/processes/embedder.py
+  s_cd3ad937f7e8a8::t_f9c3040f1595ed 55-69,132-142
+  s_cd3ad937f7e8a8::t_c4621a9ac199ab 143
+unstructured_ingest/__version__.py
+  s_cd3ad937f7e8a8::t_a2c1879d0fff3f 1
+test/unit/embed/test_vertexai.py
+  s_cd3ad937f7e8a8::t_f9c3040f1595ed 1-13,38-321
+pyproject.toml
+  s_cd3ad937f7e8a8::t_f9c3040f1595ed 103,161
+unstructured_ingest/embed/vertexai.py
+  s_cd3ad937f7e8a8::t_f9c3040f1595ed 2,5,18-23,41-118,124-149,167-207,214-279,288,291-292,302,306
+test/unit/embedders/test_vertexai.py
+  s_cd3ad937f7e8a8::t_f9c3040f1595ed 10,14-15,41-112
+uv.lock
+  s_cd3ad937f7e8a8::t_02d2b27d188a80 7307,7346,7412,7529
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "100d363f720b4b6f2a381be9913345025a6dd075",
+  "prompts": {},
+  "sessions": {
+    "s_cd3ad937f7e8a8": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b8da8a31-8167-4d72-a6bf-c291088a49b5",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Trevor Bossert <alanboss@gmail.com>"
+    }
+  }
+}

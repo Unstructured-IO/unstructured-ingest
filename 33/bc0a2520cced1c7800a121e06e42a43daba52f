@@ -1,0 +1,151 @@
+test/integration/connectors/test_neo4j.py
+  s_abd20c73044326::t_cba4d96f02648c 128-131,136,142-146,158-160
+test/unit/connectors/fsspec/test_gcs.py
+  s_abd20c73044326::t_cba4d96f02648c 1-50
+unstructured_ingest/processes/connectors/milvus.py
+  s_abd20c73044326::t_cba4d96f02648c 15,220-221
+unstructured_ingest/processes/connectors/fsspec/dropbox.py
+  s_abd20c73044326::t_cba4d96f02648c 15,136,140,146,148,150
+test/unit/connectors/zendesk/test_zendesk_client.py
+  s_abd20c73044326::t_cba4d96f02648c 1-60
+unstructured_ingest/processes/connectors/jira.py
+  s_abd20c73044326::t_cba4d96f02648c 16-21,246-249,251-254
+unstructured_ingest/processes/connectors/onedrive.py
+  s_abd20c73044326::t_cba4d96f02648c 22,25,256-259,261-264,700-703,705-708
+unstructured_ingest/processes/connectors/elasticsearch/elasticsearch.py
+  s_abd20c73044326::t_cba4d96f02648c 23,175-177,179-182,405-407,409-412,460-461,463,465-472,475,477-481,483-492
+.github/workflows/unit_tests.yml
+  s_abd20c73044326::t_cba4d96f02648c 73-75
+test/unit/connectors/test_github.py
+  s_abd20c73044326::t_cba4d96f02648c 1-826
+unstructured_ingest/processes/connectors/mongodb.py
+  s_abd20c73044326::t_cba4d96f02648c 21,23,166-170,172-175,358-362,364-367
+test/unit/connectors/duckdb/test_duckdb.py
+  s_abd20c73044326::t_cba4d96f02648c 1-41
+unstructured_ingest/processes/connectors/fsspec/gcs.py
+  s_abd20c73044326::t_cba4d96f02648c 3,14,102-112,141,146
+unstructured_ingest/processes/connectors/kafka/kafka.py
+  s_abd20c73044326::t_cba4d96f02648c 22,186-189,191-194,259-262,264-267
+test/unit/connectors/sql/test_teradata.py
+  s_abd20c73044326::t_cba4d96f02648c 1,668,1046-1052,1307-1311,1318-1322,1343,1359-1361,1419,1444,1536-1541,1614,1659-1840
+unstructured_ingest/processes/connectors/salesforce.py
+  s_abd20c73044326::t_cba4d96f02648c 32,34,109-111,154-157,159-162
+unstructured_ingest/error.py
+  s_abd20c73044326::t_cba4d96f02648c 1,4-87,100-103,112-117
+unstructured_ingest/processes/connectors/delta_table.py
+  s_abd20c73044326::t_cba4d96f02648c 12-17,157-160,162-165
+unstructured_ingest/__version__.py
+  s_abd20c73044326::t_c11221b84958b3 1
+unstructured_ingest/processes/connectors/sql/teradata.py
+  s_abd20c73044326::t_cba4d96f02648c 17,118-121,130-133,135-136,151-154,156-157,164,321,330,528,540,554,592,655-656
+unstructured_ingest/processes/connectors/vectara.py
+  s_abd20c73044326::t_cba4d96f02648c 12-17,133-137,139-142
+test/unit/test_error.py
+  s_abd20c73044326::t_cba4d96f02648c 9,12,32-35,37,60-157
+unstructured_ingest/processes/connectors/fsspec/sftp.py
+  s_abd20c73044326::t_cba4d96f02648c 3-4,15,18,52-184,227-245,267-316
+test/unit/connectors/test_salesforce.py
+  s_abd20c73044326::t_cba4d96f02648c 1-34
+test/unit/connectors/fsspec/test_box.py
+  s_abd20c73044326::t_cba4d96f02648c 59-100
+unstructured_ingest/processes/connectors/zendesk/client.py
+  s_abd20c73044326::t_cba4d96f02648c 13,220-221,229,235,240-241,245-246
+unstructured_ingest/processes/connectors/weaviate/weaviate.py
+  s_abd20c73044326::t_cba4d96f02648c 14-19,360-363
+unstructured_ingest/processes/connectors/chroma.py
+  s_abd20c73044326::t_cba4d96f02648c 10,145-148,162
+test/integration/connectors/test_milvus.py
+  s_abd20c73044326::t_cba4d96f02648c 541
+unstructured_ingest/processes/connectors/sql/sql.py
+  s_abd20c73044326::t_cba4d96f02648c 21-26,127-130,132-135,357-360,362-365
+unstructured_ingest/processes/connectors/slack.py
+  s_abd20c73044326::t_cba4d96f02648c 23,255-262,301-309,477-489
+unstructured_ingest/processes/connectors/fsspec/azure.py
+  s_abd20c73044326::t_cba4d96f02648c 11-17,129,132,134,140
+unstructured_ingest/processes/connectors/gitlab.py
+  s_abd20c73044326::t_cba4d96f02648c 16-21,168-171,173-176
+unstructured_ingest/processes/connectors/notion/connector.py
+  s_abd20c73044326::t_cba4d96f02648c 12-17,94-97,99-102
+unstructured_ingest/processes/connectors/duckdb/duckdb.py
+  s_abd20c73044326::t_cba4d96f02648c 9-14,104-107,109-112
+CHANGELOG.md
+  s_abd20c73044326::t_8601a7c1a1dd3e 1
+  s_abd20c73044326::t_cba4d96f02648c 7-84
+  s_abd20c73044326::t_c270b03ec98074 85
+test/unit/connectors/databricks/test_volumes.py
+  s_abd20c73044326::t_cba4d96f02648c 1-75
+test/unit/connectors/fsspec/test_s3.py
+  s_abd20c73044326::t_cba4d96f02648c 1-57
+unstructured_ingest/processes/connectors/elasticsearch/opensearch.py
+  s_abd20c73044326::t_cba4d96f02648c 20,303-306,493-496
+test/integration/connectors/test_github.py
+  s_abd20c73044326::t_cba4d96f02648c 23,46-71
+unstructured_ingest/processes/connectors/azure_ai_search.py
+  s_abd20c73044326::t_cba4d96f02648c 9-14,329-332
+unstructured_ingest/processes/connectors/fsspec/s3.py
+  s_abd20c73044326::t_cba4d96f02648c 13-18,142,149,158
+unstructured_ingest/processes/connectors/kdbai.py
+  s_abd20c73044326::t_cba4d96f02648c 9,116-119
+unstructured_ingest/processes/connectors/couchbase.py
+  s_abd20c73044326::t_cba4d96f02648c 22,173-176,209-212
+test/unit/connectors/ibm_watsonx/test_ibm_watsonx_s3.py
+  s_abd20c73044326::t_cba4d96f02648c 11,600-660
+unstructured_ingest/processes/connectors/confluence.py
+  s_abd20c73044326::t_cba4d96f02648c 18,22,264-267,269-272,278-281,283-288,299-301,303-308
+unstructured_ingest/processes/connectors/redisdb.py
+  s_abd20c73044326::t_cba4d96f02648c 9-15,170-173,175-178
+test/unit/connectors/test_chroma.py
+  s_abd20c73044326::t_cba4d96f02648c 1-37
+test/unit/connectors/fsspec/test_azure.py
+  s_abd20c73044326::t_cba4d96f02648c 1,58-111
+pyproject.toml
+  s_abd20c73044326::t_cba4d96f02648c 55
+unstructured_ingest/processes/connectors/sql/vastdb.py
+  s_abd20c73044326::t_cba4d96f02648c 11-15,110-113,115-118,200-203,205-208
+test/unit/connectors/fsspec/test_sftp.py
+  s_abd20c73044326::t_cba4d96f02648c 14-20,159-441
+test/unit/connectors/test_google_drive.py
+  s_abd20c73044326::t_cba4d96f02648c 514-581
+test/unit/connectors/fsspec/test_dropbox.py
+  s_abd20c73044326::t_cba4d96f02648c 1-64
+test/unit/connectors/test_slack.py
+  s_abd20c73044326::t_cba4d96f02648c 711-785
+test/unit/connectors/motherduck/test_motherduck.py
+  s_abd20c73044326::t_cba4d96f02648c 1-46
+unstructured_ingest/processes/connectors/astradb.py
+  s_abd20c73044326::t_cba4d96f02648c 26,28,182-185,187-190,461-464,466-469,484-486,488-491,602-605,608-611,614-616,624,628-630
+unstructured_ingest/processes/connectors/duckdb/motherduck.py
+  s_abd20c73044326::t_cba4d96f02648c 10-14,107-110,112-115
+test/unit/connectors/sql/test_vastdb.py
+  s_abd20c73044326::t_cba4d96f02648c 1-44
+unstructured_ingest/processes/connectors/fsspec/box.py
+  s_abd20c73044326::t_cba4d96f02648c 15,273,275,277,284
+unstructured_ingest/processes/connectors/pinecone.py
+  s_abd20c73044326::t_cba4d96f02648c 15,19,228-231,242-245,247-250
+unstructured_ingest/processes/connectors/github.py
+  s_abd20c73044326::t_cba4d96f02648c 1,5,18-19,23-24,49-138,141-155,167-177,185-189,195-202,205-208,211,213-242,245-262,267-268,274-329,339-343,353-390,392-427,434-436,439-443,445-446,448-449,454-460,464-468,476-485,492-504,513-525,531-533
+unstructured_ingest/processes/connectors/google_drive.py
+  s_abd20c73044326::t_cba4d96f02648c 16-21,406-409,412-413,415,554
+unstructured_ingest/processes/connectors/ibm_watsonx/ibm_watsonx_s3.py
+  s_abd20c73044326::t_cba4d96f02648c 17,93-95,97-98,104,109,112-113,115-116,118-119,121-124,197-200
+unstructured_ingest/processes/connectors/databricks/volumes.py
+  s_abd20c73044326::t_cba4d96f02648c 21,93,98,100,102,104-105
+uv.lock
+  s_abd20c73044326::t_77139c3f7ee844 7131,7474
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "33bc0a2520cced1c7800a121e06e42a43daba52f",
+  "prompts": {},
+  "sessions": {
+    "s_abd20c73044326": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "741c2eb0-851c-4a69-96e7-2906c030e510",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Trevor Bossert <alanboss@gmail.com>"
+    }
+  }
+}

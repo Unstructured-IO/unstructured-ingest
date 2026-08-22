@@ -1,0 +1,29 @@
+test/unit/connectors/test_salesforce.py
+  s_7f682e0f06a699::t_32b062ba96f7bc 1-34
+unstructured_ingest/__version__.py
+  s_7f682e0f06a699::t_32b062ba96f7bc 1
+unstructured_ingest/processes/connectors/chroma.py
+  s_7f682e0f06a699::t_32b062ba96f7bc 156
+unstructured_ingest/processes/connectors/salesforce.py
+  s_7f682e0f06a699::t_32b062ba96f7bc 108-110
+CHANGELOG.md
+  s_7f682e0f06a699::t_32b062ba96f7bc 1-6
+test/unit/connectors/test_chroma.py
+  s_7f682e0f06a699::t_32b062ba96f7bc 1-37
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "186e1aa5863767c6633b63efc47c6c1b56d51454",
+  "prompts": {},
+  "sessions": {
+    "s_7f682e0f06a699": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d8bc9139-e708-46cf-8312-972bb2d5402b",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulkarayan <pk@unstructured.io>"
+    }
+  }
+}

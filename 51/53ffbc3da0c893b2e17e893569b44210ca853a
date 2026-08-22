@@ -1,0 +1,44 @@
+test/unit/connectors/fsspec/test_s3.py
+  s_7f682e0f06a699::t_06978003553214 1-57
+test/unit/connectors/sql/test_vastdb.py
+  s_7f682e0f06a699::t_9d1e2ed1438be6 32-33
+  s_7f682e0f06a699::t_f67ceaad3a6630 35-39
+  s_7f682e0f06a699::t_0f1cd5ec869aef 1-31,34,40-44
+test/unit/connectors/zendesk/test_zendesk_client.py
+  s_7f682e0f06a699::t_f64fd29e877fdd 45-46
+  s_7f682e0f06a699::t_e4ca047cc3c56a 3,16-18
+  s_7f682e0f06a699::t_018146b57a85a6 36-37
+  s_7f682e0f06a699::t_519e454048cf3c 1-2,4-15,19-35,38-44,47-53,56-60
+  s_7f682e0f06a699::t_a299a9ff2fe95d 54-55
+test/unit/connectors/duckdb/test_duckdb.py
+  s_7f682e0f06a699::t_01becbc54e767d 29-30
+  s_7f682e0f06a699::t_98dc67ec66a7d0 32-36
+  s_7f682e0f06a699::t_380e8a66fcbc87 1-28,31,37-41
+CHANGELOG.md
+  s_7f682e0f06a699::t_b220d8ba6447e8 1-6
+unstructured_ingest/__version__.py
+  s_7f682e0f06a699::t_beb75eb285bdbc 1
+test/unit/connectors/databricks/test_volumes.py
+  s_7f682e0f06a699::t_c778fdc478459c 44
+  s_7f682e0f06a699::t_0a2b6d9679fe8a 1-21,23-31,33-43,45-55,57-69,71-75
+  s_7f682e0f06a699::t_d10f16db8d4b26 32
+  s_7f682e0f06a699::t_fb9ef8c7d3e867 22
+  s_7f682e0f06a699::t_ff90cbe4e6fef9 70
+  s_7f682e0f06a699::t_7c5775032dd28b 56
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "5153ffbc3da0c893b2e17e893569b44210ca853a",
+  "prompts": {},
+  "sessions": {
+    "s_7f682e0f06a699": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d8bc9139-e708-46cf-8312-972bb2d5402b",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": null
+    }
+  }
+}

@@ -1,0 +1,34 @@
+CHANGELOG.md
+  s_9a0d6c35f5baf9::t_cc0a529ac2448d 1,11-14
+  s_d8b7e943a6f953::t_644cd2c1a17899 15-16
+pyproject.toml
+  s_9a0d6c35f5baf9::t_72f88ff16f700d 84
+unstructured_ingest/__version__.py
+  s_9a0d6c35f5baf9::t_013bc39a068f85 1
+uv.lock
+  s_9a0d6c35f5baf9::t_c2e23e4864c2d8 7449
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "92edcb2f855da608ea6c0960fad0ac0f407b95b3",
+  "prompts": {},
+  "sessions": {
+    "s_9a0d6c35f5baf9": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "87045060-1877-456e-9155-37b1491fa336",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulkarayan <pk@unstructured.io>"
+    },
+    "s_d8b7e943a6f953": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "92e9cf69-51ea-4990-8847-309e0a20a259",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulkarayan <pk@unstructured.io>"
+    }
+  }
+}

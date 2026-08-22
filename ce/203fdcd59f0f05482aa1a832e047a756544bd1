@@ -1,0 +1,21 @@
+unstructured_ingest/__version__.py
+  s_ba7cb73f828f18::t_6c94300edeb41e 1
+CHANGELOG.md
+  s_ba7cb73f828f18::t_4ddfbf57f521be 1-6
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "ce203fdcd59f0f05482aa1a832e047a756544bd1",
+  "prompts": {},
+  "sessions": {
+    "s_ba7cb73f828f18": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a70aedda-cde0-400a-852d-4f24a7b1ff67",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Trevor Bossert <alanboss@gmail.com>"
+    }
+  }
+}

@@ -1,0 +1,48 @@
+test/unit/embed/test_vertexai.py
+  s_88f5e039d48824::t_6bccbcedf04e8f 1-13,38-321
+pyproject.toml
+  s_88f5e039d48824::t_6bccbcedf04e8f 103,161,173-177
+test/unit/embedders/test_vertexai.py
+  s_88f5e039d48824::t_6bccbcedf04e8f 10,14-15,41-112
+CHANGELOG.md
+  s_88f5e039d48824::t_6bccbcedf04e8f 11-21
+  s_88f5e039d48824::t_9bbb7762d4d0f5 1
+  s_88f5e039d48824::t_703e56e38589ea 22
+unstructured_ingest/embed/vertexai.py
+  s_88f5e039d48824::t_68fb00e2d8876b 20
+  s_88f5e039d48824::t_1a635628426300 18-19
+  s_88f5e039d48824::t_5b890ec6db625a 21-23
+  s_49fe9297323070::t_958540f9d8df9e 2,5,24,42-119,125-150,175-215,222-287,296,299-300,310,314
+.github/workflows/release.yml
+  s_88f5e039d48824::t_6bccbcedf04e8f 7-16,32-37,40-41,56,69
+unstructured_ingest/__version__.py
+  s_88f5e039d48824::t_795a93fd9fb64a 1
+unstructured_ingest/processes/embedder.py
+  s_88f5e039d48824::t_7ee7bc5bc9cf17 55-69,132-143
+uv.lock
+  s_88f5e039d48824::t_3e626ac2d710f7 7307,7346,7412,7529
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "e58abb276e06c7dc9a4a66c3f481e90e675012fb",
+  "prompts": {},
+  "sessions": {
+    "s_49fe9297323070": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "agent-a13fdf0a675e24c8c",
+        "model": "unknown"
+      },
+      "human_author": "paulkarayan <pk@unstructured.io>"
+    },
+    "s_88f5e039d48824": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "abd23ca1-87cc-4d2f-9d2e-16aa42f63726",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulkarayan <pk@unstructured.io>"
+    }
+  }
+}

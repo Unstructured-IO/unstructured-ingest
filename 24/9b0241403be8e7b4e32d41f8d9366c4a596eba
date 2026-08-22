@@ -1,0 +1,37 @@
+CHANGELOG.md
+  s_e828d16f2a8ac9::t_04726e3242284e 5
+unstructured_ingest/processes/connectors/milvus.py
+  s_e828d16f2a8ac9::t_e68a3f80111363 406-410
+  s_e828d16f2a8ac9::t_f13f30f65abf55 37-38,43-75,77,82-88,92-94,107-125
+  s_e828d16f2a8ac9::t_6746ac527b0a00 330-337
+  s_e828d16f2a8ac9::t_7234b1b5d299fb 303-308
+  s_e828d16f2a8ac9::t_75a339c0707779 5
+  s_e828d16f2a8ac9::t_8f670e8123e4de 294-297,300,302
+  s_e828d16f2a8ac9::t_434463a5d7d868 301
+  s_e828d16f2a8ac9::t_e5aabc1617e9c4 376-378
+  s_e828d16f2a8ac9::t_39269cc3a46de2 373-375,379-380
+  s_e828d16f2a8ac9::t_eb7a4f7ba09a5d 126-127
+pyproject.toml
+  s_e828d16f2a8ac9::t_3b860a59323eeb 166
+test/unit/processes/connectors/test_milvus.py
+  s_e828d16f2a8ac9::t_45ca17791e1686 180-192,196-213,215-216,222-224,229-230,241-245,255,258,268,270,279-308,320-461
+  s_e828d16f2a8ac9::t_5d064ae868ad4e 2,4,6,12,19-21,24
+uv.lock
+  s_e828d16f2a8ac9::t_5e3ccd7c2bcd56 7353,7535
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "249b0241403be8e7b4e32d41f8d9366c4a596eba",
+  "prompts": {},
+  "sessions": {
+    "s_e828d16f2a8ac9": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "673ed226-4040-4a32-b7de-8d566868c93f",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulkarayan <pk@unstructured.io>"
+    }
+  }
+}

@@ -1,0 +1,117 @@
+test/integration/connectors/expected_results/databricks_volumes_native_pat/file_data/9a6eb650-98d6-5465-8f1d-aa7118eee87e.json
+  s_f1a7d911a1566b::t_39562ba353a9f2 14
+test/unit/connectors/test_slack.py
+  s_f1a7d911a1566b::t_39562ba353a9f2 3-5,8,19,21,28-29,42,47,52,360-503
+  s_f1a7d911a1566b::t_030691d65b4c8d 504-505
+unstructured_ingest/processes/connectors/confluence.py
+  s_f1a7d911a1566b::t_39562ba353a9f2 647-650
+unstructured_ingest/processes/connectors/fsspec/gcs.py
+  s_f1a7d911a1566b::t_39562ba353a9f2 3,135-150,152,154-160,162-168,170
+unstructured_ingest/processes/connectors/slack.py
+  s_f1a7d911a1566b::t_39562ba353a9f2 51-74,79,216-219,226-229
+test_e2e/expected-structured-output/google-drive/foo.txt.json
+  s_f1a7d911a1566b::t_39562ba353a9f2 14-15,56
+test/unit/utils/test_acl.py
+  s_f1a7d911a1566b::t_39562ba353a9f2 1-84
+unstructured_ingest/processes/connectors/sql/sql.py
+  s_f1a7d911a1566b::t_39562ba353a9f2 425-448,450-471
+unstructured_ingest/utils/string_and_date_utils.py
+  s_f1a7d911a1566b::t_39562ba353a9f2 2,4-5,76-101
+pyproject.toml
+  s_f1a7d911a1566b::t_39562ba353a9f2 154-157
+test/unit/connectors/test_confluence.py
+  s_f1a7d911a1566b::t_39562ba353a9f2 444-482
+test/unit/pipeline/test_download.py
+  s_f1a7d911a1566b::t_39562ba353a9f2 1-72
+test/unit/processes/utils/test_blob_storage.py
+  s_f1a7d911a1566b::t_39562ba353a9f2 4-7,14-15,56-59,62,72
+test/integration/connectors/expected_results/databricks_volumes_native/file_data/9a6eb650-98d6-5465-8f1d-aa7118eee87e.json
+  s_f1a7d911a1566b::t_39562ba353a9f2 14
+test/unit/connectors/databricks/test_volumes.py
+  s_f1a7d911a1566b::t_39562ba353a9f2 4,10-11,13,80-101
+test/unit/connectors/fsspec/test_gcs.py
+  s_f1a7d911a1566b::t_39562ba353a9f2 51-117
+unstructured_ingest/data_types/file_data.py
+  s_f1a7d911a1566b::t_39562ba353a9f2 33
+test/unit/utils/test_compression.py
+  s_f1a7d911a1566b::t_39562ba353a9f2 1-57
+unstructured_ingest/processes/connectors/notion/connector.py
+  s_f1a7d911a1566b::t_39562ba353a9f2 1,46,48,51,57-60,94-98,111-160,294-295,297-303
+unstructured_ingest/utils/acl.py
+  s_f1a7d911a1566b::t_39562ba353a9f2 1-42
+unstructured_ingest/processes/connectors/sharepoint.py
+  s_f1a7d911a1566b::t_39562ba353a9f2 335,338
+CHANGELOG.md
+  s_f1a7d911a1566b::t_f2761c12ce1be4 1
+  s_f1a7d911a1566b::t_39562ba353a9f2 7-58
+  s_f1a7d911a1566b::t_c778de8d738449 59
+unstructured_ingest/processes/connectors/couchbase.py
+  s_f1a7d911a1566b::t_39562ba353a9f2 235-237
+test/unit/connectors/ibm_watsonx/test_ibm_watsonx_s3.py
+  s_f1a7d911a1566b::t_39562ba353a9f2 2,12-18,60-74,172-228,330-359,718,768-961
+unstructured_ingest/processes/connectors/onedrive.py
+  s_f1a7d911a1566b::t_39562ba353a9f2 48,344-351,353-355,419-422,461-470,483-492,494,509,516-520,538,575,587,609,611,614
+test/unit/utils/test_data_prep.py
+  s_f1a7d911a1566b::t_39562ba353a9f2 1-10
+unstructured_ingest/processes/utils/blob_storage.py
+  s_f1a7d911a1566b::t_39562ba353a9f2 7-8,29-31,35-43
+test/unit/connectors/test_onedrive.py
+  s_f1a7d911a1566b::t_39562ba353a9f2 179-181,183-187,359,369-374,378-390,392,454,471-523,542,557-560,568-574,577,590-592,638,645
+test/unit/connectors/zendesk/test_zendesk_client.py
+  s_f1a7d911a1566b::t_39562ba353a9f2 12-17,67-131
+unstructured_ingest/processes/connectors/databricks/volumes.py
+  s_f1a7d911a1566b::t_39562ba353a9f2 163-169
+unstructured_ingest/processes/connectors/jira.py
+  s_f1a7d911a1566b::t_39562ba353a9f2 500-503
+test/unit/connectors/test_sharepoint.py
+  s_f1a7d911a1566b::t_39562ba353a9f2 1-2,671-722
+unstructured_ingest/utils/compression.py
+  s_f1a7d911a1566b::t_39562ba353a9f2 60,62,66-67
+unstructured_ingest/__version__.py
+  s_f1a7d911a1566b::t_a8ad4343c73761 1
+unstructured_ingest/utils/data_prep.py
+  s_f1a7d911a1566b::t_39562ba353a9f2 294
+test/unit/interfaces/test_downloader.py
+  s_f1a7d911a1566b::t_39562ba353a9f2 1-103
+test/unit/connectors/sql/test_sql.py
+  s_f1a7d911a1566b::t_39562ba353a9f2 10,248-343
+  s_f1a7d911a1566b::t_f0b34e1c9da112 344-345
+test/unit/test_utils.py
+  s_f1a7d911a1566b::t_39562ba353a9f2 3,22,222-255
+unstructured_ingest/processes/connectors/zendesk/client.py
+  s_f1a7d911a1566b::t_39562ba353a9f2 20,192-194,200-202,212-214
+unstructured_ingest/pipeline/steps/download.py
+  s_f1a7d911a1566b::t_39562ba353a9f2 14,54,57-58
+test/unit/connectors/notion/test_connector.py
+  s_f1a7d911a1566b::t_39562ba353a9f2 1-38
+test/unit/connectors/test_jira.py
+  s_f1a7d911a1566b::t_39562ba353a9f2 344-378
+unstructured_ingest/interfaces/downloader.py
+  s_f1a7d911a1566b::t_39562ba353a9f2 11,51-55
+unstructured_ingest/processes/connectors/ibm_watsonx/ibm_watsonx_s3.py
+  s_f1a7d911a1566b::t_39562ba353a9f2 48-50,66-74,86-87,162,177-181,337-342,344,346-348,353,357-359,391-393
+test_e2e/expected-structured-output/google-drive/test-drive-doc.docx.json
+  s_f1a7d911a1566b::t_39562ba353a9f2 20-21,80-81,122
+test_e2e/expected-structured-output/google-drive/fake.docx.json
+  s_f1a7d911a1566b::t_39562ba353a9f2 15-16,57
+test/unit/connectors/test_couchbase.py
+  s_f1a7d911a1566b::t_39562ba353a9f2 16-17,21-22,25-28,169-194
+uv.lock
+  s_f1a7d911a1566b::t_ad4bc053d6e5fc 7338,7346,7348,7362,7519,7527,7529,7543
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "6d991aa0237da23ba95bc5803e6ec252ba732599",
+  "prompts": {},
+  "sessions": {
+    "s_f1a7d911a1566b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b5cf65b9-1ab7-4b5e-8dcf-408fc380ac34",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Trevor Bossert <alanboss@gmail.com>"
+    }
+  }
+}

@@ -1,0 +1,37 @@
+unstructured_ingest/processes/connectors/databricks/volumes_native.py
+  s_6801f431a48564::t_2ef8c7e7e6ed8d 90,106
+unstructured_ingest/processes/connectors/sharepoint.py
+  s_6801f431a48564::t_2ef8c7e7e6ed8d 306-310
+unstructured_ingest/processes/connectors/milvus.py
+  s_6801f431a48564::t_2ef8c7e7e6ed8d 168-172,326-330
+unstructured_ingest/processes/connectors/local.py
+  s_6801f431a48564::t_2ef8c7e7e6ed8d 227
+unstructured_ingest/processes/connectors/jira.py
+  s_6801f431a48564::t_2ef8c7e7e6ed8d 599
+unstructured_ingest/processes/connectors/confluence.py
+  s_6801f431a48564::t_2ef8c7e7e6ed8d 694-698
+test/unit/connectors/test_registry_markers.py
+  s_6801f431a48564::t_2ef8c7e7e6ed8d 12-14,118-122,145
+unstructured_ingest/processes/connectors/databricks/volumes.py
+  s_6801f431a48564::t_2ef8c7e7e6ed8d 50-52
+unstructured_ingest/processes/connectors/elasticsearch/elasticsearch.py
+  s_6801f431a48564::t_2ef8c7e7e6ed8d 485-489
+unstructured_ingest/processes/connectors/chroma.py
+  s_6801f431a48564::t_2ef8c7e7e6ed8d 200-207
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.11",
+  "base_commit_sha": "bbfd9750bfd4a38a275679e80ffe340afa37b0da",
+  "prompts": {},
+  "sessions": {
+    "s_6801f431a48564": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9f7ac434-a2a1-4c6a-b231-39cc7d67a5f7",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Trevor Bossert <alanboss@gmail.com>"
+    }
+  }
+}

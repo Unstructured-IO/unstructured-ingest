@@ -1,0 +1,21 @@
+unstructured_ingest/processes/connectors/milvus.py
+  s_1964dec4e21f57::t_41b5852db3c795 384
+  s_1964dec4e21f57::t_8b1ed424074a9f 410-411,415-420
+  s_1964dec4e21f57::t_bfac60ac268d11 328-332,336-342
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "e12a03b625e7cc8ac49f5689bb570089330b92b7",
+  "prompts": {},
+  "sessions": {
+    "s_1964dec4e21f57": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "334e664a-6aa4-489d-8321-5a5c6257d954",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulkarayan <pk@unstructured.io>"
+    }
+  }
+}

@@ -1,0 +1,25 @@
+CHANGELOG.md
+  s_7f682e0f06a699::t_2c364b2b127495 2-6
+  s_7f682e0f06a699::t_17d8343e412ad6 1
+test/unit/connectors/motherduck/test_motherduck.py
+  s_7f682e0f06a699::t_8d1eeebaa190b7 1-37,43-46
+  s_7f682e0f06a699::t_4bafee95a72b39 38-42
+unstructured_ingest/__version__.py
+  s_7f682e0f06a699::t_3e8b71179773c1 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "61271b478dd73dd23393b56ae2bc3ed324a532c4",
+  "prompts": {},
+  "sessions": {
+    "s_7f682e0f06a699": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d8bc9139-e708-46cf-8312-972bb2d5402b",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulkarayan <pk@unstructured.io>"
+    }
+  }
+}

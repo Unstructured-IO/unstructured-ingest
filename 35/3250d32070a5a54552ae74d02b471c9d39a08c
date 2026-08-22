@@ -1,0 +1,27 @@
+CHANGELOG.md
+  s_3aacbbc4d60859::t_a1cc3ecd71a626 9-11
+  s_3aacbbc4d60859::t_b57b363e8b5609 1,7-8
+  s_3aacbbc4d60859::t_c432ccfb6f4b71 12
+test/unit/connectors/test_sharepoint.py
+  s_3aacbbc4d60859::t_a1cc3ecd71a626 7-15,208-574,609-610,615,640,657
+unstructured_ingest/__version__.py
+  s_3aacbbc4d60859::t_b89dd8a07d45ac 1
+unstructured_ingest/processes/connectors/sharepoint.py
+  s_3aacbbc4d60859::t_a1cc3ecd71a626 4,7,16,19,101-233,246-247,250,252-255,271,302,325,333,340-347,349,372-381,405-414,417,423-427,433-454
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.13",
+  "base_commit_sha": "353250d32070a5a54552ae74d02b471c9d39a08c",
+  "prompts": {},
+  "sessions": {
+    "s_3aacbbc4d60859": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "40c11e8a-07aa-4958-b82d-92ce74ff944e",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Trevor Bossert <alanboss@gmail.com>"
+    }
+  }
+}

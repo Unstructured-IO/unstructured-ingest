@@ -1,0 +1,27 @@
+unstructured_ingest/processes/connectors/zendesk/client.py
+  s_7f682e0f06a699::t_71b4b6c711db94 221
+  s_7f682e0f06a699::t_210cdad2ca4266 229
+  s_7f682e0f06a699::t_9dc388fb66c46e 240
+  s_7f682e0f06a699::t_0fbd8bcd4825d4 245
+  s_7f682e0f06a699::t_bdbccfc2503b94 235
+unstructured_ingest/processes/connectors/fsspec/s3.py
+  s_7f682e0f06a699::t_76b25874b4086c 141,148
+unstructured_ingest/processes/connectors/databricks/volumes.py
+  s_7f682e0f06a699::t_ec3e4045a8f1d4 84,89,91,93,95
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "2697814653aefbf12cab8be6979fd9881835201f",
+  "prompts": {},
+  "sessions": {
+    "s_7f682e0f06a699": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d8bc9139-e708-46cf-8312-972bb2d5402b",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulkarayan <pk@unstructured.io>"
+    }
+  }
+}

@@ -1,0 +1,21 @@
+CHANGELOG.md
+  s_fdab3a2a3edbde::t_a865ad51920bfc 1-6
+unstructured_ingest/__version__.py
+  s_fdab3a2a3edbde::t_84a69656f02cfb 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "2f615547adbaedf3574f5801285556fab75e2357",
+  "prompts": {},
+  "sessions": {
+    "s_fdab3a2a3edbde": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6d149d8b-ceb4-41ac-a2ec-b40e766e9310",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulkarayan <pk@unstructured.io>"
+    }
+  }
+}
