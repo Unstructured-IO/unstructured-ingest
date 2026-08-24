@@ -19,6 +19,7 @@ from unstructured_ingest.error import (
 from unstructured_ingest.logger import logger
 from unstructured_ingest.processes.connector_registry import (
     DestinationRegistryEntry,
+    LocationShape,
     SourceRegistryEntry,
 )
 from unstructured_ingest.processes.connectors.fsspec.fsspec import (
@@ -246,6 +247,9 @@ s3_source_entry = SourceRegistryEntry(
     downloader=S3Downloader,
     downloader_config=S3DownloaderConfig,
     connection_config=S3ConnectionConfig,
+    location_shape=LocationShape.FSSPEC_URL,
+    location_identity=("indexer_config.remote_url",),
+    emits_record_version=True,
 )
 
 s3_destination_entry = DestinationRegistryEntry(
@@ -254,4 +258,6 @@ s3_destination_entry = DestinationRegistryEntry(
     connection_config=S3ConnectionConfig,
     upload_stager_config=BlobStoreUploadStagerConfig,
     upload_stager=BlobStoreUploadStager,
+    location_shape=LocationShape.FSSPEC_URL,
+    location_identity=("uploader_config.remote_url",),
 )

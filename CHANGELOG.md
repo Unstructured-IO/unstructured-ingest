@@ -1,4 +1,4 @@
-## [1.10.5]
+## [1.11.1]
 
 ### Enhancements
 
@@ -7,6 +7,12 @@
 ### Fixes
 
 - **fix(confluence): parse ACL `access-class` principals instead of crashing (PLU-625).** The permission parser assumed every principal was a `user` or `group` and raised `KeyError` on Confluence's built-in `access-class` principals (`ALL_LICENSED_USERS`, `ALL_PRODUCT_ADMINS`, …), which appear on essentially every space. The exception was swallowed, so `permissions_data` came back blank for every space — and, because the crash happened after page restrictions were already parsed, it discarded those too, so even explicitly-restricted pages emitted no ACL. Principals are now bucketed by type into `users` / `groups` / `access_classes` (unknown types skipped), so the parser no longer crashes, page restrictions survive, and access-class grants are captured in the digest.
+
+## [1.11.0]
+
+### Enhancements
+
+- **feat: annotate connectors with location capability markers.** `RegistryEntry` now carries opt-in capability markers (`location_shape`, `location_identity`, `supports_recursion`, and `emits_record_version`) plus per-field `x-runtime-eligible` schema hints, so consumers can identify a connector's target location shape, the settings paths that identify that location, and its recursion/record-version semantics. Markers default to unannotated (`location_shape=None`) so a connector without them is never mistaken for an explicit declaration and consumers fall back to their existing defaults. Markers are applied across the fsspec, SQL, search-index, and API-folder connector families.
 
 ## [1.10.4]
 

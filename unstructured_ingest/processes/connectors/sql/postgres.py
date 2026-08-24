@@ -9,6 +9,7 @@ from unstructured_ingest.data_types.file_data import FileData
 from unstructured_ingest.logger import logger
 from unstructured_ingest.processes.connector_registry import (
     DestinationRegistryEntry,
+    LocationShape,
     SourceRegistryEntry,
 )
 from unstructured_ingest.processes.connectors.sql.sql import (
@@ -44,6 +45,7 @@ class PostgresConnectionConfig(SQLConnectionConfig):
     database: Optional[str] = Field(
         default=None,
         description="Database name.",
+        json_schema_extra={"x-runtime-eligible": True},
     )
     username: Optional[str] = Field(default=None, description="DB username")
     host: Optional[str] = Field(default=None, description="DB host")
@@ -82,7 +84,7 @@ class PostgresConnectionConfig(SQLConnectionConfig):
 
 
 class PostgresIndexerConfig(SQLIndexerConfig):
-    pass
+    table_name: str = Field(json_schema_extra={"x-runtime-eligible": True})
 
 
 @dataclass
@@ -162,6 +164,9 @@ postgres_source_entry = SourceRegistryEntry(
     indexer=PostgresIndexer,
     downloader_config=PostgresDownloaderConfig,
     downloader=PostgresDownloader,
+    location_shape=LocationShape.SQL_TABLE,
+    location_identity=("connector_config.database", "indexer_config.table_name"),
+    supports_recursion=False,
 )
 
 postgres_destination_entry = DestinationRegistryEntry(
@@ -170,4 +175,7 @@ postgres_destination_entry = DestinationRegistryEntry(
     uploader_config=PostgresUploaderConfig,
     upload_stager=PostgresUploadStager,
     upload_stager_config=PostgresUploadStagerConfig,
+    location_shape=LocationShape.SQL_TABLE,
+    location_identity=("connector_config.database", "uploader_config.table_name"),
+    supports_recursion=False,
 )

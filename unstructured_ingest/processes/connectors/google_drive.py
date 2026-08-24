@@ -29,7 +29,10 @@ from unstructured_ingest.interfaces import (
     download_responses,
 )
 from unstructured_ingest.logger import logger
-from unstructured_ingest.processes.connector_registry import SourceRegistryEntry
+from unstructured_ingest.processes.connector_registry import (
+    LocationShape,
+    SourceRegistryEntry,
+)
 from unstructured_ingest.processes.connectors.utils import conform_string_to_dict
 from unstructured_ingest.utils.dep_check import requires_dependencies
 
@@ -182,7 +185,10 @@ class GoogleDriveAccessConfig(AccessConfig):
 
 
 class GoogleDriveConnectionConfig(ConnectionConfig):
-    drive_id: str = Field(description="Google Drive File or Folder ID.")
+    drive_id: str = Field(
+        description="Google Drive File or Folder ID.",
+        json_schema_extra={"x-runtime-eligible": True},
+    )
     access_config: Secret[GoogleDriveAccessConfig]
 
     @requires_dependencies(["googleapiclient"], extras="google-drive")
@@ -223,7 +229,7 @@ class GoogleDriveConnectionConfig(ConnectionConfig):
 
 class GoogleDriveIndexerConfig(IndexerConfig):
     extensions: Optional[list[str]] = None
-    recursive: bool = False
+    recursive: bool = Field(default=False, json_schema_extra={"x-runtime-eligible": True})
 
     def model_post_init(self, __context: Any) -> None:
         if self.extensions is not None:
@@ -1011,4 +1017,8 @@ google_drive_source_entry = SourceRegistryEntry(
     indexer=GoogleDriveIndexer,
     downloader_config=GoogleDriveDownloaderConfig,
     downloader=GoogleDriveDownloader,
+    location_shape=LocationShape.API_FOLDER,
+    location_identity=("connector_config.drive_id",),
+    emits_record_version=True,
+    supports_recursion=True,
 )

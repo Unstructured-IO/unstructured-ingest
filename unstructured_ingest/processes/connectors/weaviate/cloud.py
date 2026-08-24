@@ -5,7 +5,10 @@ from typing import TYPE_CHECKING, Any, Generator, Optional
 from pydantic import Field, Secret
 
 from unstructured_ingest.error import ValueError
-from unstructured_ingest.processes.connector_registry import DestinationRegistryEntry
+from unstructured_ingest.processes.connector_registry import (
+    DestinationRegistryEntry,
+    LocationShape,
+)
 from unstructured_ingest.processes.connectors.weaviate.weaviate import (
     WeaviateAccessConfig,
     WeaviateConnectionConfig,
@@ -163,4 +166,7 @@ weaviate_cloud_destination_entry = DestinationRegistryEntry(
     uploader_config=CloudWeaviateUploaderConfig,
     upload_stager=CloudWeaviateUploadStager,
     upload_stager_config=CloudWeaviateUploadStagerConfig,
+    location_shape=LocationShape.SEARCH_INDEX,
+    location_identity=("connector_config.cluster_url", "uploader_config.collection"),
+    supports_recursion=False,
 )

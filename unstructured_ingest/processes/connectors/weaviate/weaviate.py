@@ -218,6 +218,7 @@ class WeaviateUploaderConfig(UploaderConfig):
             "If not provided, a default collection name will be used."
         ),
         default=None,
+        json_schema_extra={"x-runtime-eligible": True},
     )
     batch_size: Optional[int] = Field(default=None, description="Number of records per batch")
     requests_per_minute: Optional[int] = Field(default=None, description="Rate limit for upload")
