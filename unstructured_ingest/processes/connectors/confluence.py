@@ -263,6 +263,18 @@ def _get_doc_permissions_data(
     with connection_config.get_client() as client:
         try:
             doc_permissions = client.get_all_restrictions_for_content(content_id=doc_id)
+            # The byOperation restrictions endpoint always returns the operation keys
+            # (read/update) for a real page, even when unrestricted. A non-dict or empty
+            # response is a failure masquerading as success; treat it as unavailable
+            # (None) rather than parsing it into a fabricated "unrestricted" ACL, which
+            # would emit a digest and could read as a permission change. Mirrors the
+            # malformed-response guard in _get_space_permissions.
+            if not isinstance(doc_permissions, dict) or not doc_permissions:
+                logger.warning(
+                    f"Malformed content-restrictions response for doc {doc_id}; "
+                    "treating permissions as unavailable this run"
+                )
+                return None
             parsed_permissions_dict = _parse_permissions(
                 doc_permissions, space_permissions, max_num_metadata_permissions
             )

@@ -836,3 +836,63 @@ def test_indexer_clears_permissions_cache_at_run_start(connection_config):
     with mock.patch.object(indexer, "_get_space_ids_and_keys", return_value=[]):
         list(indexer.run())
     assert 987 not in indexer._permissions_cache
+
+
+def test_get_space_permissions_none_on_nonlist_results_initial(connection_config):
+    # A present-but-non-list `results` is malformed, same as a missing one -> None.
+    mock_client = mock.MagicMock()
+    mock_client.get.return_value = {"results": "oops", "_links": {}}
+    cache = OrderedDict()
+    patcher = _patched_client(connection_config, mock_client)
+    try:
+        result = _get_space_permissions(connection_config, 987, cache)
+    finally:
+        patcher.stop()
+
+    assert result is None
+    assert 987 not in cache
+
+
+def test_get_space_permissions_none_on_nonlist_results_cursor(connection_config):
+    page1 = {
+        "results": [_space_perm("u1")],
+        "_links": {"next": "/wiki/api/v2/spaces/987/permissions?cursor=abc"},
+    }
+    bad_cursor_page = {"results": {"unexpected": "shape"}, "_links": {}}
+    mock_client = mock.MagicMock()
+    mock_client.get.side_effect = [page1, bad_cursor_page]
+    cache = OrderedDict()
+    patcher = _patched_client(connection_config, mock_client)
+    try:
+        result = _get_space_permissions(connection_config, 987, cache)
+    finally:
+        patcher.stop()
+
+    assert result is None
+    assert 987 not in cache
+
+
+def test_get_space_permissions_empty_results_returns_and_caches(connection_config):
+    # A valid empty space ACL ([]) is distinct from unavailable (None): it is returned
+    # as [] and cached, so the caller emits a real (empty) digest.
+    mock_client = mock.MagicMock()
+    mock_client.get.return_value = {"results": [], "_links": {}}
+    cache = OrderedDict()
+    patcher = _patched_client(connection_config, mock_client)
+    try:
+        result = _get_space_permissions(connection_config, 987, cache)
+    finally:
+        patcher.stop()
+
+    assert result == []
+    assert cache[987] == []
+
+
+@pytest.mark.parametrize("bad_doc_response", [None, {}, [], "nope"])
+def test_get_permissions_data_none_on_malformed_doc_restrictions(
+    connection_config, bad_doc_response
+):
+    # awalker4 review: the per-doc restrictions fetch must also return None on a
+    # malformed response instead of parsing it into a fabricated unrestricted ACL.
+    result = _run_get_permissions_data(connection_config, [_space_perm("u1")], bad_doc_response)
+    assert result is None
