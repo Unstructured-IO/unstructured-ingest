@@ -83,12 +83,14 @@ def test_wrap_error_unhandled_log_redacts(caplog: pytest.LogCaptureFixture):
     assert "hunter2" not in caplog.text
 
 
-def _indexer(mocker: MockerFixture, client) -> DatabricksNativeVolumesIndexer:
+def _indexer(
+    mocker: MockerFixture, client, volume_path: str = "path"
+) -> DatabricksNativeVolumesIndexer:
     mocker.patch.object(DatabricksNativeVolumesConnectionConfig, "get_client", return_value=client)
     return DatabricksNativeVolumesIndexer(
         connection_config=_connection_config(),
         index_config=DatabricksNativeVolumesIndexerConfig(
-            catalog="catalog", schema="schema", volume="volume", volume_path="path"
+            catalog="catalog", schema="schema", volume="volume", volume_path=volume_path
         ),
     )
 
@@ -157,12 +159,15 @@ def test_indexer_precheck_lists_the_configured_path_without_recursing(mocker: Mo
 
 
 def test_indexer_precheck_accepts_an_empty_volume_path(mocker: MockerFixture):
-    # An empty directory is a valid source, not a connection failure.
+    # With no volume_path the source is the volume root, and an empty listing there
+    # is a valid (empty) source, not a connection failure.
     pytest.importorskip("databricks.sdk")
     client = mocker.MagicMock()
     client.dbfs.list.return_value = iter([])
 
-    _indexer(mocker, client).precheck()
+    _indexer(mocker, client, volume_path="").precheck()
+
+    client.dbfs.list.assert_called_once_with(path="/Volumes/catalog/schema/volume", recursive=False)
 
 
 def test_downloader_precheck_raises_when_credentials_are_rejected(mocker: MockerFixture):
