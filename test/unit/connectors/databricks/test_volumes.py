@@ -167,6 +167,9 @@ def test_indexer_precheck_accepts_an_empty_volume_path(mocker: MockerFixture):
 
     _indexer(mocker, client, volume_path="").precheck()
 
+    # precheck validates BOTH credentials (me()) and resource access (list()); assert both,
+    # since the empty-path case must still prove the connection was actually contacted.
+    client.current_user.me.assert_called_once()
     client.dbfs.list.assert_called_once_with(path="/Volumes/catalog/schema/volume", recursive=False)
 
 
