@@ -36,6 +36,7 @@ from unstructured_ingest.processes.connector_registry import (
     LocationShape,
     SourceRegistryEntry,
 )
+from unstructured_ingest.utils.acl import compute_permissions_version
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.utils.html import HtmlMixin
 from unstructured_ingest.utils.string_and_date_utils import fix_unescaped_unicode
@@ -55,6 +56,263 @@ def _iso8601_to_epoch_str(iso_date: Optional[str]) -> Optional[str]:
     if iso_date is None:
         return None
     return str(parser.parse(iso_date).timestamp())
+
+
+# Confluence principals fall into three kinds. "access-class" covers the built-in
+# categories (ALL_LICENSED_USERS, ALL_PRODUCT_ADMINS, anonymous, ...) that appear on
+# essentially every space; earlier code assumed only user/group and raised KeyError on
+# these, which was swallowed and produced blank permissions_data (PLU-625). Unknown
+# principal types are skipped rather than crashing the whole parse.
+_PRINCIPAL_TYPE_TO_BUCKET = {
+    "user": "users",
+    "group": "groups",
+    "access-class": "access_classes",
+}
+
+
+def _empty_permission_buckets() -> dict[str, set]:
+    return {"users": set(), "groups": set(), "access_classes": set()}
+
+
+def _parse_permissions(
+    doc_permissions: dict,
+    space_permissions: list,
+    max_num_metadata_permissions: int,
+) -> dict[str, dict]:
+    """
+    Parses document and space permissions to determine final user/group/access-class roles.
+
+    :param doc_permissions: dict containing document-level restrictions
+    - doc_permissions type in Confluence: ContentRestrictionArray
+    :param space_permissions: list of space-level permission assignments
+    - space_permissions type in Confluence: list of SpacePermissionAssignment
+    :return: dict with operation as keys, each mapping to dict with "users", "groups",
+      and "access_classes"
+
+    Get document permissions. If they exist, they will override space level permissions.
+    Otherwise, apply relevant space permissions (read, administer, delete)
+    """
+
+    # Separate flags to track if view or edit is restricted at the page level
+    page_view_restricted = bool(
+        doc_permissions.get("read", {}).get("restrictions", {}).get("user", {}).get("results")
+        or doc_permissions.get("read", {}).get("restrictions", {}).get("group", {}).get("results")
+    )
+
+    page_edit_restricted = bool(
+        doc_permissions.get("update", {}).get("restrictions", {}).get("user", {}).get("results")
+        or doc_permissions.get("update", {}).get("restrictions", {}).get("group", {}).get("results")
+    )
+
+    permissions_by_role = {
+        "read": _empty_permission_buckets(),
+        "update": _empty_permission_buckets(),
+        "delete": _empty_permission_buckets(),
+    }
+
+    total_permissions = 0
+
+    for action, permissions in doc_permissions.items():
+        if action not in permissions_by_role:
+            continue
+        restrictions_dict = permissions.get("restrictions", {})
+
+        for entity_type, entity_data in restrictions_dict.items():
+            bucket = _PRINCIPAL_TYPE_TO_BUCKET.get(entity_type)
+            if bucket is None:
+                continue
+            for entity in entity_data.get("results") or []:
+                entity_id = entity["accountId"] if entity_type == "user" else entity["id"]
+                permissions_by_role[action][bucket].add(entity_id)
+                total_permissions += 1
+                # edit permission implies view permission
+                if action == "update":
+                    permissions_by_role["read"][bucket].add(entity_id)
+                    # total_permissions += 1
+                    # ^ omitting to not double count an entity.
+                    # may result in a higher total count than max_num_metadata_permissions
+
+    for space_perm in space_permissions:
+        if total_permissions < max_num_metadata_permissions:
+            space_operation = space_perm["operation"]["key"]
+            space_target_type = space_perm["operation"]["targetType"]
+            space_entity_id = space_perm["principal"]["id"]
+            space_entity_type = space_perm["principal"]["type"]
+            bucket = _PRINCIPAL_TYPE_TO_BUCKET.get(space_entity_type)
+            if bucket is None:
+                # Unknown principal type (not user/group/access-class); skip rather than
+                # crash the whole parse (PLU-625).
+                continue
+
+            # Apply space-level view permissions if no page restrictions exist
+            if (
+                space_target_type == "space"
+                and space_operation == "read"
+                and not page_view_restricted
+            ):
+                permissions_by_role["read"][bucket].add(space_entity_id)
+                total_permissions += 1
+
+            # Administer permission includes view + edit. Apply if not page restricted
+            elif space_target_type == "space" and space_operation == "administer":
+                if not page_view_restricted:
+                    permissions_by_role["read"][bucket].add(space_entity_id)
+                    total_permissions += 1
+                    if not page_edit_restricted:
+                        permissions_by_role["update"][bucket].add(space_entity_id)
+                        # total_permissions += 1
+                        # ^ omitting to not double count an entity.
+                        # may result in a higher total count than max_num_metadata_permissions
+
+            # Add the "delete page" space permissions if there are other page permissions
+            elif (
+                space_target_type == "page"
+                and space_operation == "delete"
+                and space_entity_id in permissions_by_role["read"][bucket]
+            ):
+                permissions_by_role["delete"][bucket].add(space_entity_id)
+                total_permissions += 1
+
+    # turn sets into sorted lists for consistency and json serialization
+    for role_dict in permissions_by_role.values():
+        for key in role_dict:
+            role_dict[key] = sorted(role_dict[key])
+
+    return permissions_by_role
+
+
+def _next_page_path(response: dict) -> Optional[str]:
+    """Return the relative path for a Confluence v2 ``_links.next`` cursor page, or None.
+
+    Strips the ``/wiki/`` context path and preserves the query so the result can be
+    passed straight back to ``client.get``. Shared by the space-permissions fetch and
+    the indexer's page listing so both paginate identically.
+    """
+    next_link = response.get("_links", {}).get("next")
+    if not next_link:
+        return None
+
+    parsed_next_link = urlparse(next_link)
+    next_path = parsed_next_link.path or next_link
+    if "/wiki/" in next_path:
+        next_path = next_path.split("/wiki/", maxsplit=1)[1]
+    else:
+        next_path = next_path.lstrip("/")
+    if parsed_next_link.query:
+        next_path = f"{next_path}?{parsed_next_link.query}"
+    return next_path
+
+
+def _get_space_permissions(
+    connection_config: "ConfluenceConnectionConfig",
+    space_id: int,
+    cache: OrderedDict,
+    cache_max_size: int = 5,
+) -> Optional[List[dict]]:
+    """Fetch space-level permissions, LRU-cached in ``cache``.
+
+    Returns None when the fetch is unavailable this run (e.g. an API error) so
+    callers leave the ACL fields unset rather than fabricating an empty ACL.
+    """
+    if space_id in cache:
+        cache.move_to_end(space_id)  # mark recent use
+        logger.debug(f"Retrieved cached permissions for space {space_id}")
+        return cache[space_id]
+    with connection_config.get_client() as client:
+        try:
+            # TODO limit the total number of results being called.
+            # not yet implemented because this client call doesn't allow for filtering for
+            # certain operations, so adding a limit here would result in too little data.
+            space_permissions = []
+            space_permissions_result = client.get(f"/api/v2/spaces/{space_id}/permissions")
+            page_results = space_permissions_result.get("results")
+            while True:  # follow every _links.next cursor page
+                if not isinstance(page_results, list):
+                    # A 200 whose body omits `results` is a failure masquerading as
+                    # success. Treat the whole fetch as unavailable (return None, not
+                    # cached) rather than fabricating an empty ACL, which the indexer
+                    # would emit as a digest and record as a permission revocation.
+                    logger.warning(
+                        f"Malformed space-permissions response for space {space_id}; "
+                        "treating permissions as unavailable this run"
+                    )
+                    return None
+                space_permissions.extend(page_results)
+                next_path = _next_page_path(space_permissions_result)
+                if not next_path:
+                    break
+                space_permissions_result = client.get(next_path)
+                page_results = space_permissions_result.get("results")
+
+            if len(cache) >= cache_max_size:
+                cache.popitem(last=False)  # LRU/FIFO eviction
+            cache[space_id] = space_permissions
+
+            logger.debug(f"Retrieved permissions for space {space_id}")
+            return space_permissions
+        except Exception as e:
+            logger.debug(f"Could not retrieve permissions for space {space_id}: {e}")
+            return None
+
+
+def _get_doc_permissions_data(
+    connection_config: "ConfluenceConnectionConfig",
+    doc_id: str,
+    space_permissions: list,
+    max_num_metadata_permissions: int,
+) -> Optional[list[dict]]:
+    with connection_config.get_client() as client:
+        try:
+            doc_permissions = client.get_all_restrictions_for_content(content_id=doc_id)
+            # The byOperation restrictions endpoint always returns the operation keys
+            # (read/update) for a real page, even when unrestricted. A non-dict or empty
+            # response is a failure masquerading as success; treat it as unavailable
+            # (None) rather than parsing it into a fabricated "unrestricted" ACL, which
+            # would emit a digest and could read as a permission change. Mirrors the
+            # malformed-response guard in _get_space_permissions.
+            if not isinstance(doc_permissions, dict) or not doc_permissions:
+                logger.warning(
+                    f"Malformed content-restrictions response for doc {doc_id}; "
+                    "treating permissions as unavailable this run"
+                )
+                return None
+            parsed_permissions_dict = _parse_permissions(
+                doc_permissions, space_permissions, max_num_metadata_permissions
+            )
+            parsed_permissions_dict = [{k: v} for k, v in parsed_permissions_dict.items()]
+        except Exception as e:
+            # skip writing any permission metadata
+            logger.debug(f"Could not retrieve permissions for doc {doc_id}: {e}")
+            return None
+
+    logger.debug(f"normalized permissions generated: {parsed_permissions_dict}")
+    return parsed_permissions_dict
+
+
+def get_permissions_data(
+    connection_config: "ConfluenceConnectionConfig",
+    doc_id: str,
+    space_id: int,
+    cache: OrderedDict,
+    max_num_metadata_permissions: int,
+) -> Optional[list[dict]]:
+    """Resolve a document's effective permissions (space + page-level restrictions).
+
+    Returns None when permissions are unavailable this run (space fetch failed or the
+    per-doc fetch errored) so callers leave ``permissions_data``/``permissions_version``
+    unset and the orchestration skips the ACL comparison. Otherwise returns the
+    normalized permissions, which flow into both ``permissions_data`` and the
+    ``permissions_version`` digest.
+    """
+    space_perm = _get_space_permissions(connection_config, space_id, cache)
+    # None means the space fetch was unavailable this run -> leave ACL fields unset.
+    # An empty list is a valid state (no space-level grants) and must still resolve
+    # page-level restrictions and emit a digest, so guard on None, not falsiness.
+    if space_perm is None:
+        return None
+    return _get_doc_permissions_data(
+        connection_config, doc_id, space_perm, max_num_metadata_permissions
+    )
 
 
 class ConfluenceAccessConfig(AccessConfig):
@@ -175,6 +433,9 @@ class ConfluenceIndexerConfig(IndexerConfig):
         description="List of specific space keys to index",
         json_schema_extra={"x-runtime-eligible": True},
     )
+    max_num_metadata_permissions: int = Field(
+        250, description="Approximate maximum number of permissions included in metadata"
+    )
 
 
 @dataclass
@@ -182,22 +443,14 @@ class ConfluenceIndexer(Indexer):
     connection_config: ConfluenceConnectionConfig
     index_config: ConfluenceIndexerConfig
     connector_type: str = CONNECTOR_TYPE
+    # Space-level permissions are LRU-cached across the pages of a single index run
+    # (PLU-534): the ACL digest is computed here so an ACL-only change reprocesses
+    # under incremental.
+    _permissions_cache: OrderedDict = field(default_factory=OrderedDict)
 
     @staticmethod
     def _get_next_page_path(response: dict) -> Optional[str]:
-        next_link = response.get("_links", {}).get("next")
-        if not next_link:
-            return None
-
-        parsed_next_link = urlparse(next_link)
-        next_path = parsed_next_link.path or next_link
-        if "/wiki/" in next_path:
-            next_path = next_path.split("/wiki/", maxsplit=1)[1]
-        else:
-            next_path = next_path.lstrip("/")
-        if parsed_next_link.query:
-            next_path = f"{next_path}?{parsed_next_link.query}"
-        return next_path
+        return _next_page_path(response)
 
     def _paginate_v2_results(
         self,
@@ -368,6 +621,10 @@ class ConfluenceIndexer(Indexer):
     def run(self) -> Generator[FileData, None, None]:
         from time import time
 
+        # The space-permissions LRU cache is scoped to a single index run; clear it
+        # here so a reused indexer instance cannot serve a stale ACL from a prior run
+        # and emit an unchanged digest after permissions changed.
+        self._permissions_cache.clear()
         space_ids_and_keys = self._get_space_ids_and_keys()
         for space_key, space_id in space_ids_and_keys:
             doc_ids = self._get_docs_ids_within_one_space(space_id)
@@ -393,6 +650,21 @@ class ConfluenceIndexer(Indexer):
                         ),
                     },
                 )
+                # ACL digest (PLU-534): resolve permissions at index so an ACL-only
+                # change reprocesses under incremental. None means the fetch was
+                # unavailable this run — leave the ACL fields unset so the orchestration
+                # skips the ACL compare (an empty-but-available ACL still yields a digest).
+                permissions_data = get_permissions_data(
+                    connection_config=self.connection_config,
+                    doc_id=doc_id,
+                    space_id=space_id,
+                    cache=self._permissions_cache,
+                    max_num_metadata_permissions=self.index_config.max_num_metadata_permissions,
+                )
+                if permissions_data is not None:
+                    metadata.permissions_data = permissions_data
+                    metadata.permissions_version = compute_permissions_version(permissions_data)
+
                 additional_metadata = {
                     "space_key": space_key,
                     "space_id": space_id,  # diff from record_locator space_id (which is space_key)
@@ -432,6 +704,9 @@ class ConfluenceIndexer(Indexer):
 
 
 class ConfluenceDownloaderConfig(HtmlMixin, DownloaderConfig):
+    # Unused by the downloader since PLU-534 (permissions are resolved at index time),
+    # but kept identical to ConfluenceIndexerConfig.max_num_metadata_permissions so the
+    # shared CLI option stays consistent and existing serialized configs keep working.
     max_num_metadata_permissions: int = Field(
         250, description="Approximate maximum number of permissions included in metadata"
     )
@@ -459,8 +734,6 @@ class ConfluenceDownloader(Downloader):
     connection_config: ConfluenceConnectionConfig
     download_config: ConfluenceDownloaderConfig = field(default_factory=ConfluenceDownloaderConfig)
     connector_type: str = CONNECTOR_TYPE
-    _permissions_cache: dict = field(default_factory=OrderedDict)
-    _permissions_cache_max_size: int = 5
 
     def download_embedded_files(
         self, session, html: str, current_file_data: FileData
@@ -484,151 +757,6 @@ class ConfluenceDownloader(Downloader):
             html=html,
             session=session,
         )
-
-    def parse_permissions(self, doc_permissions: dict, space_permissions: list) -> dict[str, dict]:
-        """
-        Parses document and space permissions to determine final user/group roles.
-
-        :param doc_permissions: dict containing document-level restrictions
-        - doc_permissions type in Confluence: ContentRestrictionArray
-        :param space_permissions: list of space-level permission assignments
-        - space_permissions type in Confluence: list of SpacePermissionAssignment
-        :return: dict with operation as keys and each maps to dict with "users" and "groups"
-
-        Get document permissions. If they exist, they will override space level permissions.
-        Otherwise, apply relevant space permissions (read, administer, delete)
-        """
-
-        # Separate flags to track if view or edit is restricted at the page level
-        page_view_restricted = bool(
-            doc_permissions.get("read", {}).get("restrictions", {}).get("user", {}).get("results")
-            or doc_permissions.get("read", {})
-            .get("restrictions", {})
-            .get("group", {})
-            .get("results")
-        )
-
-        page_edit_restricted = bool(
-            doc_permissions.get("update", {}).get("restrictions", {}).get("user", {}).get("results")
-            or doc_permissions.get("update", {})
-            .get("restrictions", {})
-            .get("group", {})
-            .get("results")
-        )
-
-        permissions_by_role = {
-            "read": {"users": set(), "groups": set()},
-            "update": {"users": set(), "groups": set()},
-            "delete": {"users": set(), "groups": set()},
-        }
-
-        total_permissions = 0
-
-        for action, permissions in doc_permissions.items():
-            restrictions_dict = permissions.get("restrictions", {})
-
-            for entity_type, entity_data in restrictions_dict.items():
-                for entity in entity_data.get("results"):
-                    entity_id = entity["accountId"] if entity_type == "user" else entity["id"]
-                    permissions_by_role[action][f"{entity_type}s"].add(entity_id)
-                    total_permissions += 1
-                    # edit permission implies view permission
-                    if action == "update":
-                        permissions_by_role["read"][f"{entity_type}s"].add(entity_id)
-                        # total_permissions += 1
-                        # ^ omitting to not double count an entity.
-                        # may result in a higher total count than max_num_metadata_permissions
-
-        for space_perm in space_permissions:
-            if total_permissions < self.download_config.max_num_metadata_permissions:
-                space_operation = space_perm["operation"]["key"]
-                space_target_type = space_perm["operation"]["targetType"]
-                space_entity_id = space_perm["principal"]["id"]
-                space_entity_type = space_perm["principal"]["type"]
-
-                # Apply space-level view permissions if no page restrictions exist
-                if (
-                    space_target_type == "space"
-                    and space_operation == "read"
-                    and not page_view_restricted
-                ):
-                    permissions_by_role["read"][f"{space_entity_type}s"].add(space_entity_id)
-                    total_permissions += 1
-
-                # Administer permission includes view + edit. Apply if not page restricted
-                elif space_target_type == "space" and space_operation == "administer":
-                    if not page_view_restricted:
-                        permissions_by_role["read"][f"{space_entity_type}s"].add(space_entity_id)
-                        total_permissions += 1
-                        if not page_edit_restricted:
-                            permissions_by_role["update"][f"{space_entity_type}s"].add(
-                                space_entity_id
-                            )
-                            # total_permissions += 1
-                            # ^ omitting to not double count an entity.
-                            # may result in a higher total count than max_num_metadata_permissions
-
-                # Add the "delete page" space permissions if there are other page permissions
-                elif (
-                    space_target_type == "page"
-                    and space_operation == "delete"
-                    and space_entity_id in permissions_by_role["read"][f"{space_entity_type}s"]
-                ):
-                    permissions_by_role["delete"][f"{space_entity_type}s"].add(space_entity_id)
-                    total_permissions += 1
-
-        # turn sets into sorted lists for consistency and json serialization
-        for role_dict in permissions_by_role.values():
-            for key in role_dict:
-                role_dict[key] = sorted(role_dict[key])
-
-        return permissions_by_role
-
-    def _get_permissions_for_space(self, space_id: int) -> Optional[List[dict]]:
-        if space_id in self._permissions_cache:
-            self._permissions_cache.move_to_end(space_id)  # mark recent use
-            logger.debug(f"Retrieved cached permissions for space {space_id}")
-            return self._permissions_cache[space_id]
-        else:
-            with self.connection_config.get_client() as client:
-                try:
-                    # TODO limit the total number of results being called.
-                    # not yet implemented because this client call doesn't allow for filtering for
-                    # certain operations, so adding a limit here would result in too little data.
-                    space_permissions = []
-                    space_permissions_result = client.get(f"/api/v2/spaces/{space_id}/permissions")
-                    space_permissions.extend(space_permissions_result["results"])
-                    if space_permissions_result["_links"].get("next"):  # pagination
-                        while space_permissions_result.get("next"):
-                            space_permissions_result = client.get(space_permissions_result["next"])
-                            space_permissions.extend(space_permissions_result["results"])
-
-                    if len(self._permissions_cache) >= self._permissions_cache_max_size:
-                        self._permissions_cache.popitem(last=False)  # LRU/FIFO eviction
-                    self._permissions_cache[space_id] = space_permissions
-
-                    logger.debug(f"Retrieved permissions for space {space_id}")
-                    return space_permissions
-                except Exception as e:
-                    logger.debug(f"Could not retrieve permissions for space {space_id}: {e}")
-                    return None
-
-    def _parse_permissions_for_doc(
-        self, doc_id: str, space_permissions: list
-    ) -> Optional[list[dict]]:
-        with self.connection_config.get_client() as client:
-            try:
-                doc_permissions = client.get_all_restrictions_for_content(content_id=doc_id)
-                parsed_permissions_dict = self.parse_permissions(doc_permissions, space_permissions)
-                parsed_permissions_dict = [{k: v} for k, v in parsed_permissions_dict.items()]
-
-            except Exception as e:
-                # skip writing any permission metadata
-                logger.debug(f"Could not retrieve permissions for doc {doc_id}: {e}")
-                return None
-
-        logger.debug(f"normalized permissions generated: {parsed_permissions_dict}")
-        return parsed_permissions_dict
 
     def run(self, file_data: FileData, **kwargs) -> download_responses:
         from bs4 import BeautifulSoup
@@ -670,13 +798,8 @@ class ConfluenceDownloader(Downloader):
             soup = BeautifulSoup(content, "html.parser")
             f.write(soup.prettify())
 
-        # Get document permissions and update metadata
-        space_id = file_data.additional_metadata["space_id"]
-        space_perm = self._get_permissions_for_space(space_id)  # must be the id, NOT the space key
-        if space_perm:
-            combined_doc_permissions = self._parse_permissions_for_doc(doc_id, space_perm)
-            if combined_doc_permissions:
-                file_data.metadata.permissions_data = combined_doc_permissions
+        # permissions_data / permissions_version are resolved at index time (PLU-534)
+        # and carried on file_data, so the downloader no longer fetches permissions.
 
         # Update file_data with metadata
         file_data.metadata.date_created = _iso8601_to_epoch_str(page["createdAt"])
