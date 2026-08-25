@@ -1,0 +1,45 @@
+test/unit/test_sanitizer.py
+  s_8b7038141fe502::t_c93ebb0e5cd59e 1-52
+unstructured_ingest/processes/utils/logging/sanitizer.py
+  s_8b7038141fe502::t_c93ebb0e5cd59e 34,39-42
+unstructured_ingest/processes/connectors/milvus.py
+  s_8b7038141fe502::t_c93ebb0e5cd59e 5,14-16,38,44-134,303-306,308-315,317-321,323-325,327,342-352,392-399,424-427,429-434
+CHANGELOG.md
+  s_8b7038141fe502::t_1db42d4c2aab6c 1
+  s_8b7038141fe502::t_c93ebb0e5cd59e 7-49
+  s_8b7038141fe502::t_669f0f448632a9 50
+unstructured_ingest/processes/connectors/fsspec/sftp.py
+  s_8b7038141fe502::t_c93ebb0e5cd59e 18,55-62,242-243,318-343,426
+unstructured_ingest/processes/connectors/sharepoint.py
+  s_8b7038141fe502::t_c93ebb0e5cd59e 5,7,25,44,52-74,85-86,92-94,129-141,154-162,164-165,167-215,271-277,284-285,291,294,298,302-306,336-388,431-448,451,453,458-465,483-484,489-616,619,630-642,663-718,720-976,1015-1025,1050-1066,1087,1096
+.github/workflows/claude.yml
+  s_8b7038141fe502::t_c93ebb0e5cd59e 34,37-38
+pyproject.toml
+  s_8b7038141fe502::t_c93ebb0e5cd59e 167
+unstructured_ingest/__version__.py
+  s_8b7038141fe502::t_1db42d4c2aab6c 1
+test/unit/connectors/fsspec/test_sftp.py
+  s_8b7038141fe502::t_c93ebb0e5cd59e 14-15,19-20,47,324-339,397,416,456-584
+test/unit/processes/connectors/test_milvus.py
+  s_8b7038141fe502::t_c93ebb0e5cd59e 2-3,5,7,11-17,20-22,24-26,174-484
+test/unit/connectors/test_sharepoint.py
+  s_8b7038141fe502::t_c93ebb0e5cd59e 2-4,21-22,29-31,285-299,301,305-310,313-316,318,323-326,347,350-368,370-373,375,377,379-382,384,498,600,620,652,739,775-1702
+uv.lock
+  s_8b7038141fe502::t_e0a77bbd7546b7 7355,7539
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "942d08d58961378a4e5a384b67a8b0e9ce955c2d",
+  "prompts": {},
+  "sessions": {
+    "s_8b7038141fe502": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ec78a3b3-4bc0-4001-91af-fca0399588d2",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Trevor Bossert <alanboss@gmail.com>"
+    }
+  }
+}
