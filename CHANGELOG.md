@@ -2,6 +2,8 @@
 
 ### Fixes
 
+- **fix(ibm-watsonx-s3): write Iceberg data files through FsspecFileIO.** PyIceberg defaults `s3://` to `PyArrowFileIO` whenever pyarrow is installed. That initializes pyarrow's AWS C++ S3 client, whose vendored s2n process-aborts under FIPS libcrypto (`s2n_init() failed: FIPS mode is not supported for the libcrypto`) instead of failing the job. Catalog config now sets `py-io-impl` to `pyiceberg.io.fsspec.FsspecFileIO` so COS writes use s3fs/botocore (the same stack as the S3 destination). Adds `s3fs` to the `ibm-watsonx-s3` extra.
+
 - **fix: map Vertex AI `ResourceExhausted` to `QuotaError`.** `VertexAIEmbeddingConfig.wrap_error` only wrapped Google auth errors, so a quota/rate-exhaustion (`google.api_core.exceptions.ResourceExhausted`, HTTP 429) surfaced raw. Combined with the transient-skip test guard added below, that would have caused a quota exhaustion to be treated as a transient blip and skipped rather than failing. Vertex now maps `ResourceExhausted` to `QuotaError` (a user error), mirroring how OpenAI/OctoAI map `insufficient_quota`, so it fails loudly.
 
 ### Chores

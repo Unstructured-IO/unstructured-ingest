@@ -7149,6 +7149,7 @@ ibm-watsonx-s3 = [
     { name = "pandas" },
     { name = "pyarrow" },
     { name = "pyiceberg" },
+    { name = "s3fs" },
     { name = "tenacity" },
 ]
 image = [
@@ -7362,6 +7363,7 @@ test = [
     { name = "pytest-tagging" },
     { name = "pytest-timeout" },
     { name = "pytest-xdist" },
+    { name = "s3fs" },
     { name = "slack-sdk", extra = ["optional"] },
     { name = "universal-pathlib" },
     { name = "vertexai" },
@@ -7471,6 +7473,7 @@ requires-dist = [
     { name = "requests", marker = "extra == 'onedrive'" },
     { name = "requests", marker = "extra == 'sharepoint'" },
     { name = "requests", marker = "extra == 'vectara'" },
+    { name = "s3fs", marker = "extra == 'ibm-watsonx-s3'" },
     { name = "s3fs", marker = "extra == 's3'" },
     { name = "sentence-transformers", marker = "extra == 'huggingface'" },
     { name = "simple-salesforce", marker = "extra == 'salesforce'" },
@@ -7546,6 +7549,7 @@ test = [
     { name = "pytest-tagging" },
     { name = "pytest-timeout" },
     { name = "pytest-xdist" },
+    { name = "s3fs" },
     { name = "slack-sdk", extras = ["optional"] },
     { name = "universal-pathlib" },
     { name = "vertexai" },

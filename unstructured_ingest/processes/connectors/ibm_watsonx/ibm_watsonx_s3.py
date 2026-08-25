@@ -49,6 +49,11 @@ DEFAULT_ICEBERG_URI_PATH = "/mds/iceberg"
 # instance-scoped /mds/iceberg path in favor of this one.
 ACCOUNT_SCOPED_ICEBERG_URI_PATH = "/api/v1/iceberg"
 DEFAULT_ICEBERG_CATALOG_TYPE = "rest"
+# PyIceberg prefers PyArrowFileIO for s3:// whenever pyarrow is installed.
+# PyArrow's AWS C++ S3 client then runs s2n_init(), which process-aborts under
+# FIPS libcrypto (not a catchable exception). FsspecFileIO uses s3fs/botocore,
+# the same stack as the S3 destination.
+DEFAULT_PY_IO_IMPL = "pyiceberg.io.fsspec.FsspecFileIO"
 
 
 class IbmWatsonxAccessConfig(AccessConfig):
@@ -173,6 +178,7 @@ class IbmWatsonxConnectionConfig(ConnectionConfig):
             # configuration doesn't allow vending credentials. We need to set it to `None`
             # in order to use user-provided S3 credentials.
             "header.X-Iceberg-Access-Delegation": None,
+            "py-io-impl": DEFAULT_PY_IO_IMPL,
         }
         # Account-scoped (SaaS) MDS requires the account ID as a request header.
         # It must be the `AccountId` header; the query-parameter form is rejected.
@@ -180,7 +186,7 @@ class IbmWatsonxConnectionConfig(ConnectionConfig):
             config["header.AccountId"] = self.account_id
         return config
 
-    @requires_dependencies(["pyiceberg"], extras="ibm-watsonx-s3")
+    @requires_dependencies(["pyiceberg", "s3fs"], extras="ibm-watsonx-s3")
     @contextmanager
     def get_catalog(
         self, max_retries: Optional[int] = None

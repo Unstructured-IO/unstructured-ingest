@@ -56,7 +56,7 @@ github = ["pygithub>1.58.0", "requests", "tenacity"]
 gitlab = ["python-gitlab"]
 google-drive = ["google-api-python-client", "tenacity"]
 hubspot = ["hubspot-api-client", "urllib3"]
-ibm-watsonx-s3 = ["pyiceberg", "httpx", "pyarrow", "tenacity", "pandas"]
+ibm-watsonx-s3 = ["pyiceberg", "httpx", "pyarrow", "tenacity", "pandas", "s3fs"]
 jira = ["atlassian-python-api"]
 kafka = ["confluent-kafka"]
 kdbai = ["pandas", "kdbai-client>=1.4.0"]
@@ -161,6 +161,7 @@ test = [
     "google-genai",
     "pyiceberg",
     "pyarrow",
+    "s3fs",
     "networkx",
     "htmlBuilder",
     "office365-rest-python-client",

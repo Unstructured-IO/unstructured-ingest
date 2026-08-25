@@ -1,3 +1,4 @@
+import logging
 import time
 from pathlib import Path
 from unittest.mock import MagicMock
@@ -18,6 +19,7 @@ from unstructured_ingest.error import (
 )
 from unstructured_ingest.processes.connectors.ibm_watsonx import IBM_WATSONX_S3_CONNECTOR_TYPE
 from unstructured_ingest.processes.connectors.ibm_watsonx.ibm_watsonx_s3 import (
+    DEFAULT_PY_IO_IMPL,
     IbmWatsonxAccessConfig,
     IbmWatsonxConnectionConfig,
     IbmWatsonxUploader,
@@ -213,6 +215,7 @@ def test_ibm_watsonx_connection_config_get_catalog_config_no_account_id(
     mocker.patch.object(IbmWatsonxConnectionConfig, "bearer_token", new="test_bearer_token")
     config = connection_config.get_catalog_config()
     assert "header.AccountId" not in config
+    assert config["py-io-impl"] == DEFAULT_PY_IO_IMPL
 
 
 def test_ibm_watsonx_connection_config_get_catalog_config_account_scoped(
@@ -224,6 +227,7 @@ def test_ibm_watsonx_connection_config_get_catalog_config_account_scoped(
     config = account_scoped_connection_config.get_catalog_config()
     assert config["header.AccountId"] == "test_account_id"
     assert config["uri"] == "https://test_iceberg_endpoint/api/v1/iceberg"
+    assert config["py-io-impl"] == DEFAULT_PY_IO_IMPL
 
 
 def test_ibm_watsonx_connection_config_object_storage_url(
@@ -323,8 +327,31 @@ def test_ibm_watsonx_connection_config_get_catalog_success(
             "s3.secret-access-key": "test_secret_access_key",
             "s3.region": "test_region",
             "header.X-Iceberg-Access-Delegation": None,
+            "py-io-impl": DEFAULT_PY_IO_IMPL,
         }
     )
+
+
+def test_catalog_config_constructs_fsspec_file_io_backed_by_s3fs(
+    mocker: MockerFixture, connection_config: IbmWatsonxConnectionConfig
+):
+    # Setting py-io-impl is not enough: PyIceberg still prefers PyArrowFileIO for s3://
+    # unless that property actually constructs FsspecFileIO. Construct FileIO the same
+    # way the catalog does and assert the s3 scheme is s3fs, not pyarrow.
+    from pyiceberg.io import load_file_io
+    from pyiceberg.io.fsspec import FsspecFileIO
+    from s3fs import S3FileSystem
+
+    mocker.patch.object(IbmWatsonxConnectionConfig, "bearer_token", new="test_bearer_token")
+    config = connection_config.get_catalog_config()
+    file_io = load_file_io(properties=config, location="s3://test-bucket/warehouse")
+
+    assert isinstance(file_io, FsspecFileIO)
+    assert type(file_io).__module__ == "pyiceberg.io.fsspec"
+    s3_fs = file_io.get_fs("s3")
+    assert isinstance(s3_fs, S3FileSystem)
+    assert type(s3_fs).__module__.startswith("s3fs")
+    assert "pyarrow" not in type(s3_fs).__module__
 
 
 def test_ibm_watsonx_connection_config_get_catalog_account_scoped_success(
@@ -353,6 +380,7 @@ def test_ibm_watsonx_connection_config_get_catalog_account_scoped_success(
             "s3.region": "test_region",
             "header.X-Iceberg-Access-Delegation": None,
             "header.AccountId": "test_account_id",
+            "py-io-impl": DEFAULT_PY_IO_IMPL,
         }
     )
 
@@ -853,9 +881,7 @@ def test_ibm_watsonx_upload_data_table_commit_failed_redacts_secret(
             max_retries=2,
         ),
     )
-    mock_transaction.append.side_effect = CommitFailedException(
-        f"commit conflict token={_SECRET}"
-    )
+    mock_transaction.append.side_effect = CommitFailedException(f"commit conflict token={_SECRET}")
 
     with pytest.raises(ProviderError) as excinfo:
         fast_uploader.upload_data_table(mock_table, mock_data_table, file_data)
