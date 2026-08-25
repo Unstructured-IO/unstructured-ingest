@@ -85,7 +85,11 @@ class SourceValidationConfigs(ValidationConfig):
     predownload_file_data_check: Optional[FILEDATA_CHECKS_TYPE] = None
     postdownload_file_data_check: Optional[FILEDATA_CHECKS_TYPE] = None
     exclude_fields: list[str] = Field(
-        default_factory=lambda: ["local_download_path", "metadata.date_processed"]
+        default_factory=lambda: [
+            "local_download_path",
+            "metadata.date_processed",
+            "metadata.permissions_version",
+        ]
     )
     exclude_fields_extend: list[str] = Field(default_factory=list)
     fixture_scrubbers: list[FixtureScrubber] = Field(

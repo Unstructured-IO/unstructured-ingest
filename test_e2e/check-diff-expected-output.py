@@ -79,6 +79,10 @@ def omit_ignored_fields(data: dict) -> None:
     if metadata := data.get("metadata"):
         metadata.pop("text_as_html", None)
         metadata.pop("languages", None)
+        if data_source := metadata.get("data_source"):
+            # Connector-specific optional field; null value carries no information
+            # for connectors that don't compute ACL digests.
+            data_source.pop("permissions_version", None)
 
 
 def compare_files(expected_file: Path, current_file: Path) -> list[DeepDiff]:
