@@ -1,0 +1,57 @@
+test/integration/embedders/test_octoai.py
+  s_accfa6659375ec::t_2ea9a1d9a8c28c 8,36-38,53-60,83-84,86-89
+test/integration/embedders/test_togetherai.py
+  s_accfa6659375ec::t_2ea9a1d9a8c28c 8,32-36,45-47,59-60,66,84-85,91
+test/unit/embed/test_vertexai.py
+  s_accfa6659375ec::t_2ea9a1d9a8c28c 11,146-170
+  s_accfa6659375ec::t_f2931efd8650ae 171-172
+test/integration/embedders/test_openai.py
+  s_accfa6659375ec::t_2ea9a1d9a8c28c 8,36-38,53-60,82-83,85-88
+test/integration/embedders/test_vertexai.py
+  s_accfa6659375ec::t_2ea9a1d9a8c28c 8,35-37,52-59,71-72,74-77
+test/integration/embedders/test_azure_openai.py
+  s_accfa6659375ec::t_2ea9a1d9a8c28c 9-13,48-50,66-72
+  s_accfa6659375ec::t_0b3489fe4feff9 73
+unstructured_ingest/embed/vertexai.py
+  s_accfa6659375ec::t_2ea9a1d9a8c28c 20,155,160-181
+test/integration/embedders/test_utils.py
+  s_accfa6659375ec::t_2ea9a1d9a8c28c 1-197
+test/integration/embedders/utils.py
+  s_accfa6659375ec::t_2ea9a1d9a8c28c 2,6-7,9-128,151,157-169,178,184-195
+test/integration/embedders/test_bedrock.py
+  s_accfa6659375ec::t_2ea9a1d9a8c28c 8,40-42,58-59,65,104-105,111
+unstructured_ingest/__version__.py
+  s_accfa6659375ec::t_b79d80ac69fd9c 1
+test/integration/embedders/test_voyageai.py
+  s_accfa6659375ec::t_2ea9a1d9a8c28c 8,35-37,52-59,71-72,74-77,90-92
+test/integration/embedders/test_mixedbread.py
+  s_accfa6659375ec::t_2ea9a1d9a8c28c 8,35-37,58,77
+CHANGELOG.md
+  s_accfa6659375ec::t_e0c15852589988 1,7-10
+  s_accfa6659375ec::t_2ea9a1d9a8c28c 11-15
+  s_f113d232d786d4::t_332330310ba3a0 16
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "d796018ff5450d2d3e98579ee41cdaa7e405265a",
+  "prompts": {},
+  "sessions": {
+    "s_accfa6659375ec": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "531a09a5-1763-443d-ada5-2c5dae96534b",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulkarayan <pk@unstructured.io>"
+    },
+    "s_f113d232d786d4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7121eec1-b3a3-4c45-b7c0-41bdd8d6680d",
+        "model": "claude-opus-5"
+      },
+      "human_author": "paulkarayan <pk@unstructured.io>"
+    }
+  }
+}
