@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 
 from test.integration.embedders.utils import (
+    skip_on_transient_provider,
     validate_embedding_output,
     validate_raw_embedder,
     validate_raw_embedder_async,
@@ -28,6 +29,11 @@ def get_api_key() -> str:
 
 
 # TODO: re-enable these tests when TogetherAI API is fixed
+#
+# Every test below is @pytest.mark.skip because the TogetherAI API is disabled
+# (a permanent exclusion, not a transient outage), so the
+# skip_on_transient_provider guards here are inert - they only start gating
+# skip-vs-fail once these skip marks are removed and the API is re-enabled.
 
 
 @pytest.mark.skip(reason="TogetherAI API disabled")
@@ -36,8 +42,9 @@ def test_togetherai_embedder(embedder_file: Path):
     api_key = get_api_key()
     embedder_config = EmbedderConfig(embedding_provider="togetherai", embedding_api_key=api_key)
     embedder = Embedder(config=embedder_config)
-    embedder.precheck()
-    results = embedder.run(elements_filepath=embedder_file)
+    with skip_on_transient_provider("togetherai"):
+        embedder.precheck()
+        results = embedder.run(elements_filepath=embedder_file)
     assert results
     with embedder_file.open("r") as f:
         original_elements = json.load(f)
@@ -49,12 +56,14 @@ def test_togetherai_embedder(embedder_file: Path):
 def test_raw_togetherai_embedder(embedder_file: Path):
     api_key = get_api_key()
     embedder = TogetherAIEmbeddingEncoder(config=TogetherAIEmbeddingConfig(api_key=api_key))
-    embedder.precheck()
+    with skip_on_transient_provider("togetherai"):
+        embedder.precheck()
     validate_raw_embedder(
         embedder=embedder,
         embedder_file=embedder_file,
         expected_dimension=768,
         expected_is_unit_vector=False,
+        provider_label="togetherai",
     )
 
 
@@ -72,10 +81,12 @@ def test_raw_togetherai_embedder_invalid_credentials():
 async def test_raw_async_togetherai_embedder(embedder_file: Path):
     api_key = get_api_key()
     embedder = AsyncTogetherAIEmbeddingEncoder(config=TogetherAIEmbeddingConfig(api_key=api_key))
-    embedder.precheck()
+    with skip_on_transient_provider("togetherai"):
+        embedder.precheck()
     await validate_raw_embedder_async(
         embedder=embedder,
         embedder_file=embedder_file,
         expected_dimension=768,
         expected_is_unit_vector=False,
+        provider_label="togetherai",
     )

@@ -1,3 +1,13 @@
+## [1.11.2]
+
+### Fixes
+
+- **fix: map Vertex AI `ResourceExhausted` to `QuotaError`.** `VertexAIEmbeddingConfig.wrap_error` only wrapped Google auth errors, so a quota/rate-exhaustion (`google.api_core.exceptions.ResourceExhausted`, HTTP 429) surfaced raw. Combined with the transient-skip test guard added below, that would have caused a quota exhaustion to be treated as a transient blip and skipped rather than failing. Vertex now maps `ResourceExhausted` to `QuotaError` (a user error), mirroring how OpenAI/OctoAI map `insufficient_quota`, so it fails loudly.
+
+### Chores
+
+- **test: skip embedder integration tests on transient provider errors.** The hosted-provider embedder integration tests (openai, azure_openai, vertexai, voyageai, octoai, togetherai, mixedbread, bedrock) now `pytest.skip` rather than fail when the provider is transiently rate-limited / unavailable (5xx) / timing out - an environmental flake, not a defect in the code under test. Auth (`UserAuthError`), quota (`QuotaError`), user-input (`UserError`), and wrong-output (`AssertionError`) failures are deliberately excluded and still fail. HuggingFace (local model) is left unguarded. Adds a unit test (`test/integration/embedders/test_utils.py`) covering the transient-vs-fatal classifier directly.
+
 ## [1.11.1]
 
 ### Enhancements

@@ -17,6 +17,7 @@ from unstructured_ingest.embed.interfaces import (
 )
 from unstructured_ingest.error import (
     ProviderError,
+    QuotaError,
     UserAuthError,
     UserError,
     is_internal_error,
@@ -151,10 +152,33 @@ class VertexAIEmbeddingConfig(EmbeddingConfig):
     def wrap_error(self, e: Exception) -> Exception:
         if is_internal_error(e=e):
             return e
+        from google.api_core.exceptions import ResourceExhausted
         from google.auth.exceptions import GoogleAuthError
 
         if isinstance(e, GoogleAuthError):
             return UserAuthError(e)
+        if isinstance(e, ResourceExhausted):
+            # Quota / rate exhaustion (HTTP 429). Surface as QuotaError - a user
+            # error - so it fails loudly instead of being mistaken for a
+            # transient provider blip and skipped. Mirrors OpenAI/OctoAI, which
+            # map insufficient_quota to QuotaError.
+            return QuotaError(e)
+        # The Gemini-family transport goes through google-genai, which raises its OWN
+        # google.genai.errors.ClientError (code 429) for quota exhaustion, NOT
+        # api_core.ResourceExhausted - so without this a Gemini 429 would surface raw and the
+        # transient-skip guard (which treats a 429 as transient) would swallow a genuine quota
+        # exhaustion. Map it to QuotaError too. Imported defensively: google-genai is only present
+        # with the `vertexai` extra, and the legacy transport never raises this type.
+        try:
+            from google.genai.errors import ClientError as GenAIClientError
+        except ImportError:
+            GenAIClientError = None
+        if (
+            GenAIClientError is not None
+            and isinstance(e, GenAIClientError)
+            and getattr(e, "code", None) == 429
+        ):
+            return QuotaError(e)
         return e
 
     def register_application_credentials(self):
