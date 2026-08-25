@@ -1,3 +1,9 @@
+## [1.11.3]
+
+### Fixes
+
+- **fix(ibm-watsonx-s3): write Iceberg data files through FsspecFileIO.** PyIceberg defaults `s3://` to `PyArrowFileIO` whenever pyarrow is installed. That initializes pyarrow's AWS C++ S3 client, whose vendored s2n process-aborts under FIPS libcrypto (`s2n_init() failed: FIPS mode is not supported for the libcrypto`) instead of failing the job. Catalog config now sets `py-io-impl` to `pyiceberg.io.fsspec.FsspecFileIO` so COS writes use s3fs/botocore (the same stack as the S3 destination). Adds `s3fs` to the `ibm-watsonx-s3` extra.
+
 ## [1.11.2]
 
 ### Fixes
