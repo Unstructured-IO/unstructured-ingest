@@ -131,7 +131,20 @@ class DatabricksVolumesIndexer(Indexer, ABC):
 
     def precheck(self) -> None:
         try:
-            self.connection_config.get_client()
+            client = self.connection_config.get_client()
+            # Building the client is not a connection test: with a personal access token
+            # the SDK's auth provider is a static header and contacts nothing. Both calls
+            # below are live requests. me() proves the credentials and the host; the
+            # listing proves the catalog, schema and volume resolve and that the Unity
+            # Catalog read grants are in place.
+            client.current_user.me()
+            # dbfs.list is a generator, so take a single entry: that issues one request
+            # and stops, rather than paging through a volume that may hold many files.
+            # An empty path is valid, hence the default.
+            next(
+                iter(client.dbfs.list(path=self.index_config.path, recursive=False)),
+                None,
+            )
         except Exception as e:
             raise self.connection_config.wrap_error(e=e) from e
 
@@ -185,9 +198,12 @@ class DatabricksVolumesDownloader(Downloader, ABC):
 
     def precheck(self) -> None:
         try:
-            self.connection_config.get_client()
+            # The downloader has no path of its own to validate, so it checks what it
+            # can: a live call proving the credentials and the host, instead of the
+            # no-I/O client construction that passed for any input at all.
+            self.connection_config.get_client().current_user.me()
         except Exception as e:
-            raise self.connection_config.wrap_error(e=e)
+            raise self.connection_config.wrap_error(e=e) from e
 
     def get_download_path(self, file_data: FileData) -> Path:
         return self.download_config.download_dir / Path(file_data.source_identifiers.relative_path)

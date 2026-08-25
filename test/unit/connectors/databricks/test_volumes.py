@@ -4,9 +4,13 @@ import pytest
 from pytest_mock import MockerFixture
 
 from unstructured_ingest.error import ProviderError, UserAuthError, UserError
+from unstructured_ingest.processes.connectors.databricks.volumes import (
+    DatabricksVolumesDownloaderConfig,
+)
 from unstructured_ingest.processes.connectors.databricks.volumes_native import (
     DatabricksNativeVolumesAccessConfig,
     DatabricksNativeVolumesConnectionConfig,
+    DatabricksNativeVolumesDownloader,
     DatabricksNativeVolumesIndexer,
     DatabricksNativeVolumesIndexerConfig,
 )
@@ -77,6 +81,111 @@ def test_wrap_error_unhandled_log_redacts(caplog: pytest.LogCaptureFixture):
 
     assert SECRET not in caplog.text
     assert "hunter2" not in caplog.text
+
+
+def _indexer(mocker: MockerFixture, client) -> DatabricksNativeVolumesIndexer:
+    mocker.patch.object(DatabricksNativeVolumesConnectionConfig, "get_client", return_value=client)
+    return DatabricksNativeVolumesIndexer(
+        connection_config=_connection_config(),
+        index_config=DatabricksNativeVolumesIndexerConfig(
+            catalog="catalog", schema="schema", volume="volume", volume_path="path"
+        ),
+    )
+
+
+def _downloader(mocker: MockerFixture, client) -> DatabricksNativeVolumesDownloader:
+    mocker.patch.object(DatabricksNativeVolumesConnectionConfig, "get_client", return_value=client)
+    return DatabricksNativeVolumesDownloader(
+        connection_config=_connection_config(),
+        download_config=DatabricksVolumesDownloaderConfig(),
+    )
+
+
+def test_indexer_precheck_raises_when_credentials_are_rejected(mocker: MockerFixture):
+    # Constructing the client makes no request under token auth, so without a live
+    # call the connection check passes for a token the workspace rejects and the
+    # failure only surfaces when the job runs.
+    pytest.importorskip("databricks.sdk")
+    from databricks.sdk.errors.platform import STATUS_CODE_MAPPING
+
+    client = mocker.MagicMock()
+    client.current_user.me.side_effect = STATUS_CODE_MAPPING[401](SECRET)
+
+    with pytest.raises(UserAuthError) as exc_info:
+        _indexer(mocker, client).precheck()
+
+    assert SECRET not in str(exc_info.value)
+    client.current_user.me.assert_called_once()
+
+
+def test_indexer_precheck_raises_when_volume_path_is_missing(mocker: MockerFixture):
+    pytest.importorskip("databricks.sdk")
+    from databricks.sdk.errors.platform import STATUS_CODE_MAPPING
+
+    client = mocker.MagicMock()
+    client.dbfs.list.side_effect = STATUS_CODE_MAPPING[404]("path does not exist")
+
+    with pytest.raises(UserError):
+        _indexer(mocker, client).precheck()
+
+
+def test_indexer_precheck_raises_when_volume_read_is_not_granted(mocker: MockerFixture):
+    # Credentials are good but the Unity Catalog READ VOLUME grant is missing: the
+    # me() call succeeds and only the listing fails.
+    pytest.importorskip("databricks.sdk")
+    from databricks.sdk.errors.platform import STATUS_CODE_MAPPING
+
+    client = mocker.MagicMock()
+    client.dbfs.list.side_effect = STATUS_CODE_MAPPING[403]("insufficient permissions")
+
+    with pytest.raises(UserAuthError):
+        _indexer(mocker, client).precheck()
+
+
+def test_indexer_precheck_lists_the_configured_path_without_recursing(mocker: MockerFixture):
+    pytest.importorskip("databricks.sdk")
+    client = mocker.MagicMock()
+    client.dbfs.list.return_value = iter(
+        [mocker.MagicMock(is_dir=False, path="/Volumes/catalog/schema/volume/path/example.pdf")]
+    )
+
+    _indexer(mocker, client).precheck()
+
+    client.dbfs.list.assert_called_once_with(
+        path="/Volumes/catalog/schema/volume/path", recursive=False
+    )
+
+
+def test_indexer_precheck_accepts_an_empty_volume_path(mocker: MockerFixture):
+    # An empty directory is a valid source, not a connection failure.
+    pytest.importorskip("databricks.sdk")
+    client = mocker.MagicMock()
+    client.dbfs.list.return_value = iter([])
+
+    _indexer(mocker, client).precheck()
+
+
+def test_downloader_precheck_raises_when_credentials_are_rejected(mocker: MockerFixture):
+    pytest.importorskip("databricks.sdk")
+    from databricks.sdk.errors.platform import STATUS_CODE_MAPPING
+
+    client = mocker.MagicMock()
+    client.current_user.me.side_effect = STATUS_CODE_MAPPING[401](SECRET)
+
+    with pytest.raises(UserAuthError) as exc_info:
+        _downloader(mocker, client).precheck()
+
+    assert SECRET not in str(exc_info.value)
+    client.current_user.me.assert_called_once()
+
+
+def test_downloader_precheck_passes_when_credentials_are_accepted(mocker: MockerFixture):
+    pytest.importorskip("databricks.sdk")
+    client = mocker.MagicMock()
+
+    _downloader(mocker, client).precheck()
+
+    client.current_user.me.assert_called_once()
 
 
 def test_indexed_file_reports_modification_time_in_epoch_seconds(mocker: MockerFixture):
