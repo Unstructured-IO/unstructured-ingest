@@ -18,6 +18,7 @@ from unstructured_ingest.interfaces import (
 from unstructured_ingest.logger import logger
 from unstructured_ingest.processes.connector_registry import (
     DestinationRegistryEntry,
+    LocationShape,
 )
 from unstructured_ingest.utils.data_prep import (
     flatten_dict,
@@ -91,9 +92,14 @@ class KdbaiUploadStager(UploadStager):
 
 class KdbaiUploaderConfig(UploaderConfig):
     database_name: str = Field(
-        default="default", description="The name of the KDBAI database to write into."
+        default="default",
+        description="The name of the KDBAI database to write into.",
+        json_schema_extra={"x-runtime-eligible": True},
     )
-    table_name: str = Field(description="The name of the KDBAI table to write into.")
+    table_name: str = Field(
+        description="The name of the KDBAI table to write into.",
+        json_schema_extra={"x-runtime-eligible": True},
+    )
     batch_size: int = Field(default=100, description="Number of records per batch")
 
 
@@ -155,4 +161,7 @@ kdbai_destination_entry = DestinationRegistryEntry(
     uploader_config=KdbaiUploaderConfig,
     upload_stager=KdbaiUploadStager,
     upload_stager_config=KdbaiUploadStagerConfig,
+    location_shape=LocationShape.SQL_TABLE,
+    location_identity=("uploader_config.database_name", "uploader_config.table_name"),
+    supports_recursion=False,
 )

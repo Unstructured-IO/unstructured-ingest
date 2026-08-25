@@ -38,6 +38,7 @@ from unstructured_ingest.interfaces import (
 from unstructured_ingest.logger import logger
 from unstructured_ingest.processes.connector_registry import (
     DestinationRegistryEntry,
+    LocationShape,
     SourceRegistryEntry,
 )
 from unstructured_ingest.processes.utils.blob_storage import (
@@ -235,8 +236,8 @@ class OnedriveConnectionConfig(ConnectionConfig):
 
 
 class OnedriveIndexerConfig(IndexerConfig):
-    path: Optional[str] = Field(default="")
-    recursive: bool = False
+    path: Optional[str] = Field(default="", json_schema_extra={"x-runtime-eligible": True})
+    recursive: bool = Field(default=False, json_schema_extra={"x-runtime-eligible": True})
 
 
 @dataclass
@@ -671,7 +672,8 @@ class OnedriveDownloader(Downloader):
 
 class OnedriveUploaderConfig(UploaderConfig):
     remote_url: str = Field(
-        description="URL of the destination in OneDrive, e.g., 'onedrive://Documents/Folder'"
+        description="URL of the destination in OneDrive, e.g., 'onedrive://Documents/Folder'",
+        json_schema_extra={"x-runtime-eligible": True},
     )
     prefix: str = "onedrive://"
 
@@ -827,6 +829,10 @@ onedrive_source_entry = SourceRegistryEntry(
     indexer=OnedriveIndexer,
     downloader_config=OnedriveDownloaderConfig,
     downloader=OnedriveDownloader,
+    location_shape=LocationShape.API_FOLDER,
+    location_identity=("connector_config.user_pname", "indexer_config.path"),
+    emits_record_version=True,
+    supports_recursion=True,
 )
 
 onedrive_destination_entry = DestinationRegistryEntry(
@@ -835,4 +841,7 @@ onedrive_destination_entry = DestinationRegistryEntry(
     uploader_config=OnedriveUploaderConfig,
     upload_stager_config=BlobStoreUploadStagerConfig,
     upload_stager=BlobStoreUploadStager,
+    location_shape=LocationShape.FSSPEC_URL,
+    location_identity=("connector_config.user_pname", "uploader_config.remote_url"),
+    supports_recursion=True,
 )

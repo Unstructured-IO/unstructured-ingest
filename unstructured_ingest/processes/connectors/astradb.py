@@ -44,6 +44,7 @@ from unstructured_ingest.interfaces import (
 from unstructured_ingest.logger import logger
 from unstructured_ingest.processes.connector_registry import (
     DestinationRegistryEntry,
+    LocationShape,
     SourceRegistryEntry,
 )
 from unstructured_ingest.processes.connectors.utils import format_and_truncate_orig_elements
@@ -152,9 +153,14 @@ class AstraDBIndexerConfig(IndexerConfig):
     collection_name: str = Field(
         description="The name of the Astra DB collection. "
         "Note that the collection name must only include letters, "
-        "numbers, and underscores."
+        "numbers, and underscores.",
+        json_schema_extra={"x-runtime-eligible": True},
     )
-    keyspace: Optional[str] = Field(default=None, description="The Astra DB connection keyspace.")
+    keyspace: Optional[str] = Field(
+        default=None,
+        description="The Astra DB connection keyspace.",
+        json_schema_extra={"x-runtime-eligible": True},
+    )
     batch_size: int = Field(default=20, description="Number of records per batch")
 
 
@@ -343,6 +349,16 @@ class AstraDBUploadStager(UploadStager):
             metadata["original_elements"] = format_and_truncate_orig_elements(element_dict)
             metadata.pop("orig_elements", None)
 
+    def should_include(self, element_dict: dict) -> bool:
+        # The embedder skips elements with empty text, so those arrive without an
+        # "embeddings" key and have nothing to index. When Astra generates the vectors
+        # it works from the content instead, so nothing is dropped in that mode.
+        if self.upload_stager_config.astra_generated_embeddings:
+            return True
+        # An element that has text but no embedding means no embedder ran, which is a
+        # configuration error conform_dict reports. Keep it so that error still surfaces.
+        return bool(element_dict.get("text")) or "embeddings" in element_dict
+
     def conform_dict(self, element_dict: dict, file_data: FileData) -> dict:
         self.truncate_dict_elements(element_dict)
         if self.upload_stager_config.flatten_metadata:
@@ -393,8 +409,13 @@ class AstraDBUploaderConfig(UploaderConfig):
         "Note that the collection name must only include letters, "
         "numbers, and underscores.",
         default=None,
+        json_schema_extra={"x-runtime-eligible": True},
     )
-    keyspace: Optional[str] = Field(default=None, description="The Astra DB connection keyspace.")
+    keyspace: Optional[str] = Field(
+        default=None,
+        description="The Astra DB connection keyspace.",
+        json_schema_extra={"x-runtime-eligible": True},
+    )
     requested_indexing_policy: Optional[dict[str, Any]] = Field(
         default=None,
         description="The indexing policy to use for the collection.",
@@ -640,6 +661,9 @@ astra_db_source_entry = SourceRegistryEntry(
     downloader=AstraDBDownloader,
     downloader_config=AstraDBDownloaderConfig,
     connection_config=AstraDBConnectionConfig,
+    location_shape=LocationShape.SEARCH_INDEX,
+    location_identity=("indexer_config.keyspace", "indexer_config.collection_name"),
+    supports_recursion=False,
 )
 
 astra_db_destination_entry = DestinationRegistryEntry(
@@ -648,4 +672,7 @@ astra_db_destination_entry = DestinationRegistryEntry(
     upload_stager=AstraDBUploadStager,
     uploader_config=AstraDBUploaderConfig,
     uploader=AstraDBUploader,
+    location_shape=LocationShape.SEARCH_INDEX,
+    location_identity=("uploader_config.keyspace", "uploader_config.collection_name"),
+    supports_recursion=False,
 )

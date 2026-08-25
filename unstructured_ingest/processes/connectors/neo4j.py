@@ -29,6 +29,7 @@ from unstructured_ingest.interfaces import (
 from unstructured_ingest.logger import logger
 from unstructured_ingest.processes.connector_registry import (
     DestinationRegistryEntry,
+    LocationShape,
 )
 from unstructured_ingest.processes.connectors.utils import format_and_truncate_orig_elements
 from unstructured_ingest.utils.data_prep import batch_generator, get_json_data
@@ -52,7 +53,11 @@ class Neo4jConnectionConfig(ConnectionConfig):
     connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
     username: str = Field(default="neo4j")
     uri: str = Field(description="Neo4j Connection URI <scheme>://<host>:<port>")
-    database: str = Field(default="neo4j", description="Name of the target database")
+    database: str = Field(
+        default="neo4j",
+        description="Name of the target database",
+        json_schema_extra={"x-runtime-eligible": True},
+    )
 
     @requires_dependencies(["neo4j"], extras="neo4j")
     @asynccontextmanager
@@ -531,4 +536,7 @@ neo4j_destination_entry = DestinationRegistryEntry(
     upload_stager_config=Neo4jUploadStagerConfig,
     uploader=Neo4jUploader,
     uploader_config=Neo4jUploaderConfig,
+    location_shape=LocationShape.OTHER,
+    location_identity=("connector_config.database",),
+    supports_recursion=False,
 )

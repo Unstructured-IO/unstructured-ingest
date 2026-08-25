@@ -28,6 +28,7 @@ from unstructured_ingest.interfaces import (
 from unstructured_ingest.logger import logger
 from unstructured_ingest.processes.connector_registry import (
     DestinationRegistryEntry,
+    LocationShape,
     SourceRegistryEntry,
 )
 from unstructured_ingest.processes.utils.blob_storage import (
@@ -50,12 +51,14 @@ class LocalConnectionConfig(ConnectionConfig):
 
 class LocalIndexerConfig(IndexerConfig):
     input_path: Path = Field(
-        description="Path to the location in the local file system that will be processed."
+        description="Path to the location in the local file system that will be processed.",
+        json_schema_extra={"x-runtime-eligible": True},
     )
     recursive: bool = Field(
         default=False,
         description="Recursively download files in their respective folders "
         "otherwise stop at the files in provided folder level.",
+        json_schema_extra={"x-runtime-eligible": True},
     )
 
     @property
@@ -160,7 +163,9 @@ class LocalDownloader(Downloader):
 
 class LocalUploaderConfig(UploaderConfig):
     output_dir: str = Field(
-        default="structured-output", description="Local path to write partitioned output to"
+        default="structured-output",
+        description="Local path to write partitioned output to",
+        json_schema_extra={"x-runtime-eligible": True},
     )
 
     @property
@@ -217,6 +222,9 @@ local_source_entry = SourceRegistryEntry(
     downloader=LocalDownloader,
     downloader_config=LocalDownloaderConfig,
     connection_config=LocalConnectionConfig,
+    location_shape=LocationShape.OTHER,
+    location_identity=("indexer_config.input_path",),
+    supports_recursion=True,
 )
 
 local_destination_entry = DestinationRegistryEntry(
@@ -224,4 +232,7 @@ local_destination_entry = DestinationRegistryEntry(
     uploader_config=LocalUploaderConfig,
     upload_stager_config=BlobStoreUploadStagerConfig,
     upload_stager=BlobStoreUploadStager,
+    location_shape=LocationShape.OTHER,
+    location_identity=("uploader_config.output_dir",),
+    supports_recursion=False,
 )

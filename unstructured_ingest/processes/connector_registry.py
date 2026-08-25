@@ -1,5 +1,6 @@
 from abc import ABC
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from enum import Enum
 from typing import Optional, Type, TypeVar
 
 from unstructured_ingest.interfaces import (
@@ -25,9 +26,23 @@ UploaderConfigT = TypeVar("UploaderConfigT", bound=UploaderConfig)
 UploaderT = TypeVar("UploaderT", bound=Uploader)
 
 
+class LocationShape(str, Enum):
+    # Shape of a connector's target location; drives scope identity and recursion semantics.
+    FSSPEC_URL = "fsspec-url"
+    SQL_TABLE = "sql-table"
+    SEARCH_INDEX = "search-index"
+    API_FOLDER = "api-folder"
+    OTHER = "other"
+
+
 @dataclass
 class RegistryEntry(ABC):
-    pass
+    # Capability markers. Default None == unannotated: consumers fall back to their
+    # own defaults rather than deriving, so annotating a connector is opt-in and an
+    # unannotated one is never mistaken for an explicit fsspec declaration.
+    # kw_only so they don't disturb the required positional fields on subclasses.
+    location_shape: Optional[LocationShape] = field(default=None, kw_only=True)
+    supports_recursion: bool = field(default=True, kw_only=True)
 
 
 @dataclass
@@ -38,6 +53,10 @@ class SourceRegistryEntry(RegistryEntry):
     downloader_config: Optional[Type[DownloaderConfigT]] = None
     indexer_config: Optional[Type[IndexerConfigT]] = None
     connection_config: Optional[Type[ConnectionConfigT]] = None
+
+    # Ordered reshaped-settings dot-paths that identify the targeted location.
+    location_identity: tuple[str, ...] = field(default=("indexer_config.remote_url",), kw_only=True)
+    emits_record_version: bool = field(default=False, kw_only=True)
 
 
 source_registry: dict[str, SourceRegistryEntry] = {}
@@ -58,6 +77,12 @@ class DestinationRegistryEntry(RegistryEntry):
     uploader_config: Optional[Type[UploaderConfigT]] = None
 
     connection_config: Optional[Type[ConnectionConfigT]] = None
+
+    # Ordered reshaped-settings dot-paths that identify the targeted location.
+    location_identity: tuple[str, ...] = field(
+        default=("uploader_config.remote_url",), kw_only=True
+    )
+    emits_record_version: bool = field(default=False, kw_only=True)
 
 
 destination_registry: dict[str, DestinationRegistryEntry] = {}

@@ -17,7 +17,10 @@ from unstructured_ingest.interfaces import (
     UploadStagerConfig,
 )
 from unstructured_ingest.logger import logger
-from unstructured_ingest.processes.connector_registry import DestinationRegistryEntry
+from unstructured_ingest.processes.connector_registry import (
+    DestinationRegistryEntry,
+    LocationShape,
+)
 from unstructured_ingest.utils.data_prep import (
     batch_generator,
     flatten_dict,
@@ -108,6 +111,14 @@ class ChromaUploadStager(UploadStager):
             logger.debug(f"date {date_string} string not a timestamp: {e}")
         return parser.parse(date_string)
 
+    def should_include(self, element_dict: dict) -> bool:
+        # The embedder skips elements with empty text, so those arrive without an
+        # "embeddings" key. The uploader passes one embedding per id, so a missing one
+        # becomes a null entry and Chroma rejects the whole batch. An element that has
+        # text but no embedding means no embedder ran, which is a misconfiguration that
+        # should keep failing loudly rather than be dropped silently.
+        return bool(element_dict.get("text")) or "embeddings" in element_dict
+
     def conform_dict(self, element_dict: dict, file_data: FileData) -> dict:
         """
         Prepares dictionary in the format that Chroma requires
@@ -122,7 +133,10 @@ class ChromaUploadStager(UploadStager):
 
 
 class ChromaUploaderConfig(UploaderConfig):
-    collection_name: str = Field(description="The name of the Chroma collection to write into.")
+    collection_name: str = Field(
+        description="The name of the Chroma collection to write into.",
+        json_schema_extra={"x-runtime-eligible": True},
+    )
     batch_size: int = Field(default=100, description="Number of records per batch")
 
 
@@ -192,4 +206,14 @@ chroma_destination_entry = DestinationRegistryEntry(
     uploader_config=ChromaUploaderConfig,
     upload_stager=ChromaUploadStager,
     upload_stager_config=ChromaUploadStagerConfig,
+    location_shape=LocationShape.SEARCH_INDEX,
+    location_identity=(
+        "connector_config.host",
+        "connector_config.port",
+        "connector_config.path",
+        "connector_config.tenant",
+        "connector_config.database",
+        "uploader_config.collection_name",
+    ),
+    supports_recursion=False,
 )
