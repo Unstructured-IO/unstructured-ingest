@@ -1,0 +1,33 @@
+CHANGELOG.md
+  s_99d1419b14ae79::t_81006c6b56bbe8 2-6
+unstructured_ingest/processes/connectors/databricks/volumes.py
+  s_99d1419b14ae79::t_f5ff511c136431 134-147
+  s_99d1419b14ae79::t_7caf8b853cf5d8 201-204,206
+test/unit/connectors/databricks/test_volumes.py
+  s_99d1419b14ae79::t_d343ebfc4c6257 7-9,13
+  s_99d1419b14ae79::t_8a04bd93b8580e 86-190
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "b1dea9a34366a8474896fc4ac04e402d7697ca1c",
+  "prompts": {},
+  "sessions": {
+    "s_99d1419b14ae79": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "fa72d486-2767-4b79-886c-8e17a661818c",
+        "model": "claude-opus-5"
+      },
+      "human_author": "paulkarayan <pk@unstructured.io>"
+    },
+    "s_e46ffc0e3f41eb": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9279667e-fa70-4797-a3a4-edf0130390ee",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulkarayan <pk@unstructured.io>"
+    }
+  }
+}

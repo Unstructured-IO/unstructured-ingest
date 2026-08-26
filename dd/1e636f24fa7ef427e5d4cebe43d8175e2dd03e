@@ -1,0 +1,20 @@
+test/unit/connectors/databricks/test_volumes.py
+  s_accfa6659375ec::t_fb9b1000724c0e 162-163,168-170
+  s_accfa6659375ec::t_145a1fd941a0a4 86-88,93
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "dd1e636f24fa7ef427e5d4cebe43d8175e2dd03e",
+  "prompts": {},
+  "sessions": {
+    "s_accfa6659375ec": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "531a09a5-1763-443d-ada5-2c5dae96534b",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulkarayan <pk@unstructured.io>"
+    }
+  }
+}
