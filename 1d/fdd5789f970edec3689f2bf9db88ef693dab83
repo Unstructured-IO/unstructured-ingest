@@ -1,0 +1,23 @@
+unstructured_ingest/processes/connectors/databricks/volumes.py
+  s_e46ffc0e3f41eb::t_66543669aff502 149-151
+  s_e46ffc0e3f41eb::t_d45db3b0fe5799 208-210
+test/unit/connectors/databricks/test_volumes.py
+  s_e46ffc0e3f41eb::t_b722393701517c 191-223
+  s_e46ffc0e3f41eb::t_005660c89fef91 2
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "1dfdd5789f970edec3689f2bf9db88ef693dab83",
+  "prompts": {},
+  "sessions": {
+    "s_e46ffc0e3f41eb": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9279667e-fa70-4797-a3a4-edf0130390ee",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulkarayan <pk@unstructured.io>"
+    }
+  }
+}
