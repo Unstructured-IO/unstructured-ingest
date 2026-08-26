@@ -1,3 +1,9 @@
+## [1.11.4]
+
+### Fixes
+
+- **fix(test): exclude `permissions_version` from fixture comparison.** PLU-511 added `permissions_version: Optional[str] = None` to `FileDataSourceMetadata`. Pydantic serializes `None` fields by default, so every connector's JSON output gained the key even when no ACL digest was computed, causing all ~221 snapshot fixtures to fail with `dictionary_item_added: permissions_version`. Rather than patching fixture files (which would break again on the next optional field), `permissions_version` is now excluded in both comparison utilities — `SourceValidationConfigs.exclude_fields` (connector integration tests) and `omit_ignored_fields` in `test_e2e/check-diff-expected-output.py` (E2E tests) — following the same pattern as `local_download_path` and `metadata.date_processed`. Hash-computation correctness is covered by the existing unit tests in `test/unit/utils/test_acl.py` and `test/unit/connectors/test_onedrive.py`.
+
 ## [1.11.3]
 
 ### Fixes
