@@ -39,6 +39,11 @@ SHAREPOINT_SOURCE_EXCLUDE_FIELDS = [
     "additional_metadata.@microsoft.graph.downloadUrl",
     # live tenant ACL snapshot (object ids); drifts when site sharing changes
     "metadata.permissions_data",
+    # drive_id + item_id are Graph API IDs that are environment-specific;
+    # added by PLU-504 (SharePoint Teams file download) and absent from
+    # fixtures that predate that change
+    "metadata.record_locator.drive_id",
+    "metadata.record_locator.item_id",
 ]
 
 
