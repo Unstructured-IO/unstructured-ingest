@@ -146,7 +146,9 @@ class DatabricksVolumesIndexer(Indexer, ABC):
                 None,
             )
         except Exception as e:
-            raise self.connection_config.wrap_error(e=e)
+            # from None suppresses the implicit __context__ so the raw SDK exception text
+            # cannot resurface through full-traceback logging; wrap_error already redacts.
+            raise self.connection_config.wrap_error(e=e) from None
 
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
         try:
@@ -203,7 +205,9 @@ class DatabricksVolumesDownloader(Downloader, ABC):
             # no-I/O client construction that passed for any input at all.
             self.connection_config.get_client().current_user.me()
         except Exception as e:
-            raise self.connection_config.wrap_error(e=e)
+            # from None suppresses the implicit __context__ so the raw SDK exception text
+            # cannot resurface through full-traceback logging; wrap_error already redacts.
+            raise self.connection_config.wrap_error(e=e) from None
 
     def get_download_path(self, file_data: FileData) -> Path:
         return self.download_config.download_dir / Path(file_data.source_identifiers.relative_path)
