@@ -1,3 +1,9 @@
+## [1.11.5]
+
+### Fixes
+
+- **fix(test): exclude `drive_id`/`item_id` from SharePoint fixture comparison.** PLU-504 added `drive_id` and `item_id` to the SharePoint `record_locator` for Teams file download support. These are Graph API IDs that are environment-specific and can't be baked into static fixtures, breaking 6 SharePoint source integration tests. Both fields are now added to `SHAREPOINT_SOURCE_EXCLUDE_FIELDS` in `test/integration/connectors/test_sharepoint.py`.
+
 ## [1.11.4]
 
 ### Fixes
