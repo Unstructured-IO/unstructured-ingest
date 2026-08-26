@@ -1,3 +1,9 @@
+## [1.11.6]
+
+### Fixes
+
+- **fix(test): expect `UserError` in `test_precheck_fails_on_nonexistent_collection`.** PLU-543 reclassified a missing Milvus collection from `DestinationConnectionError` to `UserError` (a customer configuration problem, not a connection fault). `UserError` and `DestinationConnectionError` are sibling exception types, not parent/child, so the test's `pytest.raises(DestinationConnectionError, ...)` stopped catching the raised exception. Updated the test to expect `UserError` and match the actual message text (`"Milvus collection '{name}' does not exist"`).
+
 ## [1.11.5]
 
 ### Fixes
