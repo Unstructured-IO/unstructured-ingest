@@ -1,4 +1,5 @@
 import logging
+import traceback
 
 import pytest
 from pytest_mock import MockerFixture
@@ -185,6 +186,39 @@ def test_downloader_precheck_raises_when_credentials_are_rejected(mocker: Mocker
 
     assert SECRET not in str(exc_info.value)
     client.current_user.me.assert_called_once()
+
+
+def test_indexer_precheck_error_does_not_leak_raw_text_in_traceback(mocker: MockerFixture):
+    # wrap_error sanitizes the message, but if the raw SDK exception survives as the
+    # implicit __context__ then a full traceback (logger.exception / format_exception)
+    # reprints its secret-bearing text. The precheck must suppress the context.
+    pytest.importorskip("databricks.sdk")
+    from databricks.sdk.errors.platform import STATUS_CODE_MAPPING
+
+    client = mocker.MagicMock()
+    client.current_user.me.side_effect = STATUS_CODE_MAPPING[401](SECRET)
+
+    with pytest.raises(UserAuthError) as exc_info:
+        _indexer(mocker, client).precheck()
+
+    formatted = "".join(traceback.format_exception(exc_info.value))
+    assert SECRET not in formatted
+    assert "hunter2" not in formatted
+
+
+def test_downloader_precheck_error_does_not_leak_raw_text_in_traceback(mocker: MockerFixture):
+    pytest.importorskip("databricks.sdk")
+    from databricks.sdk.errors.platform import STATUS_CODE_MAPPING
+
+    client = mocker.MagicMock()
+    client.current_user.me.side_effect = STATUS_CODE_MAPPING[401](SECRET)
+
+    with pytest.raises(UserAuthError) as exc_info:
+        _downloader(mocker, client).precheck()
+
+    formatted = "".join(traceback.format_exception(exc_info.value))
+    assert SECRET not in formatted
+    assert "hunter2" not in formatted
 
 
 def test_downloader_precheck_passes_when_credentials_are_accepted(mocker: MockerFixture):
