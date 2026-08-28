@@ -1,3 +1,9 @@
+## [1.11.6]
+
+### Fixes
+
+- **fix(ibm-watsonx-s3): retry COS IncompleteBody and RequestTimeTooSkewed during Iceberg upload.** s3fs maps those COS/S3 errors to `OSError`/`PermissionError` and then refuses to retry them. The uploader was wrapping them as `ProviderError`, turning a transient COS flake into a hard job failure. Both are now classified as retryable (without treating every `EINVAL` or `AccessDenied` as retryable), re-raised out of `upload_data_table` so `upload_dataframe`'s retry loop can start a fresh Iceberg transaction, and surfaced as `DestinationConnectionError` if retries are exhausted. The Iceberg transaction has not committed when these fire, so retrying delete+append is safe.
+
 ## [1.11.5]
 
 ### Fixes
