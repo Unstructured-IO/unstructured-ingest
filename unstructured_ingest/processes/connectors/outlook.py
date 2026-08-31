@@ -29,15 +29,29 @@ from unstructured_ingest.processes.connector_registry import (
 )
 from unstructured_ingest.utils.dep_check import requires_dependencies
 
-MAX_EMAILS_PER_FOLDER = 1_000_000  # Maximum number of emails per folder
+# Graph accepts $top between 1 and 1000 for /messages and warns that large
+# full-message pages can 504; get_all() still follows @odata.nextLink to
+# fetch every message in the folder, this just bounds each individual page.
+MESSAGES_PAGE_SIZE = 100
 
 if TYPE_CHECKING:
     from office365.graph_client import GraphClient
     from office365.outlook.mail.folders.folder import MailFolder
     from office365.outlook.mail.messages.message import Message
+    from office365.runtime.http.request_options import RequestOptions
 
 
 CONNECTOR_TYPE = "outlook"
+
+
+def _prefer_immutable_ids(request: "RequestOptions") -> None:
+    """Ask Graph to return immutable ids for mail resources.
+
+    Without this header, Outlook/Exchange can rotate a message's id when the
+    message is moved between folders, breaking downstream record identity
+    that keys off FileData.identifier.
+    """
+    request.headers["Prefer"] = 'IdType="ImmutableId"'
 
 
 class OutlookAccessConfig(AccessConfig):
@@ -135,7 +149,11 @@ class OutlookConnectionConfig(ConnectionConfig):
     def get_client(self) -> "GraphClient":
         from office365.graph_client import GraphClient
 
-        return GraphClient(self._acquire_token)
+        client = GraphClient(self._acquire_token)
+        # once=False: must ride every request, including the paginated
+        # continuations get_all() issues for large folders/mailboxes.
+        client.before_execute(_prefer_immutable_ids, once=False)
+        return client
 
 
 class OutlookIndexerConfig(IndexerConfig):
@@ -186,16 +204,18 @@ class OutlookIndexer(Indexer):
 
         while mail_folders:
             mail_folder = mail_folders.pop()
-            messages += list(mail_folder.messages.get().top(MAX_EMAILS_PER_FOLDER).execute_query())
+            messages += list(
+                mail_folder.messages.get_all(page_size=MESSAGES_PAGE_SIZE).execute_query()
+            )
 
             if recursive:
-                mail_folders += list(mail_folder.child_folders.get().execute_query())
+                mail_folders += list(mail_folder.child_folders.get_all().execute_query())
 
         return messages
 
     def _get_selected_root_folders(self) -> list["MailFolder"]:
         client_user = self.connection_config.get_client().users[self.index_config.user_email]
-        root_mail_folders = client_user.mail_folders.get().execute_query()
+        root_mail_folders = client_user.mail_folders.get_all().execute_query()
 
         selected_names_normalized = [
             folder_name.lower() for folder_name in self.index_config.outlook_folders
@@ -224,7 +244,7 @@ class OutlookIndexer(Indexer):
             source_identifiers=source_identifiers,
             metadata=FileDataSourceMetadata(
                 url=message.resource_url,
-                version=message.change_key,
+                version=message.get_property("changeKey"),
                 date_modified=str(
                     message.last_modified_datetime.replace(tzinfo=timezone.utc).timestamp()
                 ),
