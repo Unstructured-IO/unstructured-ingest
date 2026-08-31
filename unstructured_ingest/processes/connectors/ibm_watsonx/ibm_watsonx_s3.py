@@ -1,3 +1,4 @@
+import errno
 import logging
 import time
 from contextlib import contextmanager
@@ -92,15 +93,20 @@ def _exception_text(error: BaseException) -> str:
 def is_retryable_cos_incomplete_body(error: BaseException) -> bool:
     """True for a COS/S3 PutObject IncompleteBody mapped through s3fs.
 
-    Do not treat every OSError(EINVAL) as retryable.
+    Structured boto ``Code`` matching applies to any exception in the chain.
+    Message matching is restricted to ``OSError(EINVAL)``: that is what s3fs
+    ``translate_boto_error`` emits for IncompleteBody. Do not treat every
+    ``OSError(EINVAL)`` as retryable, and do not retry unrelated failures
+    whose message happens to contain ``terminated unexpectedly``.
     """
     for cur in _walk_exception_chain(error):
         code = _boto_error_code(cur)
         if code is not None and code.lower() == _INCOMPLETE_BODY_CODE:
             return True
-        text = _exception_text(cur)
-        if _INCOMPLETE_BODY_STRERROR in text or _INCOMPLETE_BODY_CODE in text.replace(" ", ""):
-            return True
+        if isinstance(cur, OSError) and cur.errno == errno.EINVAL:
+            text = _exception_text(cur)
+            if _INCOMPLETE_BODY_STRERROR in text or _INCOMPLETE_BODY_CODE in text.replace(" ", ""):
+                return True
     return False
 
 

@@ -669,6 +669,25 @@ def test_is_retryable_cos_incomplete_body_rejects_other_einval():
     assert is_retryable_cos_incomplete_body(ValueError("nope")) is False
 
 
+def test_is_retryable_cos_incomplete_body_rejects_non_oserror_message():
+    assert (
+        is_retryable_cos_incomplete_body(RuntimeError("The request body terminated unexpectedly"))
+        is False
+    )
+    assert is_retryable_cos_incomplete_body(ValueError("incompletebody")) is False
+
+
+def test_is_retryable_cos_incomplete_body_rejects_oserror_wrong_errno():
+    assert (
+        is_retryable_cos_incomplete_body(OSError(5, "The request body terminated unexpectedly"))
+        is False
+    )
+    assert (
+        is_retryable_cos_incomplete_body(OSError("The request body terminated unexpectedly"))
+        is False
+    )
+
+
 def test_is_retryable_cos_incomplete_body_matches_boto_code():
     err = Exception("client")
     err.response = {"Error": {"Code": "IncompleteBody"}}  # type: ignore[attr-defined]
