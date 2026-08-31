@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from typing import Optional
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
@@ -72,7 +73,7 @@ class TestOutlookConnectionConfig:
         assert config.client_id is None
 
 
-def _make_message(message_id: str = "msg-1", change_key: str = "ck-123") -> Mock:
+def _make_message(message_id: str = "msg-1", change_key: Optional[str] = "ck-123") -> Mock:
     message = Mock()
     message.id = message_id
     message.resource_url = f"https://graph.microsoft.com/v1.0/me/messages/{message_id}"
@@ -122,6 +123,16 @@ class TestMessageToFileDataVersion:
     def test_version_is_none_when_changekey_absent(self):
         indexer = _make_indexer()
         message = _make_message(change_key=None)
+
+        file_data = indexer._message_to_file_data(message)
+
+        assert file_data.metadata.version is None
+
+    def test_version_is_none_when_changekey_is_empty_string(self):
+        # An empty string would otherwise compare equal to a stored empty-string
+        # version and defeat the platform's unchanged-record skip.
+        indexer = _make_indexer()
+        message = _make_message(change_key="")
 
         file_data = indexer._message_to_file_data(message)
 
