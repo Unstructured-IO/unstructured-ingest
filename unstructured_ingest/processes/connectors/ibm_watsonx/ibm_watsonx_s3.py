@@ -1,3 +1,4 @@
+import errno
 import logging
 import time
 from contextlib import contextmanager
@@ -54,6 +55,83 @@ DEFAULT_ICEBERG_CATALOG_TYPE = "rest"
 # FIPS libcrypto (not a catchable exception). FsspecFileIO uses s3fs/botocore,
 # the same stack as the S3 destination.
 DEFAULT_PY_IO_IMPL = "pyiceberg.io.fsspec.FsspecFileIO"
+
+# s3fs translates some retryable COS/S3 errors into OSError/PermissionError and
+# then refuses to retry them. Other 400s (InvalidArgument, AccessDenied, ...)
+# must not be retried. The Iceberg transaction has not committed when these
+# fire; retrying delete+append is safe.
+_INCOMPLETE_BODY_STRERROR = "terminated unexpectedly"
+_INCOMPLETE_BODY_CODE = "incompletebody"
+_REQUEST_TIME_SKEW_CODE = "requesttimetooskewed"
+_REQUEST_TIME_SKEW_MSG = "request time and the server's time is too large"
+
+
+def _boto_error_code(error: BaseException) -> Optional[str]:
+    response = getattr(error, "response", None)
+    if not isinstance(response, dict):
+        return None
+    err = response.get("Error")
+    if not isinstance(err, dict):
+        return None
+    code = err.get("Code")
+    return code if isinstance(code, str) else None
+
+
+def _walk_exception_chain(error: BaseException) -> Generator[BaseException, None, None]:
+    seen: set[int] = set()
+    cur: Optional[BaseException] = error
+    while cur is not None and id(cur) not in seen:
+        seen.add(id(cur))
+        yield cur
+        cur = cur.__cause__ or cur.__context__
+
+
+def _exception_text(error: BaseException) -> str:
+    return f"{getattr(error, 'strerror', None) or ''} {error}".lower()
+
+
+def is_retryable_cos_incomplete_body(error: BaseException) -> bool:
+    """True for a COS/S3 PutObject IncompleteBody mapped through s3fs.
+
+    Structured boto ``Code`` matching applies to any exception in the chain.
+    Message matching is restricted to ``OSError(EINVAL)``: that is what s3fs
+    ``translate_boto_error`` emits for IncompleteBody. Do not treat every
+    ``OSError(EINVAL)`` as retryable, and do not retry unrelated failures
+    whose message happens to contain ``terminated unexpectedly``.
+    """
+    for cur in _walk_exception_chain(error):
+        code = _boto_error_code(cur)
+        if code is not None and code.lower() == _INCOMPLETE_BODY_CODE:
+            return True
+        if isinstance(cur, OSError) and cur.errno == errno.EINVAL:
+            text = _exception_text(cur)
+            if _INCOMPLETE_BODY_STRERROR in text or _INCOMPLETE_BODY_CODE in text.replace(" ", ""):
+                return True
+    return False
+
+
+def is_retryable_cos_request_time_too_skewed(error: BaseException) -> bool:
+    """True for COS/S3 RequestTimeTooSkewed mapped through s3fs to PermissionError.
+
+    A fresh Iceberg transaction re-signs with the current time. Do not retry
+    AccessDenied or other PermissionError.
+    """
+    for cur in _walk_exception_chain(error):
+        code = _boto_error_code(cur)
+        if code is not None and code.lower() == _REQUEST_TIME_SKEW_CODE:
+            return True
+        text = _exception_text(cur)
+        compact = text.replace(" ", "").replace("_", "")
+        if _REQUEST_TIME_SKEW_MSG in text or _REQUEST_TIME_SKEW_CODE in compact:
+            return True
+    return False
+
+
+def is_retryable_cos_io_error(error: BaseException) -> bool:
+    """COS I/O flakes that s3fs does not retry; Iceberg txn has not committed."""
+    return is_retryable_cos_incomplete_body(error) or is_retryable_cos_request_time_too_skewed(
+        error
+    )
 
 
 class IbmWatsonxAccessConfig(AccessConfig):
@@ -349,6 +427,16 @@ class IbmWatsonxUploader(SQLUploader):
             except RESTError as e:
                 raise DestinationConnectionError(safe_error_summary(e)) from None
             except Exception as e:
+                # IncompleteBody / RequestTimeTooSkewed must reach upload_dataframe's
+                # retry loop; wrapping them here as ProviderError made COS flakes a
+                # hard job failure. s3fs maps both to OSError/PermissionError and
+                # will not retry them itself.
+                if is_retryable_cos_io_error(e):
+                    logger.warning(
+                        "Retryable COS I/O error during Iceberg upload: %s",
+                        safe_error_summary(e),
+                    )
+                    raise
                 raise ProviderError(
                     f"Failed to upload data to table: {safe_error_summary(e)}"
                 ) from None
@@ -360,6 +448,8 @@ class IbmWatsonxUploader(SQLUploader):
         except ProviderError:
             raise
         except Exception as e:
+            if is_retryable_cos_io_error(e):
+                raise
             raise ProviderError(
                 f"Failed to upload data to table: {safe_error_summary(e)}"
             ) from None
@@ -370,18 +460,25 @@ class IbmWatsonxUploader(SQLUploader):
         from tenacity import (
             before_log,
             retry,
-            retry_if_exception_type,
+            retry_if_exception,
             stop_after_attempt,
             wait_exponential,
         )
 
         data_table = self._df_to_arrow_table(df)
 
-        # Retry connection in case of a connection error or token expiration
+        def _retryable_upload_error(error: BaseException) -> bool:
+            if isinstance(error, RESTError):
+                return True
+            return is_retryable_cos_io_error(error)
+
+        # Retry Iceberg REST blips and COS I/O flakes that s3fs will not retry
+        # (IncompleteBody, RequestTimeTooSkewed). The Iceberg transaction has
+        # not committed when these fire.
         @retry(
             stop=stop_after_attempt(self.connection_config.max_retries_connection),
             wait=wait_exponential(exp_base=2, multiplier=1, min=2, max=10),
-            retry=retry_if_exception_type(RESTError),
+            retry=retry_if_exception(_retryable_upload_error),
             before=before_log(logger, logging.DEBUG),
             reraise=True,
         )
@@ -394,6 +491,14 @@ class IbmWatsonxUploader(SQLUploader):
         except ProviderError:
             raise
         except Exception as e:
+            if is_retryable_cos_io_error(e):
+                logger.warning(
+                    "COS I/O error exhausted retries: %s",
+                    safe_error_summary(e),
+                )
+                raise DestinationConnectionError(
+                    f"Failed to upload data to table: {safe_error_summary(e)}"
+                ) from None
             raise ProviderError(
                 f"Failed to upload data to table: {safe_error_summary(e)}"
             ) from None

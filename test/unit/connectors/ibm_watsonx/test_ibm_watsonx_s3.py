@@ -23,6 +23,9 @@ from unstructured_ingest.processes.connectors.ibm_watsonx.ibm_watsonx_s3 import 
     IbmWatsonxConnectionConfig,
     IbmWatsonxUploader,
     IbmWatsonxUploaderConfig,
+    is_retryable_cos_incomplete_body,
+    is_retryable_cos_io_error,
+    is_retryable_cos_request_time_too_skewed,
 )
 
 
@@ -653,6 +656,278 @@ def test_ibm_watsonx_uploader_upload_dataframe_exception(
         uploader.upload_dataframe(test_df, file_data)
     mock_get_table.assert_called_once()
     mock_upload_data_table.assert_called_once()
+
+
+def test_is_retryable_cos_incomplete_body_matches_s3fs_oserror():
+    err = OSError(22, "The request body terminated unexpectedly")
+    assert is_retryable_cos_incomplete_body(err) is True
+
+
+def test_is_retryable_cos_incomplete_body_rejects_other_einval():
+    assert is_retryable_cos_incomplete_body(OSError(22, "Invalid argument")) is False
+    assert is_retryable_cos_incomplete_body(OSError(22, "InvalidArgument")) is False
+    assert is_retryable_cos_incomplete_body(ValueError("nope")) is False
+
+
+def test_is_retryable_cos_incomplete_body_rejects_non_oserror_message():
+    assert (
+        is_retryable_cos_incomplete_body(RuntimeError("The request body terminated unexpectedly"))
+        is False
+    )
+    assert is_retryable_cos_incomplete_body(ValueError("incompletebody")) is False
+
+
+def test_is_retryable_cos_incomplete_body_rejects_oserror_wrong_errno():
+    assert (
+        is_retryable_cos_incomplete_body(OSError(5, "The request body terminated unexpectedly"))
+        is False
+    )
+    assert (
+        is_retryable_cos_incomplete_body(OSError("The request body terminated unexpectedly"))
+        is False
+    )
+
+
+def test_is_retryable_cos_incomplete_body_matches_boto_code():
+    err = Exception("client")
+    err.response = {"Error": {"Code": "IncompleteBody"}}  # type: ignore[attr-defined]
+    assert is_retryable_cos_incomplete_body(err) is True
+
+
+def test_is_retryable_cos_incomplete_body_walks_cause_chain():
+    inner = OSError(22, "The request body terminated unexpectedly")
+    outer = RuntimeError("wrapped")
+    outer.__cause__ = inner
+    assert is_retryable_cos_incomplete_body(outer) is True
+
+
+def test_is_retryable_cos_incomplete_body_walks_cause_to_boto_code():
+    # s3fs translate_boto_error(set_cause=True): generic EINVAL outer, ClientError on __cause__.
+    inner = Exception("client")
+    inner.response = {"Error": {"Code": "IncompleteBody"}}  # type: ignore[attr-defined]
+    outer = OSError(22, "Invalid argument")
+    outer.__cause__ = inner
+    assert is_retryable_cos_incomplete_body(outer) is True
+    assert is_retryable_cos_io_error(outer) is True
+
+
+def test_is_retryable_cos_incomplete_body_walks_context_chain():
+    inner = Exception("client")
+    inner.response = {"Error": {"Code": "IncompleteBody"}}  # type: ignore[attr-defined]
+    outer = OSError(22, "Invalid argument")
+    outer.__context__ = inner
+    assert is_retryable_cos_incomplete_body(outer) is True
+
+
+def test_is_retryable_cos_incomplete_body_rejects_invalid_argument_boto_code():
+    inner = Exception("client")
+    inner.response = {"Error": {"Code": "InvalidArgument"}}  # type: ignore[attr-defined]
+    outer = OSError(22, "Invalid argument")
+    outer.__cause__ = inner
+    assert is_retryable_cos_incomplete_body(outer) is False
+    assert is_retryable_cos_io_error(outer) is False
+
+
+def test_ibm_watsonx_uploader_upload_dataframe_retries_incomplete_body(
+    mocker: MockerFixture,
+    uploader: IbmWatsonxUploader,
+    test_df: pd.DataFrame,
+    mock_get_table: MagicMock,
+    mock_data_table: MagicMock,
+    file_data: FileData,
+):
+    err = OSError(22, "The request body terminated unexpectedly")
+    mocker.patch.object(IbmWatsonxUploader, "_df_to_arrow_table", return_value=mock_data_table)
+    mock_upload_data_table = mocker.patch.object(
+        IbmWatsonxUploader, "upload_data_table", side_effect=[err, None]
+    )
+
+    uploader.upload_dataframe(test_df, file_data)
+
+    assert mock_get_table.call_count == 2
+    assert mock_upload_data_table.call_count == 2
+
+
+def test_ibm_watsonx_uploader_upload_dataframe_incomplete_body_exhausted(
+    mocker: MockerFixture,
+    uploader: IbmWatsonxUploader,
+    test_df: pd.DataFrame,
+    mock_get_table: MagicMock,
+    mock_data_table: MagicMock,
+    file_data: FileData,
+):
+    err = OSError(22, "The request body terminated unexpectedly")
+    mocker.patch.object(IbmWatsonxUploader, "_df_to_arrow_table", return_value=mock_data_table)
+    mock_upload_data_table = mocker.patch.object(
+        IbmWatsonxUploader, "upload_data_table", side_effect=err
+    )
+
+    with pytest.raises(DestinationConnectionError):
+        uploader.upload_dataframe(test_df, file_data)
+    assert mock_get_table.call_count == 2
+    assert mock_upload_data_table.call_count == 2
+
+
+def test_ibm_watsonx_uploader_upload_dataframe_other_einval_is_not_retried(
+    mocker: MockerFixture,
+    uploader: IbmWatsonxUploader,
+    test_df: pd.DataFrame,
+    mock_get_table: MagicMock,
+    mock_data_table: MagicMock,
+    file_data: FileData,
+):
+    err = OSError(22, "Invalid argument")
+    mocker.patch.object(IbmWatsonxUploader, "_df_to_arrow_table", return_value=mock_data_table)
+    mock_upload_data_table = mocker.patch.object(
+        IbmWatsonxUploader, "upload_data_table", side_effect=err
+    )
+
+    with pytest.raises(ProviderError):
+        uploader.upload_dataframe(test_df, file_data)
+    mock_get_table.assert_called_once()
+    mock_upload_data_table.assert_called_once()
+
+
+def test_ibm_watsonx_uploader_upload_data_table_reraises_incomplete_body(
+    uploader: IbmWatsonxUploader,
+    mock_table: MagicMock,
+    mock_transaction: MagicMock,
+    mock_data_table: MagicMock,
+    mock_delete: MagicMock,
+    file_data: FileData,
+):
+    err = OSError(22, "The request body terminated unexpectedly")
+    mock_transaction.append.side_effect = err
+
+    with pytest.raises(OSError, match="terminated unexpectedly"):
+        uploader.upload_data_table(mock_table, mock_data_table, file_data)
+
+
+def test_is_retryable_cos_request_time_too_skewed_matches_s3fs_permission_error():
+    err = PermissionError(
+        "The difference between the request time and the server's time is too large."
+    )
+    assert is_retryable_cos_request_time_too_skewed(err) is True
+    assert is_retryable_cos_io_error(err) is True
+
+
+def test_is_retryable_cos_request_time_too_skewed_rejects_access_denied():
+    assert is_retryable_cos_request_time_too_skewed(PermissionError("Access Denied")) is False
+    assert is_retryable_cos_io_error(PermissionError("Access Denied")) is False
+
+
+def test_is_retryable_cos_request_time_too_skewed_matches_boto_code():
+    err = Exception("client")
+    err.response = {"Error": {"Code": "RequestTimeTooSkewed"}}  # type: ignore[attr-defined]
+    assert is_retryable_cos_request_time_too_skewed(err) is True
+
+
+def test_is_retryable_cos_request_time_too_skewed_walks_cause_chain():
+    # Outer message is generic so only the ClientError on __cause__ can match.
+    inner = Exception("client")
+    inner.response = {"Error": {"Code": "RequestTimeTooSkewed"}}  # type: ignore[attr-defined]
+    outer = PermissionError("translated")
+    outer.__cause__ = inner
+    assert is_retryable_cos_request_time_too_skewed(outer) is True
+    assert is_retryable_cos_io_error(outer) is True
+
+
+def test_is_retryable_cos_request_time_too_skewed_walks_context_chain():
+    inner = Exception("client")
+    inner.response = {"Error": {"Code": "RequestTimeTooSkewed"}}  # type: ignore[attr-defined]
+    outer = PermissionError("translated")
+    outer.__context__ = inner
+    assert is_retryable_cos_request_time_too_skewed(outer) is True
+
+
+def test_is_retryable_cos_request_time_too_skewed_rejects_access_denied_boto_code():
+    inner = Exception("client")
+    inner.response = {"Error": {"Code": "AccessDenied"}}  # type: ignore[attr-defined]
+    outer = PermissionError("Access Denied")
+    outer.__cause__ = inner
+    assert is_retryable_cos_request_time_too_skewed(outer) is False
+    assert is_retryable_cos_io_error(outer) is False
+
+
+def test_ibm_watsonx_uploader_upload_dataframe_retries_request_time_too_skewed(
+    mocker: MockerFixture,
+    uploader: IbmWatsonxUploader,
+    test_df: pd.DataFrame,
+    mock_get_table: MagicMock,
+    mock_data_table: MagicMock,
+    file_data: FileData,
+):
+    err = PermissionError(
+        "The difference between the request time and the server's time is too large."
+    )
+    mocker.patch.object(IbmWatsonxUploader, "_df_to_arrow_table", return_value=mock_data_table)
+    mock_upload_data_table = mocker.patch.object(
+        IbmWatsonxUploader, "upload_data_table", side_effect=[err, None]
+    )
+
+    uploader.upload_dataframe(test_df, file_data)
+
+    assert mock_get_table.call_count == 2
+    assert mock_upload_data_table.call_count == 2
+
+
+def test_ibm_watsonx_uploader_upload_dataframe_request_time_too_skewed_exhausted(
+    mocker: MockerFixture,
+    uploader: IbmWatsonxUploader,
+    test_df: pd.DataFrame,
+    mock_get_table: MagicMock,
+    mock_data_table: MagicMock,
+    file_data: FileData,
+):
+    err = PermissionError(
+        "The difference between the request time and the server's time is too large."
+    )
+    mocker.patch.object(IbmWatsonxUploader, "_df_to_arrow_table", return_value=mock_data_table)
+    mock_upload_data_table = mocker.patch.object(
+        IbmWatsonxUploader, "upload_data_table", side_effect=err
+    )
+
+    with pytest.raises(DestinationConnectionError):
+        uploader.upload_dataframe(test_df, file_data)
+    assert mock_get_table.call_count == 2
+    assert mock_upload_data_table.call_count == 2
+
+
+def test_ibm_watsonx_uploader_upload_dataframe_access_denied_is_not_retried(
+    mocker: MockerFixture,
+    uploader: IbmWatsonxUploader,
+    test_df: pd.DataFrame,
+    mock_get_table: MagicMock,
+    mock_data_table: MagicMock,
+    file_data: FileData,
+):
+    err = PermissionError("Access Denied")
+    mocker.patch.object(IbmWatsonxUploader, "_df_to_arrow_table", return_value=mock_data_table)
+    mock_upload_data_table = mocker.patch.object(
+        IbmWatsonxUploader, "upload_data_table", side_effect=err
+    )
+
+    with pytest.raises(ProviderError):
+        uploader.upload_dataframe(test_df, file_data)
+    mock_get_table.assert_called_once()
+    mock_upload_data_table.assert_called_once()
+
+
+def test_ibm_watsonx_uploader_upload_data_table_reraises_request_time_too_skewed(
+    uploader: IbmWatsonxUploader,
+    mock_table: MagicMock,
+    mock_transaction: MagicMock,
+    mock_data_table: MagicMock,
+    mock_delete: MagicMock,
+    file_data: FileData,
+):
+    err = PermissionError(
+        "The difference between the request time and the server's time is too large."
+    )
+    mock_transaction.append.side_effect = err
+
+    with pytest.raises(PermissionError, match="request time"):
+        uploader.upload_data_table(mock_table, mock_data_table, file_data)
 
 
 def test_ibm_watsonx_uploader_delete_can_delete(
