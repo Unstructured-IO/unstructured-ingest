@@ -244,7 +244,10 @@ class OutlookIndexer(Indexer):
             source_identifiers=source_identifiers,
             metadata=FileDataSourceMetadata(
                 url=message.resource_url,
-                version=message.get_property("changeKey"),
+                # An empty-string changeKey would otherwise compare equal to a
+                # stored empty-string version, defeating the platform's
+                # unchanged-record skip; normalize falsy to None.
+                version=message.get_property("changeKey") or None,
                 date_modified=str(
                     message.last_modified_datetime.replace(tzinfo=timezone.utc).timestamp()
                 ),
