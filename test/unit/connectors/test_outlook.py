@@ -196,22 +196,35 @@ class TestPreferImmutableIdsHeader:
 
         assert request.headers["Prefer"] == 'IdType="ImmutableId"'
 
-    def test_get_client_registers_hook_for_every_request(self):
+    def test_get_client_registers_hook_that_fires_on_every_request(self):
+        # Fires the SDK's own dispatch path directly (ClientRuntimeContext.build_request
+        # calls exactly this: pending_request().beforeExecute.notify(request)) rather than
+        # asserting on a mocked call signature, so e.g. a rename of the `once` kwarg would
+        # be caught here instead of silently passing an unspecced mock assertion.
         try:
-            from office365.graph_client import GraphClient
+            from office365.runtime.http.request_options import RequestOptions
         except ImportError:
             pytest.skip("office365-rest-python-client not installed")
 
         config = OutlookConnectionConfig(
             access_config=Secret(OutlookAccessConfig(oauth_token="ey.access.token")),
         )
+        client = config.get_client()
 
-        with patch.object(GraphClient, "before_execute") as mock_before_execute:
-            config.get_client()
+        initial_request = RequestOptions(
+            "https://graph.microsoft.com/v1.0/users/alice/mailFolders/inbox/messages"
+        )
+        client.pending_request().beforeExecute.notify(initial_request)
+        assert initial_request.headers["Prefer"] == 'IdType="ImmutableId"'
 
-        # once=False: the header must ride every request, including the paginated
-        # continuations get_all() issues for large folders/mailboxes.
-        mock_before_execute.assert_called_once_with(_prefer_immutable_ids, once=False)
+        # once=False: the hook must still be registered on the same pending_request()
+        # for a get_all() pagination continuation, not just the first request.
+        continuation_request = RequestOptions(
+            "https://graph.microsoft.com/v1.0/users/alice/mailFolders/inbox/messages"
+            "?$skiptoken=abc123"
+        )
+        client.pending_request().beforeExecute.notify(continuation_request)
+        assert continuation_request.headers["Prefer"] == 'IdType="ImmutableId"'
 
 
 class TestListMessagesPagination:
@@ -251,6 +264,37 @@ class TestListMessagesPagination:
         root_folder.child_folders.get.assert_not_called()
         assert messages == [root_message, child_message]
 
+    def test_cycle_in_child_folder_graph_terminates(self):
+        # get_all() makes each spin of a folder-graph cycle far more expensive
+        # than the old single-page .get() (full pagination for messages and
+        # child folders on every repeat visit); the visited-id guard must still
+        # make this terminate rather than loop forever.
+        indexer = _make_indexer(recursive=True)
+
+        folder_a = Mock()
+        folder_a.id = "folder-a"
+        message_a = Mock()
+        folder_a.messages.get_all.return_value.execute_query.return_value = [message_a]
+
+        folder_b = Mock()
+        folder_b.id = "folder-b"
+        message_b = Mock()
+        folder_b.messages.get_all.return_value.execute_query.return_value = [message_b]
+
+        # Each folder's child_folders points back at the other: a 2-cycle.
+        folder_a.child_folders.get_all.return_value.execute_query.return_value = [folder_b]
+        folder_b.child_folders.get_all.return_value.execute_query.return_value = [folder_a]
+
+        with patch.object(OutlookIndexer, "_get_selected_root_folders", return_value=[folder_a]):
+            messages = indexer._list_messages(recursive=True)
+
+        # Each folder was expanded exactly once, not once per cycle repetition.
+        folder_a.messages.get_all.assert_called_once_with(page_size=MESSAGES_PAGE_SIZE)
+        folder_b.messages.get_all.assert_called_once_with(page_size=MESSAGES_PAGE_SIZE)
+        folder_a.child_folders.get_all.assert_called_once_with()
+        folder_b.child_folders.get_all.assert_called_once_with()
+        assert messages == [message_a, message_b]
+
 
 class TestGetSelectedRootFoldersPagination:
     """mail_folders enumeration must also follow pagination: Graph defaults
@@ -273,3 +317,43 @@ class TestGetSelectedRootFoldersPagination:
         client_user.mail_folders.get_all.assert_called_once_with()
         client_user.mail_folders.get.assert_not_called()
         assert result == [folder]
+
+
+class TestGetSelectedRootFoldersMatching:
+    """Coverage for the display_name matching in _get_selected_root_folders,
+    independent of the get_all() pagination mechanics covered above."""
+
+    def _with_folders(self, indexer, folders):
+        client_user = MagicMock()
+        client_user.mail_folders.get_all.return_value.execute_query.return_value = folders
+        client = MagicMock()
+        client.users.__getitem__.return_value = client_user
+        indexer.connection_config.get_client.return_value = client
+
+    def test_folder_name_matching_is_case_insensitive(self):
+        indexer = _make_indexer(outlook_folders=["INBOX"])
+        folder = Mock()
+        folder.display_name = "Inbox"
+        self._with_folders(indexer, [folder])
+
+        result = indexer._get_selected_root_folders()
+
+        assert result == [folder]
+
+    def test_no_matching_folder_raises_value_error(self):
+        indexer = _make_indexer(outlook_folders=["Nonexistent Folder"])
+        folder = Mock()
+        folder.display_name = "Inbox"
+        self._with_folders(indexer, [folder])
+
+        with pytest.raises(ValueError, match="Root folders selected in configuration not found"):
+            indexer._get_selected_root_folders()
+
+
+class TestMessagesPageSizeConstant:
+    def test_within_graph_top_limits(self):
+        # Graph documents $top as 1..1000 for /messages; MESSAGES_PAGE_SIZE is a
+        # plain module constant, so nothing else pins it to a sane value (a test
+        # that only asserts get_all() was called with page_size=MESSAGES_PAGE_SIZE
+        # would pass even if the constant itself were 0 or 100_000).
+        assert 1 <= MESSAGES_PAGE_SIZE <= 1000

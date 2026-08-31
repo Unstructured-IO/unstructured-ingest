@@ -200,10 +200,19 @@ class OutlookIndexer(Indexer):
 
     def _list_messages(self, recursive: bool) -> list["Message"]:
         mail_folders = self._get_selected_root_folders()
+        # Guards against a cycle in the child-folder graph. get_all() makes each
+        # spin of such a cycle far more expensive than the old single-page .get()
+        # (full pagination for messages and child folders on every repeat visit),
+        # so a folder id is only ever expanded once.
+        visited_folder_ids: set[str] = set()
         messages = []
 
         while mail_folders:
             mail_folder = mail_folders.pop()
+            if mail_folder.id in visited_folder_ids:
+                continue
+            visited_folder_ids.add(mail_folder.id)
+
             messages += list(
                 mail_folder.messages.get_all(page_size=MESSAGES_PAGE_SIZE).execute_query()
             )
