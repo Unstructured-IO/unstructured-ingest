@@ -34,6 +34,28 @@ from unstructured_ingest.utils.dep_check import requires_dependencies
 # fetch every message in the folder, this just bounds each individual page.
 MESSAGES_PAGE_SIZE = 100
 
+# $select projection for /messages, restricted to exactly what
+# _message_to_file_data (and _generate_fullpath) read off a message. Graph's
+# default projection includes the full HTML body; get_all() already pulls
+# every page into memory eagerly, and Microsoft recommends $select to reduce
+# the risk of a 504 on large pages, so this narrows the payload without
+# losing anything: the downloader fetches the full MIME message separately
+# via $value. Keep this list in sync with _message_to_file_data.
+MESSAGE_SELECT_FIELDS = [
+    "id",
+    "changeKey",
+    "lastModifiedDateTime",
+    "createdDateTime",
+    "from",
+    "toRecipients",
+    "subject",
+    "conversationId",
+    "isDraft",
+    "isRead",
+    "hasAttachments",
+    "importance",
+]
+
 if TYPE_CHECKING:
     from office365.graph_client import GraphClient
     from office365.outlook.mail.folders.folder import MailFolder
@@ -51,7 +73,7 @@ def _prefer_immutable_ids(request: "RequestOptions") -> None:
     message is moved between folders, breaking downstream record identity
     that keys off FileData.identifier.
     """
-    request.headers["Prefer"] = 'IdType="ImmutableId"'
+    request.set_header("Prefer", 'IdType="ImmutableId"')
 
 
 class OutlookAccessConfig(AccessConfig):
@@ -150,9 +172,13 @@ class OutlookConnectionConfig(ConnectionConfig):
         from office365.graph_client import GraphClient
 
         client = GraphClient(self._acquire_token)
-        # once=False: must ride every request, including the paginated
-        # continuations get_all() issues for large folders/mailboxes.
-        client.before_execute(_prefer_immutable_ids, once=False)
+        # Registered directly on the pending request's event handler rather
+        # than via client.before_execute(): that context-level helper no-ops
+        # on a fresh client (office365-rest-python-client 3.0.0 early-returns
+        # when no query has been queued yet) and, once a query exists, scopes
+        # the hook to that single query's id, so it would never ride get_all()
+        # pagination continuations.
+        client.pending_request().beforeExecute += _prefer_immutable_ids
         return client
 
 
@@ -214,7 +240,9 @@ class OutlookIndexer(Indexer):
             visited_folder_ids.add(mail_folder.id)
 
             messages += list(
-                mail_folder.messages.get_all(page_size=MESSAGES_PAGE_SIZE).execute_query()
+                mail_folder.messages.select(MESSAGE_SELECT_FIELDS)
+                .get_all(page_size=MESSAGES_PAGE_SIZE)
+                .execute_query()
             )
 
             if recursive:

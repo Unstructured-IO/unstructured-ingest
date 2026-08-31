@@ -7,6 +7,7 @@ from pydantic import Secret
 
 from unstructured_ingest.error import ValueError
 from unstructured_ingest.processes.connectors.outlook import (
+    MESSAGE_SELECT_FIELDS,
     MESSAGES_PAGE_SIZE,
     OutlookAccessConfig,
     OutlookConnectionConfig,
@@ -227,6 +228,15 @@ class TestPreferImmutableIdsHeader:
         assert continuation_request.headers["Prefer"] == 'IdType="ImmutableId"'
 
 
+def _make_folder(folder_id: str = "folder-1") -> Mock:
+    folder = Mock()
+    folder.id = folder_id
+    # select(...) returns self on the real SDK, so the mock must too for the
+    # .select(...).get_all(...) chain in _list_messages to resolve.
+    folder.messages.select.return_value = folder.messages
+    return folder
+
+
 class TestListMessagesPagination:
     """get_all() follows @odata.nextLink; the old `.get().top(MAX)` call silently
     truncated enumeration at one page for large folders/mailboxes."""
@@ -234,12 +244,13 @@ class TestListMessagesPagination:
     def test_uses_get_all_with_bounded_page_size(self):
         indexer = _make_indexer(recursive=False)
         message = Mock()
-        root_folder = Mock()
+        root_folder = _make_folder("root")
         root_folder.messages.get_all.return_value.execute_query.return_value = [message]
 
         with patch.object(OutlookIndexer, "_get_selected_root_folders", return_value=[root_folder]):
             messages = indexer._list_messages(recursive=False)
 
+        root_folder.messages.select.assert_called_once_with(MESSAGE_SELECT_FIELDS)
         root_folder.messages.get_all.assert_called_once_with(page_size=MESSAGES_PAGE_SIZE)
         root_folder.messages.get.assert_not_called()
         assert messages == [message]
@@ -248,12 +259,12 @@ class TestListMessagesPagination:
         indexer = _make_indexer(recursive=True)
 
         child_message = Mock()
-        child_folder = Mock()
+        child_folder = _make_folder("child")
         child_folder.messages.get_all.return_value.execute_query.return_value = [child_message]
         child_folder.child_folders.get_all.return_value.execute_query.return_value = []
 
         root_message = Mock()
-        root_folder = Mock()
+        root_folder = _make_folder("root")
         root_folder.messages.get_all.return_value.execute_query.return_value = [root_message]
         root_folder.child_folders.get_all.return_value.execute_query.return_value = [child_folder]
 
@@ -271,13 +282,11 @@ class TestListMessagesPagination:
         # make this terminate rather than loop forever.
         indexer = _make_indexer(recursive=True)
 
-        folder_a = Mock()
-        folder_a.id = "folder-a"
+        folder_a = _make_folder("folder-a")
         message_a = Mock()
         folder_a.messages.get_all.return_value.execute_query.return_value = [message_a]
 
-        folder_b = Mock()
-        folder_b.id = "folder-b"
+        folder_b = _make_folder("folder-b")
         message_b = Mock()
         folder_b.messages.get_all.return_value.execute_query.return_value = [message_b]
 
@@ -289,6 +298,8 @@ class TestListMessagesPagination:
             messages = indexer._list_messages(recursive=True)
 
         # Each folder was expanded exactly once, not once per cycle repetition.
+        folder_a.messages.select.assert_called_once_with(MESSAGE_SELECT_FIELDS)
+        folder_b.messages.select.assert_called_once_with(MESSAGE_SELECT_FIELDS)
         folder_a.messages.get_all.assert_called_once_with(page_size=MESSAGES_PAGE_SIZE)
         folder_b.messages.get_all.assert_called_once_with(page_size=MESSAGES_PAGE_SIZE)
         folder_a.child_folders.get_all.assert_called_once_with()
