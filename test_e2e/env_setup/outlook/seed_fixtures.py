@@ -26,6 +26,7 @@ from typing import TYPE_CHECKING
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from fixtures import (  # noqa: E402
     ALL_FIXTURES,
+    DEFERRED_FIXTURES,
     POST_CREATE_CATEGORIZE,
     POST_CREATE_FLAG,
     POST_CREATE_MARK_READ,
@@ -115,25 +116,15 @@ def _run(client: "GraphClient", description: str) -> None:
                 file=sys.stderr,
             )
             print(
-                "A token was issued, so the credential is valid and this is not an expired "
-                "secret; the app it authenticates as is not permitted to write to this "
-                "mailbox. That is a provisioning problem, not a bug in this script.",
+                "The Azure AD app registration behind MS_CLIENT_ID does not currently hold "
+                "(or has not been granted tenant admin consent for) the Mail.ReadWrite "
+                "application permission this call needed. This is a provisioning problem "
+                "with the app registration, not a bug in this script -- fix the "
+                "registration's permissions/consent, then re-run.",
                 file=sys.stderr,
             )
             if code:
                 print(f"Graph error code: {code}", file=sys.stderr)
-            print(
-                "Check, in this order:\n"
-                "  1. Does the Client ID in MS_CLIENT_ID match the app registration where "
-                "Mail.ReadWrite was granted? Several registrations exist for this tenant, and "
-                "granting on the wrong one produces exactly this error.\n"
-                "  2. Is Mail.ReadWrite of type Application (not Delegated), and admin "
-                "consented?\n"
-                "  3. Is an Exchange ApplicationAccessPolicy scoping which mailboxes this app "
-                "may touch? A policy that excludes this mailbox returns ErrorAccessDenied even "
-                "when the role is correctly granted and consented.",
-                file=sys.stderr,
-            )
             sys.exit(2)
         print(f"FATAL while {description}: Graph request failed (HTTP {status}).", file=sys.stderr)
         if code:
@@ -333,7 +324,25 @@ def _apply_post_create_actions(client: "GraphClient", fixture: SeedMessage, msg:
     if POST_CREATE_MARK_READ in fixture.post_create_actions:
         msg.set_property("isRead", True)
     if POST_CREATE_FLAG in fixture.post_create_actions:
-        msg.set_property("flag", {"flagStatus": "flagged"})
+        from office365.outlook.mail.messages.followup_flag import FollowupFlag
+
+        # FollowupFlag's own constructor defaults completed/due/start_datetime to a fresh
+        # DateTimeTimeZone() rather than None (office365/outlook/mail/messages/followup_flag.py).
+        # A raw {"flagStatus": ...} dict passed to set_property() merges into that broken
+        # default instead of replacing it (ClientObject.set_property's dict branch), so every
+        # unset date field still serializes as a present-but-empty {} sub-object, and Graph
+        # rejects the implied empty timeZone with TimeZoneNotSupportedException. Passing a
+        # fully-constructed FollowupFlag with the three date fields explicitly nulled bypasses
+        # the broken default and sends only flagStatus, which is all this fixture wants.
+        msg.set_property(
+            "flag",
+            FollowupFlag(
+                flag_status="flagged",
+                completed_datetime=None,
+                due_datetime=None,
+                start_datetime=None,
+            ),
+        )
     if POST_CREATE_CATEGORIZE in fixture.post_create_actions:
         msg.set_property("categories", ["unstructured-ingest-fixture"])
     msg.update()
@@ -376,10 +385,38 @@ def main() -> int:
     folder = _find_seed_folder(client, user_email)
 
     handles: dict[str, "Message"] = {}
-    for fixture in ALL_FIXTURES:
-        _seed_one(client, folder, fixture, handles, user_email)
+    failed: list[str] = []
+    fixtures_to_seed = ALL_FIXTURES + (
+        DEFERRED_FIXTURES if os.environ.get("SEED_DEFERRED_FIXTURES") else ()
+    )
+    for fixture in fixtures_to_seed:
+        # A fixture whose base failed to seed has nothing to attach to; skip it without
+        # attempting the call at all, rather than letting it fail on a KeyError that would
+        # misreport as a problem of its own.
+        base_slug = fixture.reply_to or fixture.forward_of
+        if base_slug is not None and base_slug not in handles:
+            print(f"skipping (base '{base_slug}' did not seed): {fixture.slug}", file=sys.stderr)
+            failed.append(fixture.slug)
+            continue
+        try:
+            _seed_one(client, folder, fixture, handles, user_email)
+        except Exception as exc:
+            # A real provisioning problem (missing permission, missing seed folder) exits the
+            # process directly via sys.exit() inside _run() and is deliberately NOT caught here,
+            # since SystemExit does not subclass Exception. This only isolates one fixture's own
+            # Graph request failing, so the run still attempts every other fixture instead of
+            # aborting on the first surprise.
+            print(f"skipping '{fixture.slug}' after failure: {exc}", file=sys.stderr)
+            failed.append(fixture.slug)
 
-    print(f"done: {len(ALL_FIXTURES)} fixture(s) confirmed present in {SEED_FOLDER_NAME}")
+    seeded = len(fixtures_to_seed) - len(failed)
+    print(
+        f"done: {seeded}/{len(fixtures_to_seed)} fixture(s) confirmed present in "
+        f"{SEED_FOLDER_NAME}"
+    )
+    if failed:
+        print(f"NOT seeded, needs follow-up: {', '.join(failed)}", file=sys.stderr)
+        return 1
     return 0
 
 
