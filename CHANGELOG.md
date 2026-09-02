@@ -1,3 +1,9 @@
+## [1.11.8]
+
+### Fixes
+
+- **fix(outlook): make Graph's immutable id type opt-in.** Outlook/Exchange can rotate a message's id when the message moves between folders (including automatic moves, e.g. a rule filing a message into a subfolder), which breaks downstream record identity for anything keyed off `FileData.identifier`: the record locator, the sha256-derived output filename, and any destination that upserts by id. Graph will hand back ids that survive an in-mailbox move if every request carries `Prefer: IdType="ImmutableId"`, but switching an existing connection to those ids re-keys every record already indexed, so the next run reprocesses the whole mailbox and leaves one duplicate set of the old records at every destination. A new `use_immutable_message_ids` connection-config flag therefore gates the header and defaults to `False`, leaving current behavior and current ids exactly as they are unless a deployment opts in and accepts the one-time re-key. When enabled, the header is registered on the request handler's event notifier directly (`pending_request().beforeExecute`) rather than through the client-level `before_execute()` helper, which no-ops on a fresh client at office365-rest-python-client 3.0.0 and would not have survived a paginated continuation request either way.
+
 ## [1.11.7]
 
 ### Fixes
