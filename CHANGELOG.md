@@ -1,3 +1,9 @@
+## [1.11.9]
+
+### Fixes
+
+- **fix(test): run the Outlook E2E test in CI instead of silently skipping it.** `outlook.sh` was listed in `all_tests` but never added to `full_python_matrix_tests`, so `test-src.sh` skipped it on every run once CI standardized on Python 3.12; it was also in `tests_to_ignore`, which discarded its exit code. The job reported success while the connector was never exercised. Both gates are removed. Because the test needs mail that actually exists in the target mailbox, and the connector derives each filename from `sha256(message.id)` (Graph-assigned, and unstable across a folder move), a tear-down-and-recreate strategy would churn every fixture name per run. `test_e2e/env_setup/outlook/` therefore seeds create-if-absent, keyed on a fixed extended-property marker, covering attachments, threading, a cross-folder move, and mutable read/flag/category state, and exits distinctly on a 403 so a missing `Mail.ReadWrite` grant is not mistaken for a code fault. The two Graph-native threading fixtures (reply and forward) currently fail against a never-sent base message and are deferred behind an opt-in (SEED_DEFERRED_FIXTURES=1), so a default seeding run seeds the remaining five and exits zero.
+
 ## [1.11.6]
 
 ### Fixes
