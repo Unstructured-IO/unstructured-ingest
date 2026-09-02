@@ -167,27 +167,39 @@ FLAG_READ_CATEGORIZE_TARGET = SeedMessage(
     ),
 )
 
-# Order matters: seed_fixtures.py processes this tuple left to right and keeps a slug -> handle
+# Order matters: seed_fixtures.py processes these tuples left to right and keeps a slug -> handle
 # map of what it has created or found so far. A fixture that sets reply_to/forward_of looks its
-# base up in that map, so the base must appear earlier in this tuple than any fixture that
-# depends on it (checked below, since getting this wrong would fail as a runtime KeyError deep
-# inside a Graph call sequence instead of at import time).
+# base up in that map, so the base must appear earlier in the seeding order than any fixture
+# that depends on it (checked below, since getting this wrong would fail as a runtime KeyError
+# deep inside a Graph call sequence instead of at import time).
 ALL_FIXTURES: tuple[SeedMessage, ...] = (
     THREAD_STARTER,
-    THREAD_REPLY,
-    THREAD_FORWARD,
     INLINE_QUOTED_HISTORY,
     SMALL_ATTACHMENT,
     MOVE_TARGET,
     FLAG_READ_CATEGORIZE_TARGET,
 )
 
-_slugs = [f.slug for f in ALL_FIXTURES]
+# Not seeded by default: neither thread fixture currently seeds when its base message was only
+# ever created via the raw message-create API and never actually sent, and THREAD_STARTER is
+# exactly such a message. Against the real mailbox, createReply 400s (ErrorInvalidReferenceItem)
+# and createForward fails client-side inside the SDK with no HTTP response at all. The root cause
+# is unconfirmed (Microsoft documents no sent-through-mail-flow constraint), so seeding these two
+# is opt-in (SEED_DEFERRED_FIXTURES=1 in the environment) until a Graph-native threading route is
+# settled; a default run then succeeds on the five fixtures that do work instead of always
+# exiting non-zero. When opted in they are seeded after ALL_FIXTURES, so their THREAD_STARTER
+# base is already in the handle map.
+DEFERRED_FIXTURES: tuple[SeedMessage, ...] = (
+    THREAD_REPLY,
+    THREAD_FORWARD,
+)
+
+_slugs = [f.slug for f in ALL_FIXTURES + DEFERRED_FIXTURES]
 assert len(_slugs) == len(set(_slugs)), "fixture slugs must be unique: %r" % _slugs
-for _i, _f in enumerate(ALL_FIXTURES):
+for _i, _f in enumerate(ALL_FIXTURES + DEFERRED_FIXTURES):
     for _dep in (_f.reply_to, _f.forward_of):
         assert _dep is None or _dep in _slugs[:_i], (
             f"fixture '{_f.slug}' depends on '{_dep}', which must appear earlier in "
-            "ALL_FIXTURES than the fixture that depends on it"
+            "the seeding order than the fixture that depends on it"
         )
 del _slugs, _i, _f, _dep
