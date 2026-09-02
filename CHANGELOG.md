@@ -1,3 +1,9 @@
+## [1.11.8]
+
+### Fixes
+
+- **fix(outlook): use immutable message ids.** Outlook/Exchange can rotate a message's id when the message is moved between folders (including automatic moves, like a rule filing a message into a subfolder), which breaks downstream record identity for anything that keys off `FileData.identifier`. Every Graph request now carries `Prefer: IdType="ImmutableId"`, so message ids stay stable across folder moves. This is a one-time migration event: existing pipelines will fully re-index once on upgrade, since the immutable id format differs from the default id format and records written before the upgrade will not match records written after.
+
 ## [1.11.6]
 
 ### Fixes
