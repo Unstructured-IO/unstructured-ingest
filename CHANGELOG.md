@@ -1,3 +1,9 @@
+## [1.11.7]
+
+### Fixes
+
+- **fix(outlook): emit real record versions and fully page folder/message listings.** The Outlook connector read a message's change key through a typed accessor that queried the wrong JSON key casing, so `data_source_version` was always null and incremental change detection could never skip an unchanged message. Message listing also requested an out-of-range page size (Graph documents `$top` for `/messages` as 1..1000) and never followed `@odata.nextLink`, while folder listing had no page size set at all and was silently capped at Graph's default; either way, only the first page was ever returned. Listings now page through every result and, for messages, request only the fields the connector actually reads via `$select`, trading the memory of holding a full page against the previous silent truncation.
+
 ## [1.11.6]
 
 ### Fixes
