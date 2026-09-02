@@ -29,6 +29,11 @@ if [ -z "$MS_CLIENT_ID" ] || [ -z "$MS_CLIENT_CRED" ] || [ -z "$MS_TENANT_ID" ] 
   exit 8
 fi
 
+# Create-if-absent: guarantees the fixed set of fixture messages exists before indexing below.
+# A no-op on every run after the first; see env_setup/outlook/README.md for why seeding has to
+# be create-if-absent rather than tear-down-and-recreate, and for what this script fails on.
+PYTHONPATH=${PYTHONPATH:-.} "$SCRIPT_DIR"/env_setup/outlook/seed_fixtures.py
+
 RUN_SCRIPT=${RUN_SCRIPT:-./unstructured_ingest/main.py}
 PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
   outlook \
@@ -45,7 +50,7 @@ PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
   --client-id "$MS_CLIENT_ID" \
   --tenant "$MS_TENANT_ID" \
   --user-email "$MS_USER_EMAIL" \
-  --outlook-folders IntegrationTest \
+  --outlook-folders EmailsWithAttachments \
   --recursive \
   --work-dir "$WORK_DIR" \
   local \
