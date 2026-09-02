@@ -43,6 +43,7 @@ full_python_matrix_tests=(
   'google-drive.sh'
   'gcs.sh'
   'azure.sh'
+  'outlook.sh'
 )
 
 CURRENT_TEST="none"
@@ -61,7 +62,6 @@ python_version=$(python --version 2>&1)
 
 # TODO: remove lines committed with this comment once the tests are fixed
 tests_to_ignore=(
-  'outlook.sh'
   's3.sh'
   'azure.sh'
 )
