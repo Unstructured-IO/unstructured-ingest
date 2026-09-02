@@ -60,9 +60,22 @@ if TYPE_CHECKING:
     from office365.graph_client import GraphClient
     from office365.outlook.mail.folders.folder import MailFolder
     from office365.outlook.mail.messages.message import Message
+    from office365.runtime.http.request_options import RequestOptions
 
 
 CONNECTOR_TYPE = "outlook"
+
+
+def _prefer_immutable_ids(request: "RequestOptions") -> None:
+    """Ask Graph to return immutable ids for mail resources.
+
+    Without this header, Outlook/Exchange can rotate a message's id when the
+    message is moved between folders, breaking downstream record identity
+    that keys off FileData.identifier. Graph honors the preference per
+    request, so this has to run for every outbound request rather than once
+    at client construction.
+    """
+    request.set_header("Prefer", 'IdType="ImmutableId"')
 
 
 class OutlookAccessConfig(AccessConfig):
@@ -112,6 +125,18 @@ class OutlookConnectionConfig(ConnectionConfig):
         default="https://login.microsoftonline.com",
         description="Authentication token provider for Microsoft apps",
     )
+    use_immutable_message_ids: bool = Field(
+        default=False,
+        description=(
+            "Ask Graph for immutable message ids, so a message keeps its id when it is moved"
+            " between folders in the same mailbox. This changes record identity: enabling it"
+            " gives every message already indexed by this connection a new id, so the next run"
+            " reprocesses the entire mailbox as if it had never been seen and leaves one"
+            " duplicate set of the old records behind at every destination. Disabling it again"
+            " re-keys everything a second time at the same cost, so treat the switch as one-way."
+            " Leave it off to keep the ids this connection emits today."
+        ),
+    )
 
     @model_validator(mode="after")
     def _require_client_id_without_oauth(self) -> "OutlookConnectionConfig":
@@ -160,7 +185,16 @@ class OutlookConnectionConfig(ConnectionConfig):
     def get_client(self) -> "GraphClient":
         from office365.graph_client import GraphClient
 
-        return GraphClient(self._acquire_token)
+        client = GraphClient(self._acquire_token)
+        if self.use_immutable_message_ids:
+            # Registered directly on the pending request's event handler rather
+            # than via client.before_execute(): that context-level helper no-ops
+            # on a fresh client (office365-rest-python-client 3.0.0 early-returns
+            # when no query has been queued yet) and, once a query exists, scopes
+            # the hook to that single query's id, so it would never ride get_all()
+            # pagination continuations.
+            client.pending_request().beforeExecute += _prefer_immutable_ids
+        return client
 
 
 class OutlookIndexerConfig(IndexerConfig):

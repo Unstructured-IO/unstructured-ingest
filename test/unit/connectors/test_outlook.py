@@ -13,6 +13,7 @@ from unstructured_ingest.processes.connectors.outlook import (
     OutlookConnectionConfig,
     OutlookIndexer,
     OutlookIndexerConfig,
+    _prefer_immutable_ids,
 )
 
 
@@ -71,6 +72,74 @@ class TestOutlookConnectionConfig:
             access_config=Secret(OutlookAccessConfig(oauth_token="ey.access.token")),
         )
         assert config.client_id is None
+
+
+class TestImmutableMessageIdsOptIn:
+    """`Prefer: IdType="ImmutableId"` keeps message ids stable across folder moves.
+
+    Without it, Outlook/Exchange can rotate a message's id when the message is moved
+    between folders, breaking downstream record identity that keys off
+    FileData.identifier. Sending it re-keys every already-indexed record once, so it
+    is opt-in and the default must stay off.
+    """
+
+    def _request_options(self, url: str = "https://graph.microsoft.com/v1.0/me/messages"):
+        try:
+            from office365.runtime.http.request_options import RequestOptions
+        except ImportError:
+            pytest.skip("office365-rest-python-client not installed")
+        return RequestOptions(url)
+
+    def _config(self, **kwargs) -> OutlookConnectionConfig:
+        return OutlookConnectionConfig(
+            access_config=Secret(OutlookAccessConfig(oauth_token="ey.access.token")),
+            **kwargs,
+        )
+
+    def test_opt_in_is_off_by_default(self):
+        # The default decides what an upgrade does to an existing deployment: off
+        # means the ids this connector already emitted keep working untouched.
+        assert self._config().use_immutable_message_ids is False
+
+    def test_hook_sets_header_on_request(self):
+        request = self._request_options()
+
+        _prefer_immutable_ids(request)
+
+        assert request.headers["Prefer"] == 'IdType="ImmutableId"'
+
+    def test_disabled_sends_no_prefer_header(self):
+        # Asserts on the header the SDK would actually put on the wire rather than on
+        # the absence of a subscriber, so an alternative registration path (e.g. a
+        # client-level before_execute) could not slip the header in unnoticed.
+        client = self._config().get_client()
+        request = self._request_options()
+
+        client.pending_request().beforeExecute.notify(request)
+
+        assert "Prefer" not in request.headers
+
+    def test_enabled_registers_hook_that_fires_on_every_request(self):
+        # Fires the SDK's own dispatch path directly (ClientRuntimeContext.build_request
+        # calls exactly this: pending_request().beforeExecute.notify(request)) rather than
+        # asserting on a mocked call signature, so e.g. a rename of the `once` kwarg would
+        # be caught here instead of silently passing an unspecced mock assertion.
+        client = self._config(use_immutable_message_ids=True).get_client()
+
+        initial_request = self._request_options(
+            "https://graph.microsoft.com/v1.0/users/alice/mailFolders/inbox/messages"
+        )
+        client.pending_request().beforeExecute.notify(initial_request)
+        assert initial_request.headers["Prefer"] == 'IdType="ImmutableId"'
+
+        # The hook must still be registered on the same pending_request() for a
+        # get_all() pagination continuation, not just the first request.
+        continuation_request = self._request_options(
+            "https://graph.microsoft.com/v1.0/users/alice/mailFolders/inbox/messages"
+            "?$skiptoken=abc123"
+        )
+        client.pending_request().beforeExecute.notify(continuation_request)
+        assert continuation_request.headers["Prefer"] == 'IdType="ImmutableId"'
 
 
 def _make_message(message_id: str = "msg-1", change_key: Optional[str] = "ck-123") -> Mock:
