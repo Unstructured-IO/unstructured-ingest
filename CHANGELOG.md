@@ -1,3 +1,9 @@
+## [1.11.12]
+
+### Fixes
+
+- **test(outlook): seed CI fixture mail and run the Outlook E2E test without enforcing it yet.** `outlook.sh` was listed in `all_tests` but never added to `full_python_matrix_tests`, so `test-src.sh` skipped it on every run once CI standardized on Python 3.12, including the fixture-regeneration dispatch, which is why no Outlook fixtures could ever be produced. The python-version gate is removed so dispatch and nightly runs actually exercise the connector and can regenerate `test_e2e/expected-structured-output`; the test stays in `tests_to_ignore` for now, so its exit code does not gate CI while e2e enforcement consolidates in the orchestration repo. Because the test needs mail that actually exists in the target mailbox, and the connector derives each filename from `sha256(message.id)` (Graph-assigned, and unstable across a folder move), a tear-down-and-recreate strategy would churn every fixture name per run. `test_e2e/env_setup/outlook/` therefore seeds create-if-absent, keyed on a fixed extended-property marker, covering attachments, threading, a cross-folder move, and mutable read/flag/category state, and exits distinctly on a 403 so a missing `Mail.ReadWrite` grant is not mistaken for a code fault. The two Graph-native threading fixtures (reply and forward) currently fail against a never-sent base message and are deferred behind an opt-in (SEED_DEFERRED_FIXTURES=1), so a default seeding run seeds the remaining five and exits zero.
+
 ## [1.11.11]
 
 ### Fixes
