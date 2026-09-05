@@ -1,3 +1,11 @@
+## [1.11.7]
+
+### Chores
+
+- **chore: reduce merge-conflict churn on bookkeeping files.** `CHANGELOG.md` now merges with the
+  `union` driver and `uv.lock` with the `uv-lock` driver, so two branches that each add an entry or
+  re-lock no longer produce a hand-resolved conflict.
+
 ## [1.11.6]
 
 ### Fixes
