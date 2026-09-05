@@ -143,22 +143,43 @@ class FsspecIndexer(Indexer):
             raise self.wrap_error(e=e)
 
     def get_file_info(self) -> list[dict[str, Any]]:
-        if not self.index_config.recursive:
-            # fs.ls does not walk directories
-            # directories that are listed in cloud storage can cause problems
-            # because they are seen as 0 byte files
-            with self.connection_config.get_client(protocol=self.index_config.protocol) as client:
-                files = client.ls(self.index_config.path_without_protocol, detail=True)
+        # The listing call is wrapped for the same reason precheck() wraps its own: fsspec
+        # raises bare builtins (PermissionError for a rejected key, FileNotFoundError for a
+        # missing prefix), and only wrap_error turns those into the classified errors that
+        # carry a status_code downstream. Unwrapped, a rejected key reaches the plugin layer
+        # as an anonymous exception and the run ends up reported as a success that indexed
+        # nothing -- indistinguishable from an empty source. Keep the filtering below OUTSIDE
+        # the try: a KeyError there is our bug, not the connector's, and must not be relabelled
+        # as a connection failure.
+        try:
+            if not self.index_config.recursive:
+                # fs.ls does not walk directories
+                # directories that are listed in cloud storage can cause problems
+                # because they are seen as 0 byte files
+                with self.connection_config.get_client(
+                    protocol=self.index_config.protocol
+                ) as client:
+                    files = client.ls(self.index_config.path_without_protocol, detail=True)
 
-        else:
-            # fs.find will recursively walk directories
-            # "size" is a common key for all the cloud protocols with fs
-            with self.connection_config.get_client(protocol=self.index_config.protocol) as client:
-                found = client.find(
-                    self.index_config.path_without_protocol,
-                    detail=True,
-                )
-                files = found.values()
+            else:
+                # fs.find will recursively walk directories
+                # "size" is a common key for all the cloud protocols with fs
+                with self.connection_config.get_client(
+                    protocol=self.index_config.protocol
+                ) as client:
+                    found = client.find(
+                        self.index_config.path_without_protocol,
+                        detail=True,
+                    )
+                    files = found.values()
+        except Exception as e:
+            self.log_connection_failed(
+                connector_type=self.connector_type,
+                error=e,
+                endpoint=f"{self.index_config.protocol}://"
+                f"{self.index_config.path_without_protocol}",
+            )
+            raise self.wrap_error(e=e)
         filtered_files = [
             file for file in files if file.get("size") > 0 and file.get("type") == "file"
         ]
