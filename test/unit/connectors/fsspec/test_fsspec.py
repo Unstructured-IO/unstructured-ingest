@@ -320,3 +320,90 @@ class TestRelPathCalculationLogic:
         fixed = file_path.replace(path_without_protocol, "", 1).lstrip("/")
         assert fixed == "/utic-platform-test-destination_report.csv".lstrip("/")
         assert fixed == "utic-platform-test-destination_report.csv"  # CORRECT!
+
+
+class TestFsspecIndexerListingErrorsAreClassified:
+    """A rejected credential during listing must reach callers as a CLASSIFIED error.
+
+    precheck() has always wrapped its listing through wrap_error; get_file_info(), which is
+    the path a real job takes, did not. fsspec raises bare builtins (PermissionError for a
+    rejected key), and an unclassified exception carries no status_code, so the plugin layer
+    downstream reported the run as a success that indexed nothing -- byte-identical to an
+    empty source. Measured on an SND: a source over a bucket holding 3 files returned
+    total_docs 0 / processing_status SUCCESS with bad credentials, while the same bucket with
+    good credentials returned 3.
+    """
+
+    class _Wrapped(Exception):
+        """Stands in for UserAuthError: what wrap_error is expected to produce."""
+
+    def _indexer(self, recursive: bool, raises: Exception):
+        config = mock.MagicMock(spec=FsspecConnectionConfig)
+        client = mock.MagicMock()
+        client.ls.side_effect = raises
+        client.find.side_effect = raises
+        config.get_client.return_value.__enter__.return_value = client
+        config.get_client.return_value.__exit__.return_value = None
+        config.wrap_error.side_effect = lambda e: self._Wrapped(str(e))
+
+        indexer = FsspecIndexer(
+            connection_config=config,
+            index_config=FsspecIndexerConfig(remote_url="s3://bucket", recursive=recursive),
+        )
+        indexer.log_connection_failed = mock.MagicMock()
+        return indexer
+
+    @pytest.mark.parametrize("recursive", [False, True], ids=["ls", "find"])
+    def test_rejected_credential_is_wrapped(self, recursive):
+        indexer = self._indexer(recursive, PermissionError("The Access Key Id you provided..."))
+
+        with pytest.raises(self._Wrapped):
+            indexer.get_file_info()
+
+        indexer.connection_config.wrap_error.assert_called_once()
+
+    @pytest.mark.parametrize("recursive", [False, True], ids=["ls", "find"])
+    def test_missing_prefix_is_wrapped(self, recursive):
+        indexer = self._indexer(recursive, FileNotFoundError("no such prefix"))
+
+        with pytest.raises(self._Wrapped):
+            indexer.get_file_info()
+
+    def test_a_successful_listing_is_untouched(self):
+        config = mock.MagicMock(spec=FsspecConnectionConfig)
+        client = mock.MagicMock()
+        client.ls.return_value = [
+            {"name": "bucket/a.txt", "size": 10, "type": "file"},
+            {"name": "bucket/dir", "size": 0, "type": "directory"},
+        ]
+        config.get_client.return_value.__enter__.return_value = client
+        config.get_client.return_value.__exit__.return_value = None
+
+        indexer = FsspecIndexer(
+            connection_config=config,
+            index_config=FsspecIndexerConfig(remote_url="s3://bucket", recursive=False),
+        )
+
+        assert [f["name"] for f in indexer.get_file_info()] == ["bucket/a.txt"]
+        config.wrap_error.assert_not_called()
+
+    def test_a_bug_in_our_own_filtering_is_not_relabelled_as_a_connection_failure(self):
+        """The try must not swallow our own defects.
+
+        Filtering sits outside it on purpose: a malformed entry is our bug, and calling it a
+        connection failure would send the reader to re-test perfectly good credentials.
+        """
+        config = mock.MagicMock(spec=FsspecConnectionConfig)
+        client = mock.MagicMock()
+        client.ls.return_value = [{"name": "bucket/a.txt", "type": "file"}]  # no "size" key
+        config.get_client.return_value.__enter__.return_value = client
+        config.get_client.return_value.__exit__.return_value = None
+
+        indexer = FsspecIndexer(
+            connection_config=config,
+            index_config=FsspecIndexerConfig(remote_url="s3://bucket", recursive=False),
+        )
+
+        with pytest.raises(TypeError):
+            indexer.get_file_info()
+        config.wrap_error.assert_not_called()

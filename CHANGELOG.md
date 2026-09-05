@@ -1,3 +1,9 @@
+## [1.11.7]
+
+### Fixes
+
+- **fix(fsspec): classify a rejected credential raised while listing, instead of letting it escape unclassified.** `precheck()` wrapped its listing through `wrap_error`; `get_file_info()`, the path a real job takes, did not, so fsspec's bare `PermissionError` (rejected key) and `FileNotFoundError` (missing prefix) escaped without a `status_code`. Downstream that made a source whose credentials were rejected indistinguishable from one that was legitimately empty: measured on an SND, a source over a bucket holding three files returned 0 documents and a SUCCESS verdict with bad credentials, while the same bucket with good credentials returned 3. The listing is now wrapped the same way `precheck()` wraps it, so S3 maps the rejection to `UserAuthError`. Post-listing filtering stays outside the try, so a malformed entry is still reported as our own bug rather than a connection failure. Inherited by every fsspec-backed connector (s3, gcs, azure, box, dropbox, sftp, onedrive).
+
 ## [1.11.6]
 
 ### Fixes
