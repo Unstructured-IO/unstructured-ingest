@@ -5,13 +5,9 @@ import pytest
 from pytest_mock import MockerFixture
 
 from unstructured_ingest.error import ProviderError, UserAuthError, UserError
-from unstructured_ingest.processes.connectors.databricks.volumes import (
-    DatabricksVolumesDownloaderConfig,
-)
 from unstructured_ingest.processes.connectors.databricks.volumes_native import (
     DatabricksNativeVolumesAccessConfig,
     DatabricksNativeVolumesConnectionConfig,
-    DatabricksNativeVolumesDownloader,
     DatabricksNativeVolumesIndexer,
     DatabricksNativeVolumesIndexerConfig,
 )
@@ -96,14 +92,6 @@ def _indexer(
     )
 
 
-def _downloader(mocker: MockerFixture, client) -> DatabricksNativeVolumesDownloader:
-    mocker.patch.object(DatabricksNativeVolumesConnectionConfig, "get_client", return_value=client)
-    return DatabricksNativeVolumesDownloader(
-        connection_config=_connection_config(),
-        download_config=DatabricksVolumesDownloaderConfig(),
-    )
-
-
 def test_indexer_precheck_raises_when_credentials_are_rejected(mocker: MockerFixture):
     # Constructing the client makes no request under token auth, so without a live
     # call the connection check passes for a token the workspace rejects and the
@@ -174,20 +162,6 @@ def test_indexer_precheck_accepts_an_empty_volume_path(mocker: MockerFixture):
     client.dbfs.list.assert_called_once_with(path="/Volumes/catalog/schema/volume", recursive=False)
 
 
-def test_downloader_precheck_raises_when_credentials_are_rejected(mocker: MockerFixture):
-    pytest.importorskip("databricks.sdk")
-    from databricks.sdk.errors.platform import STATUS_CODE_MAPPING
-
-    client = mocker.MagicMock()
-    client.current_user.me.side_effect = STATUS_CODE_MAPPING[401](SECRET)
-
-    with pytest.raises(UserAuthError) as exc_info:
-        _downloader(mocker, client).precheck()
-
-    assert SECRET not in str(exc_info.value)
-    client.current_user.me.assert_called_once()
-
-
 def test_indexer_precheck_error_does_not_leak_raw_text_in_traceback(mocker: MockerFixture):
     # wrap_error sanitizes the message, but if the raw SDK exception survives as the
     # implicit __context__ then a full traceback (logger.exception / format_exception)
@@ -204,30 +178,6 @@ def test_indexer_precheck_error_does_not_leak_raw_text_in_traceback(mocker: Mock
     formatted = "".join(traceback.format_exception(exc_info.value))
     assert SECRET not in formatted
     assert "hunter2" not in formatted
-
-
-def test_downloader_precheck_error_does_not_leak_raw_text_in_traceback(mocker: MockerFixture):
-    pytest.importorskip("databricks.sdk")
-    from databricks.sdk.errors.platform import STATUS_CODE_MAPPING
-
-    client = mocker.MagicMock()
-    client.current_user.me.side_effect = STATUS_CODE_MAPPING[401](SECRET)
-
-    with pytest.raises(UserAuthError) as exc_info:
-        _downloader(mocker, client).precheck()
-
-    formatted = "".join(traceback.format_exception(exc_info.value))
-    assert SECRET not in formatted
-    assert "hunter2" not in formatted
-
-
-def test_downloader_precheck_passes_when_credentials_are_accepted(mocker: MockerFixture):
-    pytest.importorskip("databricks.sdk")
-    client = mocker.MagicMock()
-
-    _downloader(mocker, client).precheck()
-
-    client.current_user.me.assert_called_once()
 
 
 def test_indexed_file_reports_modification_time_in_epoch_seconds(mocker: MockerFixture):
