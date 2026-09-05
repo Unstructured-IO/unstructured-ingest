@@ -1,3 +1,10 @@
+## [1.11.8]
+
+### Fixes
+
+- **fix(databricks-volumes): make the source connection check contact Databricks (PLU-637).** The Databricks Volumes indexer `precheck` only called `get_client()`. Under personal-access-token auth the SDK's auth provider is a static `Authorization` header, so building the client makes no request and the connection check passed for an invalid token, an unreachable host, or a volume the user has no access to. The first real contact was `dbfs.list` inside the indexer's `run`, so the failure surfaced as a failed job after the user had been told the connector was fine. The indexer precheck now calls `current_user.me()` (credentials and host) and then takes the first entry of a non-recursive listing of the configured volume path (the catalog, schema and volume resolve, and the Unity Catalog `USE CATALOG` / `USE SCHEMA` / `READ VOLUME` grants are in place); an empty path stays valid. Failures keep routing through the connector's existing error wrapping, so responses are still classified into the typed user/provider/rate-limit errors and redacted. This is a visible behaviour change: a Volumes source that reported a successful connection test while being unusable now fails the test, and the four Volumes source connectors (`databricks_volumes`, `databricks_volumes_aws`, `databricks_volumes_azure`, `databricks_volumes_gcp`) all inherit the fix.
+- **fix(databricks-volumes): drop `DatabricksVolumesDownloader.precheck`.** It could never run. Platform Test Connection remaps `source` to `index` only, so check-executioner never starts the downloader sidecar, and job preflight is off by default. It was the only downloader in this repo that defined a `precheck` at all; the base `Downloader` no-op now applies, as it does for every other connector.
+
 ## [1.11.6]
 
 ### Fixes
