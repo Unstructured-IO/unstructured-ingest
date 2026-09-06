@@ -1,0 +1,30 @@
+CHANGELOG.md
+  s_61b137a1380651::t_18b5eedbb3d5f5 1
+  s_cd25dd09dba57e::t_c43a03c0d0f9b7 2-6
+unstructured_ingest/__version__.py
+  s_61b137a1380651::t_31e410bd41bed6 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "c0fcf4817aa7aae762a48b5d1918e82036599989",
+  "prompts": {},
+  "sessions": {
+    "s_61b137a1380651": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "15aa78e1-656b-4b5f-ba13-1523c8a03cd4",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulkarayan <pk@unstructured.io>"
+    },
+    "s_cd25dd09dba57e": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a040ae-8607-7972-bfa8-3b2c1a80c6e9",
+        "model": "gpt-5.6-terra"
+      },
+      "human_author": "paulkarayan <pk@unstructured.io>"
+    }
+  }
+}

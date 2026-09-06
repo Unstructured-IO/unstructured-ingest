@@ -1,0 +1,19 @@
+.gitattributes
+  s_88f5e039d48824::t_b89482b88d36bb 1-2
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "10cd95110beab5f64711f020fe416ceddf158583",
+  "prompts": {},
+  "sessions": {
+    "s_88f5e039d48824": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "abd23ca1-87cc-4d2f-9d2e-16aa42f63726",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulkarayan <pk@unstructured.io>"
+    }
+  }
+}

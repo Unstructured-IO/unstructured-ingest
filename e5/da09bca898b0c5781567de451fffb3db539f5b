@@ -1,0 +1,42 @@
+CHANGELOG.md
+  s_99d1419b14ae79::t_81006c6b56bbe8 2-4,6-7
+  s_d348d2df5f826f::t_36879e7b706075 1
+unstructured_ingest/processes/connectors/databricks/volumes.py
+  s_99d1419b14ae79::t_f5ff511c136431 134-147
+  s_99d1419b14ae79::t_7caf8b853cf5d8 201-204,206
+test/unit/connectors/databricks/test_volumes.py
+  s_99d1419b14ae79::t_d343ebfc4c6257 7-9,13
+  s_99d1419b14ae79::t_8a04bd93b8580e 86-190
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "e5da09bca898b0c5781567de451fffb3db539f5b",
+  "prompts": {},
+  "sessions": {
+    "s_99d1419b14ae79": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "fa72d486-2767-4b79-886c-8e17a661818c",
+        "model": "claude-opus-5"
+      },
+      "human_author": "paulkarayan <pk@unstructured.io>"
+    },
+    "s_d348d2df5f826f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9bd85ff0-8ba0-41ee-9f6c-4df7b63e44e0",
+        "model": "claude-opus-5"
+      },
+      "human_author": "paulkarayan <pk@unstructured.io>"
+    },
+    "s_e46ffc0e3f41eb": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9279667e-fa70-4797-a3a4-edf0130390ee",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulkarayan <pk@unstructured.io>"
+    }
+  }
+}

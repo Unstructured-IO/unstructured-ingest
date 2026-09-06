@@ -1,0 +1,21 @@
+unstructured_ingest/processes/connectors/fsspec/fsspec.py
+  s_42489127b2de97::t_9f2d4036b439f4 146-182
+test/unit/connectors/fsspec/test_fsspec.py
+  s_42489127b2de97::t_ff906cfa54e72d 323-409
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "a7146679d0cec4c72ecef53b6743674a457c7772",
+  "prompts": {},
+  "sessions": {
+    "s_42489127b2de97": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "520fc8ea-ff8b-4b4c-a3ef-b965d8da0cf8",
+        "model": "claude-opus-5"
+      },
+      "human_author": "paulkarayan <pk@unstructured.io>"
+    }
+  }
+}
