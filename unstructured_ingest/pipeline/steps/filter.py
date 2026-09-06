@@ -45,10 +45,14 @@ class FilterStep(PipelineStep):
             }
         )
         if received and not retained:
+            # Say what was observed, not why. A record also fails to be retained when
+            # file_data_from_file raises on a malformed cached FileData and run_async
+            # returns None, so naming the filter config as the cause would be wrong in
+            # that case. An ERROR line precedes it there; the config stays as context.
             logger.warning(
-                f"nothing to process after filtering {stage} content: all {received} records "
-                f"were dropped by the configured filters "
-                f"({self.process.config.model_dump_json()})"
+                f"nothing to process after filtering {stage} content: none of the "
+                f"{received} records survived this stage. Filter settings in effect: "
+                f"{self.process.config.model_dump_json()}"
             )
 
     async def _run_async(self, fn: Callable, file_data_path: str, **kwargs) -> Optional[dict]:

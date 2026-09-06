@@ -193,7 +193,7 @@ class Pipeline:
         steps.append(self.uploader_step)
         return steps
 
-    def apply_filter(self, records: list[dict], stage: str) -> list[dict]:
+    def apply_filter(self, records: list[dict], stage: str = "indexed") -> list[dict]:
         if not self.filter_step:
             return records
         data_to_filter = [{"file_data_path": i["file_data_path"]} for i in records]
