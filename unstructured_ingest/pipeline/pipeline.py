@@ -193,11 +193,11 @@ class Pipeline:
         steps.append(self.uploader_step)
         return steps
 
-    def apply_filter(self, records: list[dict]) -> list[dict]:
+    def apply_filter(self, records: list[dict], stage: str) -> list[dict]:
         if not self.filter_step:
             return records
         data_to_filter = [{"file_data_path": i["file_data_path"]} for i in records]
-        filtered_data = self.filter_step(data_to_filter)
+        filtered_data = self.filter_step(data_to_filter, stage=stage)
         filtered_data = [f for f in filtered_data if f is not None]
         filtered_file_data_paths = [r["file_data_path"] for r in filtered_data]
         filtered_records = [r for r in records if r["file_data_path"] in filtered_file_data_paths]
@@ -235,7 +235,7 @@ class Pipeline:
             return
 
         # Initial filtering on indexed content
-        indices_inputs = self.apply_filter(records=indices_inputs)
+        indices_inputs = self.apply_filter(records=indices_inputs, stage="indexed")
         if not indices_inputs:
             logger.info("No files to process after filtering indexed content, exiting")
             return
@@ -248,7 +248,7 @@ class Pipeline:
             return
 
         # Post download filtering
-        downloaded_data = self.apply_filter(records=downloaded_data)
+        downloaded_data = self.apply_filter(records=downloaded_data, stage="downloaded")
         if not downloaded_data:
             logger.info("No files to process after filtering downloaded content, exiting")
             return
@@ -260,7 +260,7 @@ class Pipeline:
             downloaded_data = self.clean_results(results=downloaded_data)
 
             # Post uncompress filtering
-            downloaded_data = self.apply_filter(records=downloaded_data)
+            downloaded_data = self.apply_filter(records=downloaded_data, stage="uncompressed")
             if not downloaded_data:
                 logger.info("No files to process after filtering uncompressed content, exiting")
                 return
