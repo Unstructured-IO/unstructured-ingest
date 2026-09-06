@@ -1,0 +1,21 @@
+unstructured_ingest/pipeline/pipeline.py
+  s_35c3b2c2578dc7::t_407c3a19cbaccd 196
+unstructured_ingest/pipeline/steps/filter.py
+  s_35c3b2c2578dc7::t_f62ba2850bcd97 48-51,53-55
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "721788492de9fd1b932daf70ec1214fb9c8ca179",
+  "prompts": {},
+  "sessions": {
+    "s_35c3b2c2578dc7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ce349394-98ea-4542-b122-1701082429b1",
+        "model": "claude-opus-5"
+      },
+      "human_author": "paulkarayan <pk@unstructured.io>"
+    }
+  }
+}
