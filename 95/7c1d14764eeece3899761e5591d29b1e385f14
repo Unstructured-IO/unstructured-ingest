@@ -1,0 +1,35 @@
+unstructured_ingest/pipeline/pipeline.py
+  s_8f4b1d68b0b5e5::t_c1436bfff22fe7 196,200,238,251,263
+unstructured_ingest/processes/connectors/fsspec/fsspec.py
+  s_8f4b1d68b0b5e5::t_cf88b902e544b7 205
+  s_8f4b1d68b0b5e5::t_c99e361175960a 190
+  s_8f4b1d68b0b5e5::t_bd6c6556061d56 197-204,206-221
+  s_8f4b1d68b0b5e5::t_fbd826ff40c6f0 32
+test/unit/test_zero_file_diagnostics.py
+  s_8f4b1d68b0b5e5::t_5955242f5d132a 1-180
+unstructured_ingest/otel.py
+  s_8f4b1d68b0b5e5::t_88a8a1350c9caa 72
+  s_8f4b1d68b0b5e5::t_016536e94f06f8 73-89
+unstructured_ingest/pipeline/steps/filter.py
+  s_8f4b1d68b0b5e5::t_992750f9e63e77 37-39
+  s_8f4b1d68b0b5e5::t_d1295209ef58eb 53
+  s_8f4b1d68b0b5e5::t_91c32967794451 3,7-8,23-36,40-52
+CHANGELOG.md
+  s_8f4b1d68b0b5e5::t_f94defa295aec5 2-6
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "957c1d14764eeece3899761e5591d29b1e385f14",
+  "prompts": {},
+  "sessions": {
+    "s_8f4b1d68b0b5e5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b6a2523f-42ad-4716-8493-d2c5c392f38b",
+        "model": "claude-opus-5"
+      },
+      "human_author": "paulkarayan <pk@unstructured.io>"
+    }
+  }
+}
