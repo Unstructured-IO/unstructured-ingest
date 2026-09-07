@@ -29,6 +29,7 @@ from unstructured_ingest.interfaces import (
     Uploader,
     UploaderConfig,
 )
+from unstructured_ingest.otel import OtelHandler
 from unstructured_ingest.processes.connectors.fsspec.utils import sterilize_dict
 from unstructured_ingest.utils.filesystem import mkdir_concurrent_safe
 
@@ -186,11 +187,37 @@ class FsspecIndexer(Indexer):
         filtered_files = [
             file for file in files if file.get("size") > 0 and file.get("type") == "file"
         ]
+        self.report_listing_counts(returned=len(files), retained=len(filtered_files))
 
         if self.index_config.sample_n_files:
             filtered_files = self.sample_n_files(filtered_files, self.index_config.sample_n_files)
 
         return filtered_files
+
+    def report_listing_counts(self, returned: int, retained: int) -> None:
+        """Report what the listing gave us and what survived our own size/type filter.
+
+        Keep these two numbers apart. Zero returned means the location is empty or the path
+        matches nothing; zero retained off a non-zero listing means the location holds only
+        directory markers and zero-byte keys. Both end a job with nothing indexed, and
+        collapsing them is why "the workflow moved no files" could not be answered.
+        """
+        OtelHandler.record_on_current_span(
+            {
+                "source.listing.returned": returned,
+                "source.listing.retained": retained,
+            }
+        )
+        if retained:
+            return
+        endpoint = f"{self.index_config.protocol}://{self.index_config.path_without_protocol}"
+        if returned:
+            self.log_warning(
+                f"nothing to index at {endpoint}: the listing returned {returned} entries but "
+                f"none of them are files with content (kept only type=file and size>0)"
+            )
+        else:
+            self.log_warning(f"nothing to index at {endpoint}: the listing returned no entries")
 
     def sample_n_files(self, files: list[dict[str, Any]], n) -> list[dict[str, Any]]:
         if len(files) <= n:

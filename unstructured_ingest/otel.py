@@ -70,6 +70,24 @@ class OtelHandler:
                 span.set_attribute(att, attributes_dict[att])
 
     @staticmethod
+    def record_on_current_span(attributes: dict) -> None:
+        """Attach per-run facts to whatever span the caller is already inside.
+
+        Spans are the only STRUCTURED channel this repo has for reporting a fact (as opposed
+        to a failure) back out of a run; the platform points them somewhere by setting
+        ProcessorConfig.otel_endpoint / OTEL_EXPORTER_OTLP_ENDPOINT. A caller that wants the
+        fact readable without a collector still owes a log line of its own.
+
+        Callers sit on hot paths in base classes that every connector inherits, so a missing
+        or broken span context is swallowed: telemetry must never be the thing that fails a
+        job. With no span active this is a no-op against the non-recording default span.
+        """
+        try:
+            OtelHandler.set_attributes(trace.get_current_span(), attributes)
+        except Exception as e:
+            logger.debug(f"failed to record {sorted(attributes)} on the current span: {e}")
+
+    @staticmethod
     def inject_context() -> dict:
         trace_context = {}
         current_context = get_current()
