@@ -1,5 +1,6 @@
 """Unit tests for fsspec connector base classes."""
 
+import logging
 from unittest import mock
 
 import pytest
@@ -350,7 +351,6 @@ class TestFsspecIndexerListingErrorsAreClassified:
             connection_config=config,
             index_config=FsspecIndexerConfig(remote_url="s3://bucket", recursive=recursive),
         )
-        indexer.log_connection_failed = mock.MagicMock()
         return indexer
 
     @pytest.mark.parametrize("recursive", [False, True], ids=["ls", "find"])
@@ -361,6 +361,32 @@ class TestFsspecIndexerListingErrorsAreClassified:
             indexer.get_file_info()
 
         indexer.connection_config.wrap_error.assert_called_once()
+
+    @pytest.mark.parametrize("recursive", [False, True], ids=["ls", "find"])
+    def test_the_failure_is_logged_as_a_listing_not_a_precheck(self, recursive, caplog):
+        """The log line must name the phase and the endpoint.
+
+        precheck() logs "Failed to validate ... connection to <endpoint>" for the same
+        connector and the same endpoint. If indexing reused that template, nothing keyed on
+        the message string alone -- a log search, an alert, a dashboard -- could tell a
+        rejected precheck from a job that died while listing. Pinned here because the
+        endpoint is otherwise built by an f-string no assertion reads: replace it with a
+        constant and every other test in this class still passes.
+        """
+        indexer = self._indexer(recursive, PermissionError("The Access Key Id you provided..."))
+
+        with (
+            caplog.at_level(logging.ERROR, logger="unstructured_ingest"),
+            pytest.raises(self._Wrapped),
+        ):
+            indexer.get_file_info()
+
+        errors = [r.getMessage() for r in caplog.records if r.levelno == logging.ERROR]
+        assert errors, "listing failure must be logged"
+        assert any("Failed to list" in m and "contents at s3://bucket" in m for m in errors), errors
+        # And it must NOT be the precheck sentence.
+        assert not any("Failed to validate" in m for m in errors), errors
+        assert any("The Access Key Id you provided" in m for m in errors), errors
 
     @pytest.mark.parametrize("recursive", [False, True], ids=["ls", "find"])
     def test_missing_prefix_is_wrapped(self, recursive):

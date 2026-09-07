@@ -173,7 +173,10 @@ class FsspecIndexer(Indexer):
                     )
                     files = found.values()
         except Exception as e:
-            self.log_connection_failed(
+            # log_listing_failed, not log_connection_failed: precheck() already emits the
+            # latter for this same connector and endpoint, and a reader keyed on the message
+            # alone could not otherwise tell a failed precheck from a job that died indexing.
+            self.log_listing_failed(
                 connector_type=self.connector_type,
                 error=e,
                 endpoint=f"{self.index_config.protocol}://"
