@@ -204,6 +204,41 @@ class TestListMessagesPagination:
         root_folder.messages.get.assert_not_called()
         assert messages == [message]
 
+    def test_select_projection_names_every_field_the_connector_reads(self):
+        # Pinned as literals: _message_to_file_data and the metadata mapping
+        # read exactly these Graph fields, and a projection that drifts
+        # narrower silently nulls whatever it drops.
+        assert MESSAGE_SELECT_FIELDS == [
+            "id",
+            "changeKey",
+            "lastModifiedDateTime",
+            "createdDateTime",
+            "from",
+            "toRecipients",
+            "subject",
+            "conversationId",
+            "isDraft",
+            "isRead",
+            "hasAttachments",
+            "importance",
+        ]
+
+    def test_accumulates_every_record_across_page_boundaries(self):
+        # get_all() drains @odata.nextLink continuations into one collection;
+        # a listing larger than one Graph page must come back complete and in
+        # order, not truncated at page_size.
+        indexer = _make_indexer(recursive=False)
+        spanning_three_pages = [Mock() for _ in range(MESSAGES_PAGE_SIZE * 2 + 3)]
+        root_folder = _make_folder("root")
+        root_folder.messages.get_all.return_value.execute_query.return_value = (
+            spanning_three_pages
+        )
+
+        with patch.object(OutlookIndexer, "_get_selected_root_folders", return_value=[root_folder]):
+            messages = indexer._list_messages(recursive=False)
+
+        assert messages == spanning_three_pages
+
     def test_recursion_pages_child_folders_via_get_all(self):
         indexer = _make_indexer(recursive=True)
 
