@@ -62,6 +62,10 @@ python_version=$(python --version 2>&1)
 
 # TODO: remove lines committed with this comment once the tests are fixed
 tests_to_ignore=(
+  # outlook runs so dispatch/nightly can regenerate fixtures and gather evidence,
+  # but its exit code stays non-enforcing while e2e enforcement consolidates in
+  # the orchestration repo
+  'outlook.sh'
   's3.sh'
   'azure.sh'
 )
