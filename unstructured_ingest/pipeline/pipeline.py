@@ -258,6 +258,14 @@ class Pipeline:
             downloaded_data = self.uncompress_step(downloaded_data)
             # Flatten list of lists
             downloaded_data = self.clean_results(results=downloaded_data)
+            # clean_results returns None, not [], when everything is falsy. Guard here rather
+            # than inside apply_filter: a None from an uncompress that extracted nothing is
+            # not a zero that filtering produced, and reporting it as one would put a bogus
+            # filter.uncompressed.received of 0 on the span and log a filter warning for a
+            # drop the filters had no part in.
+            if not downloaded_data:
+                logger.info("No files to process after uncompressing, exiting")
+                return
 
             # Post uncompress filtering
             downloaded_data = self.apply_filter(records=downloaded_data, stage="uncompressed")

@@ -14,6 +14,7 @@ accompanies each zero case follows the end-of-run summary this repo already uses
 silently incomplete crawl (see the SharePoint Teams channel-skip summary).
 """
 
+import logging
 from contextlib import contextmanager
 from unittest import mock
 
@@ -24,6 +25,7 @@ from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanE
 
 from unstructured_ingest.data_types.file_data import FileData, SourceIdentifiers
 from unstructured_ingest.interfaces import ProcessorConfig
+from unstructured_ingest.pipeline.pipeline import Pipeline
 from unstructured_ingest.pipeline.steps.filter import FilterStep
 from unstructured_ingest.processes.connectors.fsspec.fsspec import (
     FsspecConnectionConfig,
@@ -31,6 +33,19 @@ from unstructured_ingest.processes.connectors.fsspec.fsspec import (
     FsspecIndexerConfig,
 )
 from unstructured_ingest.processes.filter import Filterer, FiltererConfig
+
+
+def warnings_matching(caplog, fragment: str) -> list[str]:
+    """WARNING lines containing `fragment`.
+
+    The span attributes are only readable through a collector; these sentences are what a
+    person actually sees, and they are the whole point of the change. Assert on them.
+    """
+    return [
+        r.getMessage()
+        for r in caplog.records
+        if r.levelno == logging.WARNING and fragment in r.getMessage()
+    ]
 
 
 class SpanRecorder:
@@ -73,17 +88,22 @@ def build_indexer(listing: list[dict]) -> FsspecIndexer:
 
 
 class TestIndexerReportsWhatTheListingReturned:
-    def test_an_empty_listing_is_reported_as_an_empty_listing(self):
+    def test_an_empty_listing_is_reported_as_an_empty_listing(self, caplog):
         recorder = SpanRecorder()
         indexer = build_indexer(listing=[])
 
-        with recorder.recording():
+        with caplog.at_level(logging.WARNING, logger="unstructured_ingest"), recorder.recording():
             assert indexer.get_file_info() == []
 
         assert recorder.attributes["source.listing.returned"] == 0
         assert recorder.attributes["source.listing.retained"] == 0
+        # The span counts are useless without a collector. Pin the sentence too: it is the
+        # half of this change a human reads, and swapping it for the other arm's text is
+        # otherwise invisible to the suite.
+        assert warnings_matching(caplog, "the listing returned no entries")
+        assert not warnings_matching(caplog, "none of them are files with content")
 
-    def test_a_listing_our_own_filter_empties_is_reported_as_that_instead(self):
+    def test_a_listing_our_own_filter_empties_is_reported_as_that_instead(self, caplog):
         """The discriminating case: the source is NOT empty, our filter is what emptied it.
 
         Directory markers and zero-byte keys list fine and then fail `size > 0 and
@@ -99,13 +119,18 @@ class TestIndexerReportsWhatTheListingReturned:
             ]
         )
 
-        with recorder.recording():
+        with caplog.at_level(logging.WARNING, logger="unstructured_ingest"), recorder.recording():
             assert indexer.get_file_info() == []
 
         assert recorder.attributes["source.listing.returned"] == 3
         assert recorder.attributes["source.listing.retained"] == 0
+        # This is the discriminating sentence. If it were swapped for the empty-listing arm's
+        # text the reader would be sent to check a path that is in fact populated.
+        assert warnings_matching(caplog, "none of them are files with content")
+        assert warnings_matching(caplog, "the listing returned 3 entries")
+        assert not warnings_matching(caplog, "the listing returned no entries")
 
-    def test_both_counts_are_reported_on_a_normal_run(self):
+    def test_both_counts_are_reported_on_a_normal_run(self, caplog):
         recorder = SpanRecorder()
         indexer = build_indexer(
             listing=[
@@ -115,11 +140,13 @@ class TestIndexerReportsWhatTheListingReturned:
             ]
         )
 
-        with recorder.recording():
+        with caplog.at_level(logging.WARNING, logger="unstructured_ingest"), recorder.recording():
             assert len(indexer.get_file_info()) == 2
 
         assert recorder.attributes["source.listing.returned"] == 3
         assert recorder.attributes["source.listing.retained"] == 2
+        # Reporting-only means silent on a run that worked.
+        assert not warnings_matching(caplog, "nothing to index")
 
 
 def write_file_data(tmp_path, name: str) -> str:
@@ -145,27 +172,30 @@ class TestFilterStepReportsWhatItDropped:
     def indexed_files(self, tmp_path) -> list[dict]:
         return [{"file_data_path": write_file_data(tmp_path, name)} for name in ("a.txt", "b.txt")]
 
-    def test_filters_dropping_everything_is_reported(self, tmp_path, indexed_files):
+    def test_filters_dropping_everything_is_reported(self, tmp_path, indexed_files, caplog):
         recorder = SpanRecorder()
         step = build_filter_step(tmp_path, file_glob=["*.pdf"])
 
-        with recorder.recording():
+        with caplog.at_level(logging.WARNING, logger="unstructured_ingest"), recorder.recording():
             results = step(indexed_files)
 
         assert [r for r in results if r] == []
         assert recorder.attributes["filter.indexed.received"] == 2
         assert recorder.attributes["filter.indexed.retained"] == 0
+        assert warnings_matching(caplog, "none of the 2 records survived this stage")
+        assert warnings_matching(caplog, "after filtering indexed content")
 
-    def test_a_partial_drop_reports_both_counts(self, tmp_path, indexed_files):
+    def test_a_partial_drop_reports_both_counts(self, tmp_path, indexed_files, caplog):
         recorder = SpanRecorder()
         step = build_filter_step(tmp_path, file_glob=["*a.txt"])
 
-        with recorder.recording():
+        with caplog.at_level(logging.WARNING, logger="unstructured_ingest"), recorder.recording():
             results = step(indexed_files)
 
         assert len([r for r in results if r]) == 1
         assert recorder.attributes["filter.indexed.received"] == 2
         assert recorder.attributes["filter.indexed.retained"] == 1
+        assert not warnings_matching(caplog, "survived this stage")
 
     def test_the_post_download_pass_is_reported_separately(self, tmp_path, indexed_files):
         """One Filterer runs at up to three stages; one set of keys would double-count."""
@@ -178,3 +208,48 @@ class TestFilterStepReportsWhatItDropped:
         assert recorder.attributes["filter.downloaded.received"] == 2
         assert recorder.attributes["filter.downloaded.retained"] == 0
         assert "filter.indexed.received" not in recorder.attributes
+
+
+class TestUncompressExtractingNothingDoesNotCrash:
+    """clean_results returns None, not [], when everything it is handed is falsy.
+
+    The download path guards for that; the uncompress path went straight from clean_results
+    into apply_filter. With a filterer configured and every archive extracting to zero
+    regular files, apply_filter's list comprehension iterated None and the run died with a
+    bare `TypeError: 'NoneType' object is not iterable` -- on the exact "everything got
+    dropped" path this change exists to name. Pre-existing on main; fixed here because the
+    call site is one of the lines this change edits.
+    """
+
+    def _pipeline(self, uncompress_output):
+        pipeline = Pipeline.__new__(Pipeline)
+        pipeline.context = ProcessorConfig(disable_parallelism=True)
+        record = {"file_data_path": "/nonexistent/a.json"}
+        pipeline.indexer_step = mock.MagicMock()
+        pipeline.downloader_step = mock.MagicMock(return_value=[record])
+        pipeline.uncompress_step = mock.MagicMock(return_value=uncompress_output)
+        pipeline.partitioner_step = mock.MagicMock()
+        pipeline.chunker_step = None
+        pipeline.embedder_step = None
+        pipeline.stager_step = None
+        pipeline.uploader_step = mock.MagicMock()
+        # A filterer IS configured: without one apply_filter returns None harmlessly and the
+        # crash never fires, which is why this went unnoticed.
+        pipeline.filter_step = mock.MagicMock(side_effect=lambda records, stage: records)
+        return pipeline, record
+
+    def test_zero_extracted_files_exits_instead_of_raising_typeerror(self, caplog):
+        pipeline, record = self._pipeline(uncompress_output=[[]])
+
+        with (
+            caplog.at_level(logging.INFO, logger="unstructured_ingest"),
+            mock.patch.object(Pipeline, "get_indices", return_value=[record]),
+        ):
+            pipeline._run()
+
+        assert pipeline.partitioner_step.call_count == 0
+        messages = [r.getMessage() for r in caplog.records]
+        assert any("after uncompressing" in m for m in messages), messages
+        # And the filter must not be blamed for a zero it did not produce.
+        assert not any("after filtering uncompressed content" in m for m in messages), messages
+        assert pipeline.filter_step.call_count == 2  # indexed + downloaded, not uncompressed
