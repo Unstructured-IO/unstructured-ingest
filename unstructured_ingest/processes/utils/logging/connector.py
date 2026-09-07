@@ -101,32 +101,55 @@ class ConnectorLoggingMixin:
         else:
             logger.debug("Connection to %s validated successfully", connector_type)
 
+    def _log_endpoint_failure(
+        self,
+        with_endpoint: str,
+        without_endpoint: str,
+        connector_type: str,
+        error: Exception,
+        endpoint: Optional[str] = None,
+    ):
+        """Shared body for the endpoint-failure log lines.
+
+        Keeps sanitization and exc_info identical across phases so the only thing that
+        differs between them is the message template.
+        """
+        if endpoint:
+            if self._should_sanitize():
+                endpoint = self._sanitizer.sanitize_url(endpoint)
+            logger.error(with_endpoint, connector_type, endpoint, error, exc_info=True)
+        else:
+            logger.error(without_endpoint, connector_type, error, exc_info=True)
+
     def log_connection_failed(
         self, connector_type: str, error: Exception, endpoint: Optional[str] = None
     ):
         """Log connection validation failure."""
-        if endpoint:
-            if self._should_sanitize():
-                sanitized_endpoint = self._sanitizer.sanitize_url(endpoint)
-                logger.error(
-                    "Failed to validate %s connection to %s: %s",
-                    connector_type,
-                    sanitized_endpoint,
-                    error,
-                    exc_info=True,
-                )
-            else:
-                logger.error(
-                    "Failed to validate %s connection to %s: %s",
-                    connector_type,
-                    endpoint,
-                    error,
-                    exc_info=True,
-                )
-        else:
-            logger.error(
-                "Failed to validate %s connection: %s", connector_type, error, exc_info=True
-            )
+        self._log_endpoint_failure(
+            with_endpoint="Failed to validate %s connection to %s: %s",
+            without_endpoint="Failed to validate %s connection: %s",
+            connector_type=connector_type,
+            error=error,
+            endpoint=endpoint,
+        )
+
+    def log_listing_failed(
+        self, connector_type: str, error: Exception, endpoint: Optional[str] = None
+    ):
+        """Log a failure to list a source's contents.
+
+        Worded differently from log_connection_failed on purpose. Both fire for the same
+        connector against the same endpoint, one during precheck and one during the job,
+        so anything keyed on the message string alone (log search, an alert, a dashboard)
+        cannot tell the two phases apart if they share a template. Do not collapse them.
+        """
+        self._log_endpoint_failure(
+            with_endpoint="Failed to list %s contents at %s: %s",
+            without_endpoint="Failed to list %s contents: %s",
+            connector_type=connector_type,
+            error=error,
+            endpoint=endpoint,
+        )
 
     def log_progress(
         self, current: int, total: int, item_type: str = "items", operation: str = "Processing"
