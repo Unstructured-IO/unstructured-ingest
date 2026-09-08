@@ -9,7 +9,8 @@ from unstructured_ingest.processes.connector_registry import (
     source_registry,
 )
 
-# fsspec sources that emit a per-record version (box and sftp do not).
+# fsspec sources that emit a per-record version (box and sftp make no claim: their
+# entries stay unannotated so consumers fall back to their own defaults).
 VERSION_EMITTING_FSSPEC = ("s3", "azure", "gcs", "dropbox")
 FSSPEC_COHORT = VERSION_EMITTING_FSSPEC + ("box", "sftp")
 
@@ -19,7 +20,8 @@ def test_fsspec_source_entry_markers(connector_type):
     entry = source_registry[connector_type]
     assert entry.location_shape == LocationShape.FSSPEC_URL
     assert entry.location_identity == ("indexer_config.remote_url",)
-    assert entry.emits_record_version == (connector_type in VERSION_EMITTING_FSSPEC)
+    expected_version_claim = True if connector_type in VERSION_EMITTING_FSSPEC else None
+    assert entry.emits_record_version is expected_version_claim
 
     schema = entry.indexer_config.model_json_schema()
     assert schema["properties"]["remote_url"].get("x-runtime-eligible") is True
@@ -46,7 +48,7 @@ def test_sql_table_source_entry_markers():
         "indexer_config.table_name",
     )
     assert entry.supports_recursion is False
-    assert entry.emits_record_version is False
+    assert entry.emits_record_version is None
 
     conn = entry.connection_config.model_json_schema()
     assert conn["properties"]["database"].get("x-runtime-eligible") is True
@@ -79,7 +81,7 @@ def test_sql_table_destination_write_target_markers():
         "uploader_config.table_name",
     )
     assert entry.supports_recursion is False
-    assert entry.emits_record_version is False
+    assert entry.emits_record_version is None
 
     up = entry.uploader_config.model_json_schema()
     assert up["properties"]["table_name"].get("x-runtime-eligible") is True
@@ -163,9 +165,56 @@ def test_fsspec_url_delta_table_destination_marker():
 def test_unannotated_entry_is_unmarked():
     # A connector that sets no markers reports location_shape None so consumers
     # fall back to their own defaults rather than deriving an fsspec identity.
+    # emits_record_version is tri-state for the same reason: None means "no claim",
+    # so an unannotated connector is never mistaken for an explicit opt-out that
+    # would override a consumer's own fallback list.
     entry = SourceRegistryEntry(indexer=object, downloader=object)
     assert entry.location_shape is None
-    assert entry.emits_record_version is False
+    assert entry.emits_record_version is None
+
+
+@pytest.mark.parametrize("connector_type", ["elasticsearch", "opensearch", "slack"])
+def test_no_authoritative_version_claim(connector_type):
+    # No single connector-level bool is true for these: elasticsearch and
+    # opensearch only see _version during download (their indexers emit batch
+    # items with no per-record version), and slack's two record kinds disagree
+    # (conversation packages emit a real index-time change token, file records
+    # reuse the parent message timestamp). Their entries carry no claim rather
+    # than an authoritative bool either way.
+    assert source_registry[connector_type].emits_record_version is None
+
+
+def test_version_claims_are_exactly_the_verified_set():
+    # Snapshot of every explicit emits_record_version claim in both registries.
+    # The original false claims arrived in one mechanical batch commit that no
+    # test caught; set equality forces every future claim change through a
+    # conscious edit here.
+    source_true = {
+        name for name, entry in source_registry.items() if entry.emits_record_version is True
+    }
+    assert source_true == {
+        "azure",
+        "confluence",
+        "dropbox",
+        "gcs",
+        "google_drive",
+        "onedrive",
+        "outlook",
+        "s3",
+        "salesforce",
+        "sharepoint",
+    }
+    # No entry anywhere claims an explicit False, and no destination entry makes
+    # any claim: an explicit False would authoritatively override consumers that
+    # vouch for a different implementation under the same subtype.
+    assert [
+        name for name, entry in source_registry.items() if entry.emits_record_version is False
+    ] == []
+    assert [
+        name
+        for name, entry in destination_registry.items()
+        if entry.emits_record_version is not None
+    ] == []
 
 
 def test_opensearch_dual_role_location_identity():
@@ -254,7 +303,7 @@ def test_unannotated_entries_are_ignored(registry, default_identity):
         # rather than location_shape would wrongly treat these as fsspec targets.
         assert entry.location_identity == default_identity, f"{name}: unexpected identity"
         assert entry.supports_recursion is True, f"{name}: recursion should stay default"
-        assert entry.emits_record_version is False, f"{name}: version should stay default"
+        assert entry.emits_record_version is None, f"{name}: version should stay unclaimed"
         for section in ("connection_config", "indexer_config", "uploader_config"):
             config = getattr(entry, section, None)
             if config is not None and _eligible(config):

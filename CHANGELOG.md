@@ -1,3 +1,9 @@
+## [1.11.11]
+
+### Fixes
+
+- **fix(registry): make `emits_record_version` a tri-state capability marker.** The registry defaulted the marker to a real `False`, so a connector that never considered record versions was indistinguishable from one that deliberately opted out, and a downstream consumer that treats an explicit bool as authoritative overrides its own fallback list with an unreviewed default the moment the field exists in the installed package. The field now defaults to `None`, meaning "no claim": consumers fall back to their own defaults exactly as they already do for the other unannotated capability markers, while an explicit `True`/`False` stays authoritative. Three entries whose mechanically-set `True` from the original capability-marker batch does not hold drop the claim rather than keep a false one: elasticsearch and opensearch only learn a document's `_version` at download time (their indexers emit batch items with no per-record version), and slack's two record kinds disagree: conversation packages emit a real index-time change token, but file records reuse the parent message timestamp, so no single connector-level claim is true. Entries whose indexers verifiably populate a per-record change value (s3, azure, gcs, dropbox, google_drive, onedrive, sharepoint, salesforce, confluence, outlook) keep their explicit `True`; outlook's emitted value itself is made real in a sibling change.
+
 ## [1.11.10]
 
 ### Fixes

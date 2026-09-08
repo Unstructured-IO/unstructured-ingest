@@ -664,6 +664,5 @@ slack_source_entry = SourceRegistryEntry(
     connection_config=SlackConnectionConfig,
     location_shape=LocationShape.API_FOLDER,
     location_identity=("indexer_config.channels",),
-    emits_record_version=True,
     supports_recursion=False,
 )
