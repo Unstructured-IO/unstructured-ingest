@@ -501,7 +501,8 @@ class SftpUploader(FsspecUploader):
             raise self.wrap_error(e=e)
 
 
-# sftp does not emit a per-record version, so emits_record_version stays False.
+# sftp makes no claim: emits_record_version stays unset (None), so consumers fall
+# back to their own defaults rather than reading an authoritative opt-out.
 sftp_source_entry = SourceRegistryEntry(
     indexer=SftpIndexer,
     indexer_config=SftpIndexerConfig,

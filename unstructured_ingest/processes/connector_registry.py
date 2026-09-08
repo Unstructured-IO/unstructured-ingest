@@ -56,6 +56,8 @@ class SourceRegistryEntry(RegistryEntry):
 
     # Ordered reshaped-settings dot-paths that identify the targeted location.
     location_identity: tuple[str, ...] = field(default=("indexer_config.remote_url",), kw_only=True)
+    # Tri-state: None = no claim, consumers fall back to their own defaults;
+    # an explicit bool is authoritative and overrides those defaults.
     emits_record_version: Optional[bool] = field(default=None, kw_only=True)
 
 
@@ -82,6 +84,8 @@ class DestinationRegistryEntry(RegistryEntry):
     location_identity: tuple[str, ...] = field(
         default=("uploader_config.remote_url",), kw_only=True
     )
+    # Tri-state: None = no claim, consumers fall back to their own defaults;
+    # an explicit bool is authoritative and overrides those defaults.
     emits_record_version: Optional[bool] = field(default=None, kw_only=True)
 
 

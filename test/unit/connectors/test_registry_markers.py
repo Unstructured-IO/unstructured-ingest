@@ -174,12 +174,47 @@ def test_unannotated_entry_is_unmarked():
 
 
 @pytest.mark.parametrize("connector_type", ["elasticsearch", "opensearch", "slack"])
-def test_download_time_version_sources_make_no_claim(connector_type):
-    # These indexers do not emit a per-record version at index time (elasticsearch
-    # and opensearch only see _version during download; slack file records reuse
-    # the parent message timestamp), so their entries carry no claim rather than
-    # an authoritative bool either way.
+def test_no_authoritative_version_claim(connector_type):
+    # No single connector-level bool is true for these: elasticsearch and
+    # opensearch only see _version during download (their indexers emit batch
+    # items with no per-record version), and slack's two record kinds disagree
+    # (conversation packages emit a real index-time change token, file records
+    # reuse the parent message timestamp). Their entries carry no claim rather
+    # than an authoritative bool either way.
     assert source_registry[connector_type].emits_record_version is None
+
+
+def test_version_claims_are_exactly_the_verified_set():
+    # Snapshot of every explicit emits_record_version claim in both registries.
+    # The original false claims arrived in one mechanical batch commit that no
+    # test caught; set equality forces every future claim change through a
+    # conscious edit here.
+    source_true = {
+        name for name, entry in source_registry.items() if entry.emits_record_version is True
+    }
+    assert source_true == {
+        "azure",
+        "confluence",
+        "dropbox",
+        "gcs",
+        "google_drive",
+        "onedrive",
+        "outlook",
+        "s3",
+        "salesforce",
+        "sharepoint",
+    }
+    # No entry anywhere claims an explicit False, and no destination entry makes
+    # any claim: an explicit False would authoritatively override consumers that
+    # vouch for a different implementation under the same subtype.
+    assert [
+        name for name, entry in source_registry.items() if entry.emits_record_version is False
+    ] == []
+    assert [
+        name
+        for name, entry in destination_registry.items()
+        if entry.emits_record_version is not None
+    ] == []
 
 
 def test_opensearch_dual_role_location_identity():
