@@ -1,3 +1,4 @@
+import hashlib
 from datetime import datetime, timezone
 from typing import Optional
 from unittest.mock import MagicMock, Mock, patch
@@ -138,6 +139,30 @@ class TestMessageToFileDataVersion:
         file_data = indexer._message_to_file_data(message)
 
         assert file_data.metadata.version is None
+
+
+class TestMessageToFileDataIdentity:
+    """The message id must reach every identity field unmodified.
+
+    FileData.identifier keys incremental record identity downstream, the
+    record_locator's message_id is how the downloader re-fetches the message,
+    and the download filename is derived from the id. Any normalization,
+    hashing, or re-derivation of the id here silently re-keys entire
+    mailboxes, which is exactly the failure mode immutable ids exist to
+    prevent.
+    """
+
+    def test_identity_fields_pass_through_message_id(self):
+        indexer = _make_indexer()
+        message = _make_message(message_id="msg-identity-1")
+
+        file_data = indexer._message_to_file_data(message)
+
+        assert file_data.identifier == "msg-identity-1"
+        assert file_data.metadata.record_locator["message_id"] == "msg-identity-1"
+        expected_name = hashlib.sha256(b"msg-identity-1").hexdigest()[:16] + ".eml"
+        assert file_data.source_identifiers.fullpath == expected_name
+        assert file_data.source_identifiers.filename == expected_name
 
 
 class TestChangeKeyRawPropertyLookup:

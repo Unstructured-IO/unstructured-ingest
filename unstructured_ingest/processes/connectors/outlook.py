@@ -173,11 +173,12 @@ class OutlookConnectionConfig(ConnectionConfig):
 
         client = GraphClient(self._acquire_token)
         # Registered directly on the pending request's event handler rather
-        # than via client.before_execute(): that context-level helper no-ops
-        # on a fresh client (office365-rest-python-client 3.0.0 early-returns
-        # when no query has been queued yet) and, once a query exists, scopes
-        # the hook to that single query's id, so it would never ride get_all()
-        # pagination continuations.
+        # than via client.before_execute(): on the pinned 2.6.2 that
+        # context-level helper defaults to once=True, unregistering after the
+        # first request, and on 3.0.0 it additionally no-ops on a fresh client
+        # (early-returns when no query has been queued yet) and scopes the hook
+        # to the last queued query's id. Registering here rides every request,
+        # including get_all() pagination continuations, on both versions.
         client.pending_request().beforeExecute += _prefer_immutable_ids
         return client
 
