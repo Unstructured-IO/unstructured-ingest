@@ -1,3 +1,4 @@
+import hashlib
 from datetime import datetime, timezone
 from typing import Optional
 from unittest.mock import MagicMock, Mock, patch
@@ -13,6 +14,7 @@ from unstructured_ingest.processes.connectors.outlook import (
     OutlookConnectionConfig,
     OutlookIndexer,
     OutlookIndexerConfig,
+    _prefer_immutable_ids,
 )
 
 
@@ -137,6 +139,30 @@ class TestMessageToFileDataVersion:
         file_data = indexer._message_to_file_data(message)
 
         assert file_data.metadata.version is None
+
+
+class TestMessageToFileDataIdentity:
+    """The message id must reach every identity field unmodified.
+
+    FileData.identifier keys incremental record identity downstream, the
+    record_locator's message_id is how the downloader re-fetches the message,
+    and the download filename is derived from the id. Any normalization,
+    hashing, or re-derivation of the id here silently re-keys entire
+    mailboxes, which is exactly the failure mode immutable ids exist to
+    prevent.
+    """
+
+    def test_identity_fields_pass_through_message_id(self):
+        indexer = _make_indexer()
+        message = _make_message(message_id="msg-identity-1")
+
+        file_data = indexer._message_to_file_data(message)
+
+        assert file_data.identifier == "msg-identity-1"
+        assert file_data.metadata.record_locator["message_id"] == "msg-identity-1"
+        expected_name = hashlib.sha256(b"msg-identity-1").hexdigest()[:16] + ".eml"
+        assert file_data.source_identifiers.fullpath == expected_name
+        assert file_data.source_identifiers.filename == expected_name
 
 
 class TestChangeKeyRawPropertyLookup:
@@ -352,3 +378,53 @@ class TestMessagesPageSizeConstant:
         # that only asserts get_all() was called with page_size=MESSAGES_PAGE_SIZE
         # would pass even if the constant itself were 0 or 100_000).
         assert 1 <= MESSAGES_PAGE_SIZE <= 1000
+
+
+class TestPreferImmutableIdsHeader:
+    """`Prefer: IdType="ImmutableId"` keeps message ids stable across folder moves.
+
+    Without it, Outlook/Exchange can rotate a message's id when the message is
+    moved between folders, breaking downstream record identity that keys off
+    FileData.identifier.
+    """
+
+    def test_hook_sets_header_on_request(self):
+        try:
+            from office365.runtime.http.request_options import RequestOptions
+        except ImportError:
+            pytest.skip("office365-rest-python-client not installed")
+
+        request = RequestOptions("https://graph.microsoft.com/v1.0/me/messages")
+        _prefer_immutable_ids(request)
+
+        assert request.headers["Prefer"] == 'IdType="ImmutableId"'
+
+    def test_get_client_registers_hook_that_fires_on_every_request(self):
+        # Fires the SDK's own dispatch path directly (ClientRuntimeContext.build_request
+        # calls exactly this: pending_request().beforeExecute.notify(request)) rather than
+        # asserting on a mocked call signature, so e.g. a rename of the `once` kwarg would
+        # be caught here instead of silently passing an unspecced mock assertion.
+        try:
+            from office365.runtime.http.request_options import RequestOptions
+        except ImportError:
+            pytest.skip("office365-rest-python-client not installed")
+
+        config = OutlookConnectionConfig(
+            access_config=Secret(OutlookAccessConfig(oauth_token="ey.access.token")),
+        )
+        client = config.get_client()
+
+        initial_request = RequestOptions(
+            "https://graph.microsoft.com/v1.0/users/alice/mailFolders/inbox/messages"
+        )
+        client.pending_request().beforeExecute.notify(initial_request)
+        assert initial_request.headers["Prefer"] == 'IdType="ImmutableId"'
+
+        # The hook must still be registered on the same pending_request() for a
+        # get_all() pagination continuation, not just the first request.
+        continuation_request = RequestOptions(
+            "https://graph.microsoft.com/v1.0/users/alice/mailFolders/inbox/messages"
+            "?$skiptoken=abc123"
+        )
+        client.pending_request().beforeExecute.notify(continuation_request)
+        assert continuation_request.headers["Prefer"] == 'IdType="ImmutableId"'

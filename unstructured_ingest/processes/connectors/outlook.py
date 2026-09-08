@@ -60,9 +60,20 @@ if TYPE_CHECKING:
     from office365.graph_client import GraphClient
     from office365.outlook.mail.folders.folder import MailFolder
     from office365.outlook.mail.messages.message import Message
+    from office365.runtime.http.request_options import RequestOptions
 
 
 CONNECTOR_TYPE = "outlook"
+
+
+def _prefer_immutable_ids(request: "RequestOptions") -> None:
+    """Ask Graph to return immutable ids for mail resources.
+
+    Without this header, Outlook/Exchange can rotate a message's id when the
+    message is moved between folders, breaking downstream record identity
+    that keys off FileData.identifier.
+    """
+    request.set_header("Prefer", 'IdType="ImmutableId"')
 
 
 class OutlookAccessConfig(AccessConfig):
@@ -160,7 +171,16 @@ class OutlookConnectionConfig(ConnectionConfig):
     def get_client(self) -> "GraphClient":
         from office365.graph_client import GraphClient
 
-        return GraphClient(self._acquire_token)
+        client = GraphClient(self._acquire_token)
+        # Registered directly on the pending request's event handler rather
+        # than via client.before_execute(): on the pinned 2.6.2 that
+        # context-level helper defaults to once=True, unregistering after the
+        # first request, and on 3.0.0 it additionally no-ops on a fresh client
+        # (early-returns when no query has been queued yet) and scopes the hook
+        # to the last queued query's id. Registering here rides every request,
+        # including get_all() pagination continuations, on both versions.
+        client.pending_request().beforeExecute += _prefer_immutable_ids
+        return client
 
 
 class OutlookIndexerConfig(IndexerConfig):
