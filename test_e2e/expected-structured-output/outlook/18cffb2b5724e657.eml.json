@@ -1,0 +1,29 @@
+[
+  {
+    "type": "NarrativeText",
+    "element_id": "8ccfd4b946214719f042f347add49cef",
+    "text": "This message exists to be flagged, marked read, and categorized after creation.",
+    "metadata": {
+      "languages": [
+        "eng"
+      ],
+      "filename": "18cffb2b5724e657.eml",
+      "filetype": "message/rfc822",
+      "email_message_id": "LV3P223MB0913410D8575B1EC6D20A31CF9B72@LV3P223MB0913.NAMP223.PROD.OUTLOOK.COM",
+      "subject": "[unstructured-ingest fixture] mutable state placeholder",
+      "data_source": {
+        "url": "https://graph.microsoft.com/v1.0/users/devops@unstructuredio.onmicrosoft.com/mailFolders/AAMkAGE2MmEwNzFlLWVjYzAtNDNhZS04ZGM1LTFjYmMzZDhiMmI0MAAuAAAAAADc1MfJYetSQ6QZntYrI9k4AQDZYn-lfnvLSqIcW-YsN8ebAAMD3KUhAAA=/messages/AAkALgAAAAAAHYQDEapmEc2byACqAC-EWg0A2WJ-5X57y0qiHFv2LDfHmwADBWDewgAA",
+        "version": "CQAAABYAAADZYn/lfnvLSqIcW/YsN8ebAAMK3Cb6",
+        "record_locator": {
+          "message_id": "AAkALgAAAAAAHYQDEapmEc2byACqAC-EWg0A2WJ-5X57y0qiHFv2LDfHmwADBWDewgAA",
+          "user_email": "devops@unstructuredio.onmicrosoft.com"
+        },
+        "date_created": "1788345410.0",
+        "date_modified": "1788945111.0",
+        "permissions_data": null,
+        "permissions_version": null,
+        "filesize_bytes": 620
+      }
+    }
+  }
+]

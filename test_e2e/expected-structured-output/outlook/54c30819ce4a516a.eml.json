@@ -1,0 +1,83 @@
+[
+  {
+    "type": "NarrativeText",
+    "element_id": "f143094af3e9d48836ac31667f95ac1e",
+    "text": "Following up on the note below.",
+    "metadata": {
+      "languages": [
+        "eng"
+      ],
+      "filename": "54c30819ce4a516a.eml",
+      "filetype": "message/rfc822",
+      "email_message_id": "LV3P223MB09133B9D10DD3E76EC00A9D6F9B72@LV3P223MB0913.NAMP223.PROD.OUTLOOK.COM",
+      "subject": "[unstructured-ingest fixture] re: placeholder thread",
+      "data_source": {
+        "url": "https://graph.microsoft.com/v1.0/users/devops@unstructuredio.onmicrosoft.com/mailFolders/AAMkAGE2MmEwNzFlLWVjYzAtNDNhZS04ZGM1LTFjYmMzZDhiMmI0MAAuAAAAAADc1MfJYetSQ6QZntYrI9k4AQDZYn-lfnvLSqIcW-YsN8ebAAMD3KUhAAA=/messages/AAkALgAAAAAAHYQDEapmEc2byACqAC-EWg0A2WJ-5X57y0qiHFv2LDfHmwADBWDa0gAA",
+        "version": "CQAAABYAAADZYn/lfnvLSqIcW/YsN8ebAAMFGvh6",
+        "record_locator": {
+          "message_id": "AAkALgAAAAAAHYQDEapmEc2byACqAC-EWg0A2WJ-5X57y0qiHFv2LDfHmwADBWDa0gAA",
+          "user_email": "devops@unstructuredio.onmicrosoft.com"
+        },
+        "date_created": "1788345404.0",
+        "date_modified": "1788345405.0",
+        "permissions_data": null,
+        "permissions_version": null,
+        "filesize_bytes": 1588
+      }
+    }
+  },
+  {
+    "type": "UncategorizedText",
+    "element_id": "1fb2161442e9628b82966218708a7a54",
+    "text": "On Mon, Jan 1, 2001, Fixture Sender <fixture-sender@example.com> wrote:",
+    "metadata": {
+      "languages": [
+        "eng"
+      ],
+      "filename": "54c30819ce4a516a.eml",
+      "filetype": "message/rfc822",
+      "email_message_id": "LV3P223MB09133B9D10DD3E76EC00A9D6F9B72@LV3P223MB0913.NAMP223.PROD.OUTLOOK.COM",
+      "subject": "[unstructured-ingest fixture] re: placeholder thread",
+      "data_source": {
+        "url": "https://graph.microsoft.com/v1.0/users/devops@unstructuredio.onmicrosoft.com/mailFolders/AAMkAGE2MmEwNzFlLWVjYzAtNDNhZS04ZGM1LTFjYmMzZDhiMmI0MAAuAAAAAADc1MfJYetSQ6QZntYrI9k4AQDZYn-lfnvLSqIcW-YsN8ebAAMD3KUhAAA=/messages/AAkALgAAAAAAHYQDEapmEc2byACqAC-EWg0A2WJ-5X57y0qiHFv2LDfHmwADBWDa0gAA",
+        "version": "CQAAABYAAADZYn/lfnvLSqIcW/YsN8ebAAMFGvh6",
+        "record_locator": {
+          "message_id": "AAkALgAAAAAAHYQDEapmEc2byACqAC-EWg0A2WJ-5X57y0qiHFv2LDfHmwADBWDa0gAA",
+          "user_email": "devops@unstructuredio.onmicrosoft.com"
+        },
+        "date_created": "1788345404.0",
+        "date_modified": "1788345405.0",
+        "permissions_data": null,
+        "permissions_version": null,
+        "filesize_bytes": 1588
+      }
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "7d597ffa29fe427a5179499c47a4ff70",
+    "text": "> This is the quoted portion of an earlier message, embedded directly in the body text<br>> rather than represented through Graph's reply/forward relationship.",
+    "metadata": {
+      "languages": [
+        "eng"
+      ],
+      "filename": "54c30819ce4a516a.eml",
+      "filetype": "message/rfc822",
+      "email_message_id": "LV3P223MB09133B9D10DD3E76EC00A9D6F9B72@LV3P223MB0913.NAMP223.PROD.OUTLOOK.COM",
+      "subject": "[unstructured-ingest fixture] re: placeholder thread",
+      "data_source": {
+        "url": "https://graph.microsoft.com/v1.0/users/devops@unstructuredio.onmicrosoft.com/mailFolders/AAMkAGE2MmEwNzFlLWVjYzAtNDNhZS04ZGM1LTFjYmMzZDhiMmI0MAAuAAAAAADc1MfJYetSQ6QZntYrI9k4AQDZYn-lfnvLSqIcW-YsN8ebAAMD3KUhAAA=/messages/AAkALgAAAAAAHYQDEapmEc2byACqAC-EWg0A2WJ-5X57y0qiHFv2LDfHmwADBWDa0gAA",
+        "version": "CQAAABYAAADZYn/lfnvLSqIcW/YsN8ebAAMFGvh6",
+        "record_locator": {
+          "message_id": "AAkALgAAAAAAHYQDEapmEc2byACqAC-EWg0A2WJ-5X57y0qiHFv2LDfHmwADBWDa0gAA",
+          "user_email": "devops@unstructuredio.onmicrosoft.com"
+        },
+        "date_created": "1788345404.0",
+        "date_modified": "1788345405.0",
+        "permissions_data": null,
+        "permissions_version": null,
+        "filesize_bytes": 1588
+      }
+    }
+  }
+]
