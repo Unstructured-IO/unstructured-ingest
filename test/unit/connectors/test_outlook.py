@@ -1353,6 +1353,27 @@ class TestDownloaderQuotedHistoryRequest:
         assert download_path.read_bytes() == raw
         assert [path.name for path in tmp_path.iterdir()] == ["msg-1.eml"]
 
+    def test_cleanup_failure_after_a_staging_failure_does_not_fail_the_record(self, tmp_path: Path):
+        raw = HTML_AND_PLAIN_WITH_IMAGE_ATTACHMENT.read_bytes()
+        downloader = self._downloader(exclude_quoted_history=True)
+        client, _ = self._client_writing(raw, UNIQUE_HTML)
+        download_path = tmp_path / "msg-1.eml"
+
+        def fail_write(self, *args, **kwargs):
+            raise OSError("no space left on device")
+
+        def fail_cleanup(self, *args, **kwargs):
+            raise PermissionError("cannot remove staging file")
+
+        with (
+            patch.object(OutlookConnectionConfig, "get_client", return_value=client),
+            patch.object(Path, "write_bytes", fail_write),
+            patch.object(Path, "unlink", fail_cleanup),
+        ):
+            downloader._download_message(self._file_data(), download_path)
+
+        assert download_path.read_bytes() == raw
+
 
 class TestReduceMessageBodyKeepsBodyPartHeaders:
     """set_content clears every Content-* header on the part it rewrites.

@@ -4,6 +4,7 @@ import hashlib
 import html
 import re
 import time
+from contextlib import suppress
 from dataclasses import dataclass, field
 from datetime import timezone
 from email.message import EmailMessage
@@ -655,7 +656,8 @@ class OutlookDownloader(Downloader):
                 f"keeping the full body including any quoted history: {safe_error_summary(e)}"
             )
         finally:
-            staged.unlink(missing_ok=True)
+            with suppress(OSError):
+                staged.unlink(missing_ok=True)
 
     @requires_dependencies(["office365"], extras="outlook")
     def _fetch_unique_body(
