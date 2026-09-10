@@ -7,7 +7,7 @@ import time
 from dataclasses import dataclass, field
 from datetime import timezone
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable, Coroutine, Generator, Optional
+from typing import TYPE_CHECKING, Any, Callable, Coroutine, Generator, NamedTuple, Optional
 
 from pydantic import Field, Secret, model_validator
 
@@ -66,15 +66,19 @@ MESSAGE_SELECT_FIELDS = [
 UNIQUE_BODY_FIELD = "uniqueBody"
 
 # The order unstructured's email partitioner uses to choose which body
-# rendering to extract, so the part replaced here is the part extracted
-# downstream. Keep in step with partition_email's own preference.
+# rendering to extract, so the part replaced here is the part it extracts. The
+# partitioner can be told to prefer plain text instead, which is why the other
+# renderings are removed rather than left: one surviving body part is read
+# whichever order the partitioner asks for.
 BODY_PART_PREFERENCE = ("html", "plain")
 
 # refold_source="none" leaves source headers byte-for-byte as they arrived.
 # The default policy refolds any header longer than its line limit, which
 # rewrites long headers this rebuild never intends to touch: on a real message
-# it inserted whitespace inside an Authentication-Results header.
-_MIME_POLICY = email.policy.default.clone(refold_source="none")
+# it inserted whitespace inside an Authentication-Results header. linesep keeps
+# the CRLF line endings Graph delivers, which the default policy would flatten
+# to bare newlines across the whole message.
+_MIME_POLICY = email.policy.default.clone(refold_source="none", linesep="\r\n")
 
 _MARKUP_TAG = re.compile(r"<[^>]+>")
 
@@ -84,6 +88,10 @@ _MARKUP_TAG = re.compile(r"<[^>]+>")
 # answers with its HTML default, which would then be written into a plain-text
 # part for the partitioner to extract as literal markup.
 _GRAPH_BODY_RENDERING = {"html": "html", "plain": "text"}
+
+# Rewriting the body of a signed or encrypted message would leave it claiming a
+# signature it no longer satisfies, so those are left exactly as downloaded.
+_PROTECTED_CONTENT_TYPES = ("multipart/signed", "multipart/encrypted")
 
 if TYPE_CHECKING:
     from office365.graph_client import GraphClient
@@ -136,6 +144,25 @@ def _carries_text(markup: Optional[str]) -> bool:
     return bool(html.unescape(_MARKUP_TAG.sub(" ", markup)).strip())
 
 
+class UniqueBody(NamedTuple):
+    """What Graph returns for uniqueBody: a rendering and the content itself.
+
+    The rendering is carried alongside the content because Graph is entitled to
+    ignore an unsupported Prefer header (RFC 7240) and answer in its own
+    default, and writing an HTML answer into a plain-text part would have the
+    partitioner extract literal markup.
+    """
+
+    rendering: str
+    content: str
+
+
+def _is_protected(raw: bytes) -> bool:
+    """Whether the message is signed or encrypted, so its bytes must not change."""
+    message = email.message_from_bytes(raw, policy=_MIME_POLICY)
+    return any(part.get_content_type() in _PROTECTED_CONTENT_TYPES for part in message.walk())
+
+
 def _looks_like_body_part(part: Any) -> bool:
     """Whether a MIME part is a rendering of the message body.
 
@@ -171,21 +198,63 @@ def _part_text(part: Any) -> str:
     return content if isinstance(content, str) else ""
 
 
+def _strip_superseded_renderings(part: Any, keep: Any) -> None:
+    """Remove every rendering of the outer message body except `keep`.
+
+    Descent stops at an attached message. A message carried as an attachment
+    has a body of its own, with no attachment disposition and no filename, so
+    it is indistinguishable from a rendering of the outer body; sweeping into
+    it would delete its content and gut the attachment.
+
+    A container emptied by the sweep is dropped too, rather than left as an
+    empty multipart nothing can read.
+    """
+    if not part.is_multipart():
+        return
+    children = part.get_payload()
+    if not isinstance(children, list):
+        return
+
+    kept = []
+    for child in children:
+        if child.get_content_maintype() == "message":
+            kept.append(child)
+            continue
+        if child.is_multipart():
+            _strip_superseded_renderings(child, keep)
+            grandchildren = child.get_payload()
+            if isinstance(grandchildren, list) and not grandchildren:
+                continue
+            kept.append(child)
+            continue
+        if child is not keep and _looks_like_body_part(child):
+            continue
+        kept.append(child)
+
+    if len(kept) != len(children):
+        part.set_payload(kept)
+
+
 def _reduce_message_body(raw: bytes, unique_content: Optional[str]) -> Optional[bytes]:
     """Return `raw` with its body replaced by `unique_content`, or None to decline.
 
     Only the body part a partitioner reads is rewritten. Headers, attachments
-    and inline related parts are left exactly as they arrived. Other renderings
-    of the same body are removed rather than left behind: a partitioner can be
-    told to prefer plain text, and a stale plain-text part would then restore
-    the very history this is removing.
+    and inline related parts are left exactly as they arrived. The other
+    renderings sitting beside that part are removed rather than left behind: a
+    partitioner can be told to prefer plain text, and a stale plain-text
+    sibling would then restore the very history this is removing.
+
+    Removal stops at an attached message, which has a body of its own that
+    must survive; see _strip_superseded_renderings.
 
     None means the message should be kept as downloaded, which happens when
-    the message has no body part to replace, or when `unique_content` carries
-    no text. An empty body legitimately yields an empty uniqueBody, so
-    declining is the correct outcome rather than an error.
+    the message has no body part to replace, when it is signed or encrypted, or
+    when `unique_content` carries no text. An empty body legitimately yields an
+    empty uniqueBody, so declining is the correct outcome rather than an error.
     """
     if not _carries_text(unique_content):
+        return None
+    if _is_protected(raw):
         return None
 
     message = email.message_from_bytes(raw, policy=_MIME_POLICY)
@@ -195,20 +264,7 @@ def _reduce_message_body(raw: bytes, unique_content: Optional[str]) -> Optional[
 
     body.set_content(unique_content, subtype=body.get_content_subtype(), charset="utf-8")
 
-    superseded = {
-        id(part)
-        for part in message.walk()
-        if part is not body and not part.is_multipart() and _looks_like_body_part(part)
-    }
-    if superseded:
-        containers = [part for part in message.walk() if part.is_multipart()]
-        for container in containers:
-            children = container.get_payload()
-            if not isinstance(children, list):
-                continue
-            kept = [child for child in children if id(child) not in superseded]
-            if len(kept) != len(children):
-                container.set_payload(kept)
+    _strip_superseded_renderings(message, body)
 
     return message.as_bytes(policy=_MIME_POLICY)
 
@@ -456,9 +512,12 @@ class OutlookDownloaderConfig(DownloaderConfig):
         default=False,
         description="Keep only the text unique to each message, dropping the quoted history of "
         "earlier messages in the same conversation. Headers and attachments are unchanged. Costs "
-        "one extra Graph request per downloaded message. Note that a forwarded message is treated "
-        "like a reply, so it keeps only the comment the sender added and not the text they "
-        "forwarded.",
+        "one extra Graph request per downloaded message. Graph decides what counts as unique, "
+        "with three consequences worth knowing: a forwarded message keeps only the comment its "
+        "sender added and not the text they forwarded; a reply typed inside the quoted block "
+        "rather than above it can lose that text; and where a message carries both an HTML and a "
+        "plain-text body, the HTML one is kept. Turning this on does not rewrite messages already "
+        "downloaded, since their record version has not changed.",
     )
 
 
@@ -526,12 +585,27 @@ class OutlookDownloader(Downloader):
                 f"Message {message_id} has no body part to reduce, keeping it as downloaded."
             )
             return
+        if _is_protected(raw):
+            logger.info(f"Message {message_id} is signed or encrypted, keeping it as downloaded.")
+            return
 
-        unique_content = self._fetch_unique_body(
-            client, user_email, message_id, body.get_content_subtype()
-        )
-        reduced = _reduce_message_body(raw, unique_content)
-        if reduced is None:
+        mime_subtype = body.get_content_subtype()
+        try:
+            unique = self._fetch_unique_body(client, user_email, message_id, mime_subtype)
+        except Exception:
+            # The full message is already on disk and perfectly usable, so a
+            # throttled or failed extra request must not fail the record.
+            logger.warning(
+                f"Could not read the unique body of message {message_id}, "
+                "keeping the full body including any quoted history.",
+                exc_info=True,
+            )
+            return
+
+        # Nothing to write is settled before the rendering is judged: an empty
+        # answer is the expected reply for an empty body whatever rendering it
+        # comes back in.
+        if unique is None or not _carries_text(unique.content):
             if _carries_text(_part_text(body)):
                 # Graph had text to reduce and gave nothing back, so the record
                 # keeps duplicated history it was meant to lose.
@@ -545,12 +619,35 @@ class OutlookDownloader(Downloader):
                 logger.info(f"Message {message_id} has an empty body, keeping it as downloaded.")
             return
 
-        download_path.write_bytes(reduced)
+        expected = _GRAPH_BODY_RENDERING[mime_subtype]
+        if unique.rendering and unique.rendering != expected:
+            # Graph may ignore an unsupported Prefer header and answer in its
+            # own default. Writing that into the wrong part would have the
+            # partitioner extract literal markup.
+            logger.warning(
+                f"Graph answered with a {unique.rendering} unique body for message "
+                f"{message_id} where {expected} was requested, keeping the full body."
+            )
+            return
+
+        reduced = _reduce_message_body(raw, unique.content)
+        if reduced is None:
+            logger.warning(
+                f"The unique body of message {message_id} could not replace its body, "
+                "keeping the full body including any quoted history."
+            )
+            return
+
+        # Written beside the target then moved into place, so a failure part way
+        # through cannot leave a truncated message for a later run to reuse.
+        staged = download_path.with_name(download_path.name + ".reduced")
+        staged.write_bytes(reduced)
+        staged.replace(download_path)
 
     @requires_dependencies(["office365"], extras="outlook")
     def _fetch_unique_body(
         self, client: "GraphClient", user_email: str, message_id: str, mime_subtype: str
-    ) -> Optional[str]:
+    ) -> Optional[UniqueBody]:
         """Read uniqueBody for one message, rendered to match its body part.
 
         Reuses the client the download already built, so this costs one request
@@ -561,13 +658,24 @@ class OutlookDownloader(Downloader):
         office365 client declares no typed accessor for uniqueBody, the same way
         the indexer reads changeKey.
         """
-        client.pending_request().beforeExecute += _prefer_body_rendering(mime_subtype)
-        message = client.users[user_email].messages[message_id]
-        message.select(["id", UNIQUE_BODY_FIELD]).get()
-        client.execute_query()
+        # Removed again afterwards: the hook appends to Prefer, so one left
+        # registered would stack another preference onto every later request if
+        # a caller ever reused the client across messages.
+        prefer = _prefer_body_rendering(mime_subtype)
+        client.pending_request().beforeExecute += prefer
+        try:
+            message = client.users[user_email].messages[message_id]
+            message.select(["id", UNIQUE_BODY_FIELD]).get()
+            client.execute_query()
+        finally:
+            client.pending_request().beforeExecute -= prefer
 
         value = message.get_property(UNIQUE_BODY_FIELD)
-        return value.get("content") if isinstance(value, dict) else None
+        if not isinstance(value, dict):
+            return None
+        return UniqueBody(
+            rendering=value.get("contentType") or "", content=value.get("content") or ""
+        )
 
 
 outlook_source_entry = SourceRegistryEntry(

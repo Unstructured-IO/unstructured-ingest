@@ -2,7 +2,9 @@ import email
 import email.policy
 import hashlib
 import logging
+import re
 from datetime import datetime, timezone
+from email.message import EmailMessage
 from pathlib import Path
 from typing import Optional
 from unittest.mock import MagicMock, Mock, patch
@@ -467,6 +469,17 @@ UNIQUE_HTML = "<html><body><p>Only the newest sentence.</p></body></html>"
 
 PREFER_BODY_RENDERING = "unstructured_ingest.processes.connectors.outlook._prefer_body_rendering"
 
+# Must survive inside an attached message rather than being mistaken for a
+# superseded rendering of the outer body.
+NESTED_SENTINEL = "THE ATTACHED MESSAGE BODY MUST SURVIVE"
+
+SIGNED_MESSAGE = (
+    b'Content-Type: multipart/signed; protocol="application/pkcs7-signature"; '
+    b'micalg=sha-256; boundary="s1"\r\nSubject: signed mail\r\n\r\n'
+    b"--s1\r\nContent-Type: text/plain\r\n\r\nThe signed body text.\r\n"
+    b"--s1\r\nContent-Type: application/pkcs7-signature\r\n\r\nc2lnbmF0dXJl\r\n--s1--\r\n"
+)
+
 # A single-part message: the body part is the message itself, so the surgery
 # rewrites top-level headers rather than a child part's.
 SINGLE_PART_PLAIN = (
@@ -634,17 +647,141 @@ class TestReduceMessageBody:
     def test_the_original_body_text_is_gone(self, fixture: Path):
         raw = fixture.read_bytes()
         original_body = _parse(raw).get_body(preferencelist=BODY_PART_PREFERENCE)
-        sentences = [
-            line.strip()
-            for line in original_body.get_content().splitlines()
-            if len(line.strip()) > 25 and "<" not in line
+        # Markup is stripped rather than used to skip lines: skipping any line
+        # containing a tag leaves nothing to assert on an HTML body.
+        words = [
+            word
+            for word in re.sub(r"<[^>]+>", " ", original_body.get_content()).split()
+            if len(word) > 8 and word.isalpha()
         ]
+        assert words, "fixture body has no distinctive words to check"
 
         reduced = _reduce_message_body(raw, UNIQUE_HTML)
 
         rebuilt_text = _parse(reduced).get_body(preferencelist=BODY_PART_PREFERENCE).get_content()
-        for sentence in sentences:
-            assert sentence not in rebuilt_text
+        for word in words:
+            assert word not in rebuilt_text
+
+
+class TestReduceMessageBodyLeavesNestedMessagesAlone:
+    """An attached message has a body of its own, and it must survive.
+
+    Forwarding mail as an attachment is ordinary Outlook behaviour, and the
+    attached message's body carries no attachment disposition and no filename,
+    so it looks exactly like a superseded rendering of the outer body. Removing
+    body parts anywhere but the outer body's own container guts the attachment.
+    """
+
+    def _message_with_an_attached_message(self) -> bytes:
+        outer = EmailMessage()
+        outer["Subject"] = "please see the attached mail"
+        outer["From"] = "sender@example.com"
+        outer.set_content("outer plain body")
+        outer.add_alternative("<p>outer html body</p>", subtype="html")
+
+        attached = EmailMessage()
+        attached["Subject"] = "the forwarded message"
+        attached["From"] = "original@example.com"
+        attached.set_content(NESTED_SENTINEL)
+
+        # add_attachment of a message object yields a message/rfc822 part,
+        # which is the shape Outlook produces for mail forwarded as a file.
+        outer.add_attachment(attached)
+        assert any(
+            part.get_content_type() == "message/rfc822" for part in _parse(outer.as_bytes()).walk()
+        )
+        return outer.as_bytes()
+
+    def test_the_attached_message_body_survives(self):
+        raw = self._message_with_an_attached_message()
+
+        reduced = _reduce_message_body(raw, UNIQUE_HTML)
+
+        assert reduced is not None
+        assert NESTED_SENTINEL in reduced.decode("utf-8", "replace")
+
+    def test_only_the_outer_bodys_own_rendering_is_removed(self):
+        raw = self._message_with_an_attached_message()
+
+        reduced = _reduce_message_body(raw, UNIQUE_HTML)
+
+        before = len(_leaves(_parse(raw)))
+        after = len(_leaves(_parse(reduced)))
+        assert after == before - 1
+
+    def test_the_outer_body_is_still_replaced(self):
+        raw = self._message_with_an_attached_message()
+
+        reduced = _reduce_message_body(raw, UNIQUE_HTML)
+
+        body = _parse(reduced).get_body(preferencelist=BODY_PART_PREFERENCE)
+        assert "Only the newest sentence." in body.get_content()
+        assert "outer plain body" not in reduced.decode("utf-8", "replace")
+
+
+class TestReduceMessageBodySweepsNestedContainers:
+    """The superseded rendering can sit in a different container.
+
+    A message whose HTML body lives in a related group alongside its images,
+    with the plain-text rendering in a sibling alternative group, is ordinary
+    mail. Sweeping only the body part's own container would leave that plain
+    rendering, quoted history and all, for a plain-preferring partitioner to
+    read, and the setting would silently do nothing.
+    """
+
+    def _nested(self) -> bytes:
+        raw = (
+            b'Content-Type: multipart/mixed; boundary="mix"\r\n'
+            b"Subject: nested renderings\r\n\r\n"
+            b'--mix\r\nContent-Type: multipart/alternative; boundary="alt"\r\n\r\n'
+            b"--alt\r\nContent-Type: text/plain\r\n\r\n"
+            b"PLAINRENDERING with the whole quoted history.\r\n"
+            b"--alt--\r\n"
+            b'--mix\r\nContent-Type: multipart/related; boundary="rel"\r\n\r\n'
+            b"--rel\r\nContent-Type: text/html\r\n\r\n"
+            b"<p>HTMLRENDERING with the whole quoted history.</p>\r\n"
+            b"--rel\r\nContent-Type: image/png\r\nContent-ID: <img1>\r\n\r\n"
+            b"cG5nYnl0ZXM=\r\n--rel--\r\n--mix--\r\n"
+        )
+        assert _parse(raw).get_body(preferencelist=BODY_PART_PREFERENCE).get_content_type() == (
+            "text/html"
+        )
+        return raw
+
+    def test_the_plain_rendering_in_another_container_is_removed(self):
+        reduced = _reduce_message_body(self._nested(), UNIQUE_HTML)
+
+        assert reduced is not None
+        assert b"PLAINRENDERING" not in reduced
+
+    def test_the_inline_image_survives(self):
+        reduced = _reduce_message_body(self._nested(), UNIQUE_HTML)
+
+        types = [part.get_content_type() for part in _leaves(_parse(reduced))]
+        assert "image/png" in types
+
+    def test_no_empty_container_is_left_behind(self):
+        """The alternative group holds nothing once its only rendering goes."""
+        reduced = _reduce_message_body(self._nested(), UNIQUE_HTML)
+
+        containers = [
+            part
+            for part in _parse(reduced).walk()
+            if part.is_multipart() and not part.get_payload()
+        ]
+        assert containers == []
+
+
+class TestReduceMessageBodyLineEndings:
+    def test_the_rebuilt_message_uses_crlf(self):
+        """Graph delivers CRLF, and the default policy would flatten it."""
+        reduced = _reduce_message_body(
+            HTML_AND_PLAIN_WITH_IMAGE_ATTACHMENT.read_bytes(), UNIQUE_HTML
+        )
+
+        assert reduced is not None
+        assert b"\r\n" in reduced
+        assert reduced.replace(b"\r\n", b"").count(b"\n") == 0
 
 
 class TestReduceMessageBodyDeclines:
@@ -796,8 +933,10 @@ class TestDownloaderQuotedHistoryRequest:
     def _client_writing(self, raw: bytes, unique_content: Optional[str]):
         """A client whose download writes `raw` and whose select carries uniqueBody.
 
-        Returns the client and the message it hands out, so assertions name the
-        message directly rather than re-walking the mock.
+        The rendering it answers with matches the message's own body part, the
+        way an honest service would, so a test that wants a mismatch has to say
+        so explicitly. Returns the client and the message it hands out, so
+        assertions name the message directly rather than re-walking the mock.
         """
         message = MagicMock()
 
@@ -805,12 +944,15 @@ class TestDownloaderQuotedHistoryRequest:
             file_obj.write(raw)
             return MagicMock()
 
+        body = _primary_body_part(raw)
+        rendering = "text" if body is not None and body.get_content_subtype() == "plain" else "html"
+
         message.download.side_effect = _download
         message.select.return_value = message
         # The pinned office365 client has no typed accessor for uniqueBody, so
         # the connector reads the raw property dict Graph sent.
         message.get_property.return_value = (
-            {"contentType": "html", "content": unique_content}
+            {"contentType": rendering, "content": unique_content}
             if unique_content is not None
             else None
         )
@@ -940,3 +1082,78 @@ class TestDownloaderQuotedHistoryRequest:
         written = _parse(download_path.read_bytes())
         assert written.get_content_type() == "text/plain"
         assert "<" not in written.get_content()
+
+    def test_a_failed_extra_request_does_not_fail_the_record(self, tmp_path: Path, caplog):
+        """The full message is already on disk, so a throttled or failed extra
+        request must leave a usable record rather than raise."""
+        raw = HTML_AND_PLAIN_WITH_IMAGE_ATTACHMENT.read_bytes()
+        downloader = self._downloader(exclude_quoted_history=True)
+        client, message = self._client_writing(raw, UNIQUE_HTML)
+        client.execute_query.side_effect = RuntimeError("429 too many requests")
+        download_path = tmp_path / "msg-1.eml"
+
+        with (
+            caplog.at_level(logging.WARNING),
+            patch.object(OutlookConnectionConfig, "get_client", return_value=client),
+        ):
+            downloader._download_message(self._file_data(), download_path)
+
+        assert download_path.read_bytes() == raw
+        assert any(record.levelno == logging.WARNING for record in caplog.records)
+
+    def test_a_rendering_graph_did_not_honour_is_refused(self, tmp_path: Path, caplog):
+        """Graph may ignore an unsupported preference and answer in its own
+        default. Writing HTML into a plain-text part would have the partitioner
+        extract literal markup, so the full body is kept instead."""
+        downloader = self._downloader(exclude_quoted_history=True)
+        client, message = self._client_writing(SINGLE_PART_PLAIN, "<p>html we did not ask for</p>")
+        message.get_property.return_value = {
+            "contentType": "html",
+            "content": "<p>html we did not ask for</p>",
+        }
+        download_path = tmp_path / "msg-1.eml"
+
+        with (
+            caplog.at_level(logging.WARNING),
+            patch.object(OutlookConnectionConfig, "get_client", return_value=client),
+        ):
+            downloader._download_message(self._file_data(), download_path)
+
+        assert download_path.read_bytes() == SINGLE_PART_PLAIN
+        assert any(record.levelno == logging.WARNING for record in caplog.records)
+
+    def test_a_signed_message_is_left_alone(self, tmp_path: Path):
+        """Replacing the body of a signed message would leave it claiming a
+        signature it no longer satisfies, and no extra request is worth making."""
+        downloader = self._downloader(exclude_quoted_history=True)
+        client, message = self._client_writing(SIGNED_MESSAGE, "Only the newest sentence.")
+        download_path = tmp_path / "msg-1.eml"
+
+        with patch.object(OutlookConnectionConfig, "get_client", return_value=client):
+            downloader._download_message(self._file_data(), download_path)
+
+        assert download_path.read_bytes() == SIGNED_MESSAGE
+        message.select.assert_not_called()
+
+    def test_no_staging_file_is_left_behind(self, tmp_path: Path):
+        """The reduced message is staged beside the target and moved into place,
+        so a later run must not find a stray partial file to reuse."""
+        raw = HTML_AND_PLAIN_WITH_IMAGE_ATTACHMENT.read_bytes()
+        downloader = self._downloader(exclude_quoted_history=True)
+        client, _ = self._client_writing(raw, UNIQUE_HTML)
+        download_path = tmp_path / "msg-1.eml"
+
+        with patch.object(OutlookConnectionConfig, "get_client", return_value=client):
+            downloader._download_message(self._file_data(), download_path)
+
+        assert [path.name for path in tmp_path.iterdir()] == ["msg-1.eml"]
+
+
+class TestReduceMessageBodyLeavesProtectedMessagesAlone:
+    def test_a_signed_message_declines(self):
+        assert _reduce_message_body(SIGNED_MESSAGE, UNIQUE_HTML) is None
+
+    def test_an_encrypted_message_declines(self):
+        encrypted = SIGNED_MESSAGE.replace(b"multipart/signed", b"multipart/encrypted")
+
+        assert _reduce_message_body(encrypted, UNIQUE_HTML) is None
