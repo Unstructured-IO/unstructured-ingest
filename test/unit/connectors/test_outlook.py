@@ -772,6 +772,36 @@ class TestReduceMessageBodySweepsNestedContainers:
         assert containers == []
 
 
+class TestReduceMessageBodyKeepsInlineImages:
+    """An image pasted into a reply is carried as a related part, not as data.
+
+    Outlook references it from the body as cid:<id>. The reference lives inside
+    the body text being replaced, and the image itself is a sibling part, so
+    both have to come through: the part because it is not a body rendering, and
+    the reference because Graph keeps it in the value it returns.
+    """
+
+    def _body_with_a_reference(self) -> str:
+        return '<html><body><p>Only the newest sentence.</p><img src="cid:img1"></body></html>'
+
+    def test_the_referenced_image_part_survives(self):
+        raw = INLINE_IMAGE_RELATED.read_bytes()
+
+        reduced = _reduce_message_body(raw, self._body_with_a_reference())
+
+        assert reduced is not None
+        types = [part.get_content_type() for part in _leaves(_parse(reduced))]
+        assert "image/png" in types
+
+    def test_the_reference_itself_survives(self):
+        raw = INLINE_IMAGE_RELATED.read_bytes()
+
+        reduced = _reduce_message_body(raw, self._body_with_a_reference())
+
+        body = _parse(reduced).get_body(preferencelist=BODY_PART_PREFERENCE)
+        assert "cid:img1" in body.get_content()
+
+
 class TestReduceMessageBodyLineEndings:
     def test_the_rebuilt_message_uses_crlf(self):
         """Graph delivers CRLF, and the default policy would flatten it."""
@@ -961,8 +991,35 @@ class TestDownloaderQuotedHistoryRequest:
         client.users.__getitem__.return_value.messages.__getitem__.return_value = message
         return client, message
 
-    def test_no_extra_request_when_the_setting_is_off(self, tmp_path: Path):
-        raw = HTML_AND_PLAIN_WITH_IMAGE_ATTACHMENT.read_bytes()
+    @pytest.mark.parametrize(
+        "raw",
+        [
+            HTML_AND_PLAIN_WITH_IMAGE_ATTACHMENT.read_bytes(),
+            HTML_AND_PLAIN_WITH_TEXT_ATTACHMENT.read_bytes(),
+            LONG_NON_ASCII_HEADERS.read_bytes(),
+            INLINE_IMAGE_RELATED.read_bytes(),
+            SINGLE_PART_PLAIN,
+            SIGNED_MESSAGE,
+            EMPTY_BODY,
+            ATTACHMENT_ONLY,
+        ],
+        ids=[
+            "html-plain-image-attachment",
+            "html-plain-text-attachment",
+            "long-non-ascii-headers",
+            "inline-image-related",
+            "single-part-plain",
+            "signed",
+            "empty-body",
+            "attachment-only",
+        ],
+    )
+    def test_the_setting_off_changes_nothing_at_all(self, tmp_path: Path, raw: bytes):
+        """The default must be indistinguishable from the connector before this.
+
+        Byte-identical output and no extra request, on every message shape the
+        suite knows about, is the whole no-breaking-change claim.
+        """
         downloader = self._downloader(exclude_quoted_history=False)
         client, message = self._client_writing(raw, UNIQUE_HTML)
         download_path = tmp_path / "msg-1.eml"
@@ -970,8 +1027,10 @@ class TestDownloaderQuotedHistoryRequest:
         with patch.object(OutlookConnectionConfig, "get_client", return_value=client):
             downloader._download_message(self._file_data(), download_path)
 
-        message.select.assert_not_called()
         assert download_path.read_bytes() == raw
+        message.select.assert_not_called()
+        client.execute_query.assert_not_called()
+        assert [path.name for path in tmp_path.iterdir()] == ["msg-1.eml"]
 
     def test_one_selected_request_when_the_setting_is_on(self, tmp_path: Path):
         raw = HTML_AND_PLAIN_WITH_IMAGE_ATTACHMENT.read_bytes()
