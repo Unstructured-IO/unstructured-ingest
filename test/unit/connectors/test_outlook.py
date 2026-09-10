@@ -802,6 +802,48 @@ class TestReduceMessageBodyKeepsInlineImages:
         assert "cid:img1" in body.get_content()
 
 
+class TestReduceMessageBodyLeavesAttachedContainersAlone:
+    """A container carried as an attachment keeps its own text parts.
+
+    An attached message is recognised by its content type, but a group saved as
+    a file, for instance a related bundle, is only recognisable by its
+    disposition or filename. Descending into one deletes the attachment's text.
+    """
+
+    def _message_with_an_attached_container(self) -> bytes:
+        return (
+            b'Content-Type: multipart/mixed; boundary="mix"\r\n'
+            b"Subject: attached container\r\n\r\n"
+            b'--mix\r\nContent-Type: multipart/alternative; boundary="alt"\r\n\r\n'
+            b"--alt\r\nContent-Type: text/plain\r\n\r\nOuter plain rendering.\r\n"
+            b"--alt\r\nContent-Type: text/html\r\n\r\n"
+            b"<p>Outer html rendering.</p>\r\n--alt--\r\n"
+            b'--mix\r\nContent-Type: multipart/related; boundary="rel"\r\n'
+            b'Content-Disposition: attachment; filename="bundle.mhtml"\r\n\r\n'
+            b"--rel\r\nContent-Type: text/html\r\n\r\n"
+            b"<p>ATTACHEDBUNDLETEXT</p>\r\n"
+            b"--rel\r\nContent-Type: image/png\r\nContent-ID: <b1>\r\n\r\n"
+            b"cG5n\r\n--rel--\r\n--mix--\r\n"
+        )
+
+    def test_the_attached_containers_text_survives(self):
+        raw = self._message_with_an_attached_container()
+
+        reduced = _reduce_message_body(raw, UNIQUE_HTML)
+
+        assert reduced is not None
+        assert b"ATTACHEDBUNDLETEXT" in reduced
+
+    def test_the_outer_plain_rendering_is_still_removed(self):
+        raw = self._message_with_an_attached_container()
+
+        reduced = _reduce_message_body(raw, UNIQUE_HTML)
+
+        assert b"Outer plain rendering." not in reduced
+        body = _parse(reduced).get_body(preferencelist=BODY_PART_PREFERENCE)
+        assert "Only the newest sentence." in body.get_content()
+
+
 class TestReduceMessageBodyLineEndings:
     def test_the_rebuilt_message_uses_crlf(self):
         """Graph delivers CRLF, and the default policy would flatten it."""
@@ -835,8 +877,15 @@ class TestReduceMessageBodyDeclines:
         assert _reduce_message_body(ATTACHMENT_ONLY, UNIQUE_HTML) is None
 
     def test_declines_for_an_entity_only_value(self):
-        """Non-breaking spaces are not text, and would blank a real body."""
-        assert _reduce_message_body(EMPTY_BODY, "<p>&nbsp;&nbsp;</p>") is None
+        """Non-breaking spaces are not text, and would blank a real body.
+
+        The fixture has an HTML body, so the value is read as markup. Against a
+        plain-text body the same string is literal text and is written, which
+        TestCarriesText covers.
+        """
+        raw = HTML_AND_PLAIN_WITH_IMAGE_ATTACHMENT.read_bytes()
+
+        assert _reduce_message_body(raw, "<p>&nbsp;&nbsp;</p>") is None
 
     def test_an_empty_body_and_an_empty_value_leave_the_message_alone(self):
         assert _reduce_message_body(EMPTY_BODY, "") is None
@@ -921,21 +970,45 @@ class TestOutlookDownloaderConfigDefault:
 
 
 class TestCarriesText:
+    """Angle brackets are markup in an HTML body and characters in a text one."""
+
     @pytest.mark.parametrize(
         "value",
         [None, "", "   ", "<div></div>", "<p>&nbsp;</p>", "<p>&#160;&#160;</p>"],
         ids=["none", "empty", "spaces", "tags", "nbsp-entity", "numeric-entity"],
     )
-    def test_values_without_words_are_not_text(self, value):
-        assert _carries_text(value) is False
+    def test_markup_without_words_is_not_text(self, value):
+        assert _carries_text(value, is_markup=True) is False
 
     @pytest.mark.parametrize(
         "value",
         ["hello", "<p>hello</p>", "<p>&amp;</p>"],
         ids=["bare", "wrapped", "escaped-ampersand"],
     )
-    def test_values_with_words_are_text(self, value):
-        assert _carries_text(value) is True
+    def test_markup_with_words_is_text(self, value):
+        assert _carries_text(value, is_markup=True) is True
+
+    @pytest.mark.parametrize(
+        "value",
+        ["<no comment>", "<see attached>", "a < b and c > d"],
+        ids=["bracketed-note", "bracketed-pointer", "comparison"],
+    )
+    def test_plain_text_in_angle_brackets_is_still_text(self, value):
+        assert _carries_text(value, is_markup=False) is True
+
+    @pytest.mark.parametrize(
+        "value",
+        ["<no comment>", "<see attached>"],
+        ids=["bracketed-note", "bracketed-pointer"],
+    )
+    def test_the_same_values_read_as_empty_markup(self, value):
+        """This is the miss the flag exists to prevent. Read as markup these
+        strip to nothing, so a plain-text message would be left unreduced."""
+        assert _carries_text(value, is_markup=True) is False
+
+    @pytest.mark.parametrize("value", [None, "", "  \r\n "], ids=["none", "empty", "whitespace"])
+    def test_plain_text_still_has_to_hold_something(self, value):
+        assert _carries_text(value, is_markup=False) is False
 
 
 class TestDownloaderQuotedHistoryRequest:

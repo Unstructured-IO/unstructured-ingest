@@ -130,18 +130,24 @@ def _prefer_body_rendering(mime_subtype: str) -> Callable[["RequestOptions"], No
     return hook
 
 
-def _carries_text(markup: Optional[str]) -> bool:
-    """Whether a body value holds any text once markup is stripped.
+def _carries_text(content: Optional[str], *, is_markup: bool) -> bool:
+    """Whether a body value holds any text.
 
     Graph renders uniqueBody as HTML by default, so a body with no words can
     still arrive as a non-empty string of tags. Testing the raw string for
     emptiness would treat that as real content and replace a full body with
-    nothing. Entities are decoded first, so a body of nothing but non-breaking
-    spaces also counts as empty.
+    nothing, so markup is stripped and entities decoded first, which also makes
+    a body of nothing but non-breaking spaces count as empty.
+
+    That stripping is wrong for a plain-text body, where angle brackets are
+    just characters. Text reading "<no comment>" would strip to nothing and the
+    message would be left unreduced, so the caller says which it has.
     """
-    if not markup:
+    if not content:
         return False
-    return bool(html.unescape(_MARKUP_TAG.sub(" ", markup)).strip())
+    if not is_markup:
+        return bool(content.strip())
+    return bool(html.unescape(_MARKUP_TAG.sub(" ", content)).strip())
 
 
 class UniqueBody(NamedTuple):
@@ -220,6 +226,11 @@ def _strip_superseded_renderings(part: Any, keep: Any) -> None:
         if child.get_content_maintype() == "message":
             kept.append(child)
             continue
+        if child.get_content_disposition() == "attachment" or child.get_filename() is not None:
+            # An attached container, for instance a related group saved as a
+            # file. Its inner text parts belong to it, not to this message.
+            kept.append(child)
+            continue
         if child.is_multipart():
             _strip_superseded_renderings(child, keep)
             grandchildren = child.get_payload()
@@ -252,8 +263,6 @@ def _reduce_message_body(raw: bytes, unique_content: Optional[str]) -> Optional[
     when `unique_content` carries no text. An empty body legitimately yields an
     empty uniqueBody, so declining is the correct outcome rather than an error.
     """
-    if not _carries_text(unique_content):
-        return None
     if _is_protected(raw):
         return None
 
@@ -262,7 +271,13 @@ def _reduce_message_body(raw: bytes, unique_content: Optional[str]) -> Optional[
     if body is None:
         return None
 
-    body.set_content(unique_content, subtype=body.get_content_subtype(), charset="utf-8")
+    subtype = body.get_content_subtype()
+    # The body part decides whether angle brackets in the value are markup or
+    # just characters, so the emptiness test waits until the part is known.
+    if not _carries_text(unique_content, is_markup=subtype == "html"):
+        return None
+
+    body.set_content(unique_content, subtype=subtype, charset="utf-8")
 
     _strip_superseded_renderings(message, body)
 
@@ -604,9 +619,11 @@ class OutlookDownloader(Downloader):
 
         # Nothing to write is settled before the rendering is judged: an empty
         # answer is the expected reply for an empty body whatever rendering it
-        # comes back in.
-        if unique is None or not _carries_text(unique.content):
-            if _carries_text(_part_text(body)):
+        # comes back in. Whether angle brackets in either value count as markup
+        # follows what each one actually is.
+        answer_is_markup = unique is not None and unique.rendering != "text"
+        if unique is None or not _carries_text(unique.content, is_markup=answer_is_markup):
+            if _carries_text(_part_text(body), is_markup=mime_subtype == "html"):
                 # Graph had text to reduce and gave nothing back, so the record
                 # keeps duplicated history it was meant to lose.
                 logger.warning(
