@@ -563,6 +563,24 @@ class TestPrimaryBodyPart:
     def test_reports_none_when_there_is_no_body_part(self):
         assert _primary_body_part(ATTACHMENT_ONLY) is None
 
+    def test_excludes_a_named_inline_html_part(self):
+        raw = (
+            b'Content-Type: multipart/mixed; boundary="mix"\r\n\r\n'
+            b"--mix\r\nContent-Type: text/plain\r\n\r\nThe actual message body.\r\n"
+            b"--mix\r\nContent-Type: text/html\r\n"
+            b'Content-Disposition: inline; filename="report.html"\r\n\r\n'
+            b"<p>Attached report contents.</p>\r\n--mix--\r\n"
+        )
+        assert _parse(raw).get_body(preferencelist=BODY_PART_PREFERENCE).get_filename() == (
+            "report.html"
+        )
+
+        body = _primary_body_part(raw)
+
+        assert body is not None
+        assert body.get_content_type() == "text/plain"
+        assert "actual message body" in body.get_content()
+
 
 class TestReduceMessageBody:
     """The surgery must change the body and nothing else.
@@ -661,6 +679,47 @@ class TestReduceMessageBody:
         rebuilt_text = _parse(reduced).get_body(preferencelist=BODY_PART_PREFERENCE).get_content()
         for word in words:
             assert word not in rebuilt_text
+
+    def test_a_named_inline_html_part_is_not_replaced_or_removed(self):
+        raw = (
+            b'Content-Type: multipart/mixed; boundary="mix"\r\n\r\n'
+            b"--mix\r\nContent-Type: text/plain\r\n\r\nThe actual message body.\r\n"
+            b"--mix\r\nContent-Type: text/html\r\n"
+            b'Content-Disposition: inline; filename="report.html"\r\n\r\n'
+            b"<p>Attached report contents.</p>\r\n--mix--\r\n"
+        )
+
+        reduced = _reduce_message_body(raw, "Only the newest sentence.")
+
+        assert reduced is not None
+        rebuilt = _parse(reduced)
+        named = next(part for part in rebuilt.walk() if part.get_filename() == "report.html")
+        assert named.get_content_disposition() == "inline"
+        assert "Attached report contents." in named.get_content()
+        body = _primary_body_part(reduced)
+        assert body is not None
+        assert "Only the newest sentence." in body.get_content()
+
+    def test_preserves_the_content_id_of_a_related_root(self):
+        raw = (
+            b'Content-Type: multipart/related; boundary="rel"; start="<root>"\r\n\r\n'
+            b"--rel\r\nContent-Type: image/png\r\nContent-ID: <image>\r\n\r\n"
+            b"cG5n\r\n"
+            b"--rel\r\nContent-Type: text/html\r\nContent-ID: <root>\r\n\r\n"
+            b"<p>The full body and quoted history.</p>\r\n--rel--\r\n"
+        )
+        original_body = _parse(raw).get_body(preferencelist=BODY_PART_PREFERENCE)
+        assert original_body is not None
+        assert original_body["Content-ID"] == "<root>"
+
+        reduced = _reduce_message_body(raw, UNIQUE_HTML)
+
+        assert reduced is not None
+        rebuilt = _parse(reduced)
+        body = rebuilt.get_body(preferencelist=BODY_PART_PREFERENCE)
+        assert body is not None
+        assert body["Content-ID"] == "<root>"
+        assert "Only the newest sentence." in body.get_content()
 
 
 class TestReduceMessageBodyLeavesNestedMessagesAlone:

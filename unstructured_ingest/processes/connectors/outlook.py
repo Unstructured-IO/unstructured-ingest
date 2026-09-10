@@ -183,6 +183,55 @@ def _looks_like_body_part(part: Any) -> bool:
     )
 
 
+def _select_primary_body_part(message: Any) -> Optional[Any]:
+    """Select the preferred outer body while excluding named parts.
+
+    This follows ``EmailMessage.get_body()`` for the preferences used here,
+    including the ``start`` parameter of multipart/related, but applies the
+    same attachment and filename boundaries as the later sweep. The standard
+    helper ignores attachment disposition but can otherwise select a named
+    inline text part as the body.
+    """
+
+    def candidates(part: Any) -> Generator[tuple[int, Any], None, None]:
+        if part.get_content_disposition() == "attachment" or part.get_filename() is not None:
+            return
+
+        maintype = part.get_content_maintype()
+        subtype = part.get_content_subtype()
+        if maintype == "text":
+            if subtype in BODY_PART_PREFERENCE:
+                yield BODY_PART_PREFERENCE.index(subtype), part
+            return
+        if maintype != "multipart" or not part.is_multipart():
+            return
+
+        if subtype != "related":
+            for child in part.iter_parts():
+                yield from candidates(child)
+            return
+
+        children = list(part.iter_parts())
+        root = None
+        start = part.get_param("start")
+        if start:
+            root = next((child for child in children if child["Content-ID"] == start), None)
+        if root is None and children:
+            root = children[0]
+        if root is not None:
+            yield from candidates(root)
+
+    best_priority = len(BODY_PART_PREFERENCE)
+    body = None
+    for priority, candidate in candidates(message):
+        if priority < best_priority:
+            best_priority = priority
+            body = candidate
+            if priority == 0:
+                break
+    return body
+
+
 def _primary_body_part(raw: bytes) -> Optional[Any]:
     """The MIME part a partitioner will read, or None if the message has none.
 
@@ -192,7 +241,7 @@ def _primary_body_part(raw: bytes) -> Optional[Any]:
     rendering to ask for, and whether the body held any text to begin with.
     """
     message = email.message_from_bytes(raw, policy=_MIME_POLICY)
-    return message.get_body(preferencelist=BODY_PART_PREFERENCE)
+    return _select_primary_body_part(message)
 
 
 def _part_text(part: Any) -> str:
@@ -267,7 +316,7 @@ def _reduce_message_body(raw: bytes, unique_content: Optional[str]) -> Optional[
         return None
 
     message = email.message_from_bytes(raw, policy=_MIME_POLICY)
-    body = message.get_body(preferencelist=BODY_PART_PREFERENCE)
+    body = _select_primary_body_part(message)
     if body is None:
         return None
 
@@ -277,7 +326,10 @@ def _reduce_message_body(raw: bytes, unique_content: Optional[str]) -> Optional[
     if not _carries_text(unique_content, is_markup=subtype == "html"):
         return None
 
+    content_id = body["Content-ID"]
     body.set_content(unique_content, subtype=subtype, charset="utf-8")
+    if content_id is not None:
+        body["Content-ID"] = content_id
 
     _strip_superseded_renderings(message, body)
 
