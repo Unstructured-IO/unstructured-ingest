@@ -1,20 +1,37 @@
+import email
+import email.policy
 import hashlib
+import logging
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Optional
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 from pydantic import Secret
 
+from unstructured_ingest.data_types.file_data import (
+    FileData,
+    FileDataSourceMetadata,
+    SourceIdentifiers,
+)
 from unstructured_ingest.error import ValueError
 from unstructured_ingest.processes.connectors.outlook import (
+    BODY_PART_PREFERENCE,
     MESSAGE_SELECT_FIELDS,
     MESSAGES_PAGE_SIZE,
+    UNIQUE_BODY_FIELD,
     OutlookAccessConfig,
     OutlookConnectionConfig,
+    OutlookDownloader,
+    OutlookDownloaderConfig,
     OutlookIndexer,
     OutlookIndexerConfig,
+    _carries_text,
+    _prefer_body_rendering,
     _prefer_immutable_ids,
+    _primary_body_part,
+    _reduce_message_body,
 )
 
 
@@ -256,9 +273,7 @@ class TestListMessagesPagination:
         indexer = _make_indexer(recursive=False)
         spanning_three_pages = [Mock() for _ in range(MESSAGES_PAGE_SIZE * 2 + 3)]
         root_folder = _make_folder("root")
-        root_folder.messages.get_all.return_value.execute_query.return_value = (
-            spanning_three_pages
-        )
+        root_folder.messages.get_all.return_value.execute_query.return_value = spanning_three_pages
 
         with patch.object(OutlookIndexer, "_get_selected_root_folders", return_value=[root_folder]):
             messages = indexer._list_messages(recursive=False)
@@ -428,3 +443,500 @@ class TestPreferImmutableIdsHeader:
         )
         client.pending_request().beforeExecute.notify(continuation_request)
         assert continuation_request.headers["Prefer"] == 'IdType="ImmutableId"'
+
+
+EML_DIR = Path(__file__).resolve().parents[3] / "example-docs" / "eml"
+
+# Committed fixtures chosen for MIME structure rather than content.
+HTML_AND_PLAIN_WITH_IMAGE_ATTACHMENT = EML_DIR / "email-with-image.eml"
+HTML_AND_PLAIN_WITH_TEXT_ATTACHMENT = EML_DIR / "fake-email-attachment.eml"
+# Carries two attachments and a long non-ASCII Authentication-Results header,
+# which is the only shape that catches header refolding on re-serialization.
+LONG_NON_ASCII_HEADERS = EML_DIR / "email-no-utf8-2014-03-17.111517.eml"
+# multipart/related: the inline image is a sibling of the body part.
+INLINE_IMAGE_RELATED = EML_DIR / "fake-email-image-embedded.eml"
+
+STRUCTURED_FIXTURES = [
+    HTML_AND_PLAIN_WITH_IMAGE_ATTACHMENT,
+    HTML_AND_PLAIN_WITH_TEXT_ATTACHMENT,
+    LONG_NON_ASCII_HEADERS,
+    INLINE_IMAGE_RELATED,
+]
+
+UNIQUE_HTML = "<html><body><p>Only the newest sentence.</p></body></html>"
+
+PREFER_BODY_RENDERING = "unstructured_ingest.processes.connectors.outlook._prefer_body_rendering"
+
+# A single-part message: the body part is the message itself, so the surgery
+# rewrites top-level headers rather than a child part's.
+SINGLE_PART_PLAIN = (
+    b"Subject: quarterly update\r\nFrom: sender@example.com\r\nTo: rec@example.com\r\n"
+    b"Content-Type: text/plain; charset=us-ascii\r\n\r\nThe original body text.\r\n"
+)
+
+ATTACHMENT_ONLY = (
+    b'Content-Type: multipart/mixed; boundary="b1"\r\nSubject: attachment only\r\n\r\n'
+    b"--b1\r\nContent-Type: application/pdf\r\n"
+    b'Content-Disposition: attachment; filename="a.pdf"\r\n\r\nnot-a-pdf\r\n--b1--\r\n'
+)
+
+# An empty body plus an empty uniqueBody: the shape Graph returns for a message
+# that carries only attachments in its body slot.
+EMPTY_BODY = (
+    b"Subject: nothing to say\r\nFrom: sender@example.com\r\n"
+    b"Content-Type: text/plain; charset=us-ascii\r\n\r\n\r\n"
+)
+
+
+def _parse(raw: bytes):
+    return email.message_from_bytes(raw, policy=email.policy.default)
+
+
+def _leaves(message):
+    return [part for part in message.walk() if not part.is_multipart()]
+
+
+def _looks_like_body(part) -> bool:
+    """Body rendering rather than an attachment, judged from the wire only."""
+    return (
+        part.get_content_type() in ("text/plain", "text/html")
+        and part.get_content_disposition() != "attachment"
+        and part.get_filename() is None
+    )
+
+
+def _non_body_facts(message) -> list[tuple]:
+    """Identity of every part that is not a body rendering."""
+    return [
+        (
+            part.get_content_type(),
+            part.get_filename(),
+            part.get("Content-Transfer-Encoding"),
+            part.get_payload(decode=True),
+        )
+        for part in _leaves(message)
+        if not _looks_like_body(part)
+    ]
+
+
+def _header_facts(message) -> list[tuple[str, str]]:
+    """Headers a body replacement has no business changing."""
+    structural = {"content-type", "content-transfer-encoding", "mime-version"}
+    return sorted(
+        (name.lower(), str(value))
+        for name, value in message.items()
+        if name.lower() not in structural
+    )
+
+
+class TestPrimaryBodyPart:
+    """The part reported must be the one a partitioner will read.
+
+    Its subtype decides which rendering Graph is asked for, so a wrong answer
+    here puts the wrong markup into the message.
+    """
+
+    @pytest.mark.parametrize("fixture", STRUCTURED_FIXTURES, ids=lambda p: p.name)
+    def test_prefers_html_when_the_message_carries_both(self, fixture: Path):
+        part = _primary_body_part(fixture.read_bytes())
+        assert part is not None
+        assert part.get_content_subtype() == "html"
+
+    def test_reports_plain_when_there_is_no_html_rendering(self):
+        part = _primary_body_part(SINGLE_PART_PLAIN)
+        assert part is not None
+        assert part.get_content_subtype() == "plain"
+
+    def test_reports_none_when_there_is_no_body_part(self):
+        assert _primary_body_part(ATTACHMENT_ONLY) is None
+
+
+class TestReduceMessageBody:
+    """The surgery must change the body and nothing else.
+
+    Losing an attachment here would be worse than the duplication this
+    feature exists to remove, so every invariant gets its own assertion.
+    """
+
+    @pytest.mark.parametrize("fixture", STRUCTURED_FIXTURES, ids=lambda p: p.name)
+    def test_non_body_parts_are_untouched(self, fixture: Path):
+        raw = fixture.read_bytes()
+        before = _non_body_facts(_parse(raw))
+
+        reduced = _reduce_message_body(raw, UNIQUE_HTML)
+
+        assert reduced is not None
+        assert _non_body_facts(_parse(reduced)) == before
+
+    def test_a_single_part_message_keeps_its_identifying_headers(self):
+        """The body part is the message itself here, so the surgery rewrites the
+        top-level content type and transfer encoding by design. Everything that
+        identifies the message still has to survive."""
+        reduced = _reduce_message_body(SINGLE_PART_PLAIN, "Only the newest sentence.")
+
+        assert reduced is not None
+        rebuilt, original = _parse(reduced), _parse(SINGLE_PART_PLAIN)
+        for header in ("Subject", "From", "To"):
+            assert str(rebuilt[header]) == str(original[header])
+        assert "Only the newest sentence." in rebuilt.get_content()
+        assert "The original body text." not in rebuilt.get_content()
+
+    @pytest.mark.parametrize("fixture", STRUCTURED_FIXTURES, ids=lambda p: p.name)
+    def test_headers_are_untouched(self, fixture: Path):
+        raw = fixture.read_bytes()
+        before = _header_facts(_parse(raw))
+
+        reduced = _reduce_message_body(raw, UNIQUE_HTML)
+
+        assert _header_facts(_parse(reduced)) == before
+
+    def test_long_non_ascii_headers_are_not_refolded(self):
+        """The default serialization policy rewrites long source headers.
+
+        Pinned separately from the parametrized case because a fixture with
+        only short headers cannot catch it: the failure is whitespace inserted
+        inside a header the replacement never touched.
+        """
+        raw = LONG_NON_ASCII_HEADERS.read_bytes()
+        original = _parse(raw)
+        long_headers = [name for name, value in original.items() if len(f"{name}: {value}") > 200]
+        assert long_headers, "fixture no longer carries a long header to protect"
+
+        reduced = _reduce_message_body(raw, UNIQUE_HTML)
+
+        rebuilt = _parse(reduced)
+        for name in long_headers:
+            assert str(rebuilt[name]) == str(original[name])
+
+    @pytest.mark.parametrize("fixture", STRUCTURED_FIXTURES, ids=lambda p: p.name)
+    def test_the_body_part_carries_the_supplied_text(self, fixture: Path):
+        reduced = _reduce_message_body(fixture.read_bytes(), UNIQUE_HTML)
+
+        body = _parse(reduced).get_body(preferencelist=BODY_PART_PREFERENCE)
+        assert "Only the newest sentence." in body.get_content()
+
+    @pytest.mark.parametrize("fixture", STRUCTURED_FIXTURES, ids=lambda p: p.name)
+    def test_no_other_body_rendering_survives(self, fixture: Path):
+        """A stale plain-text rendering would still hold the quoted history.
+
+        The partitioner accepts a setting that flips its preference to plain
+        text, which would silently restore that history and make the whole
+        feature a no-op, so the other renderings are removed rather than left.
+        """
+        raw = fixture.read_bytes()
+        assert len([p for p in _leaves(_parse(raw)) if _looks_like_body(p)]) > 1
+
+        reduced = _reduce_message_body(raw, UNIQUE_HTML)
+
+        assert len([p for p in _leaves(_parse(reduced)) if _looks_like_body(p)]) == 1
+
+    @pytest.mark.parametrize("fixture", STRUCTURED_FIXTURES, ids=lambda p: p.name)
+    def test_the_original_body_text_is_gone(self, fixture: Path):
+        raw = fixture.read_bytes()
+        original_body = _parse(raw).get_body(preferencelist=BODY_PART_PREFERENCE)
+        sentences = [
+            line.strip()
+            for line in original_body.get_content().splitlines()
+            if len(line.strip()) > 25 and "<" not in line
+        ]
+
+        reduced = _reduce_message_body(raw, UNIQUE_HTML)
+
+        rebuilt_text = _parse(reduced).get_body(preferencelist=BODY_PART_PREFERENCE).get_content()
+        for sentence in sentences:
+            assert sentence not in rebuilt_text
+
+
+class TestReduceMessageBodyDeclines:
+    """Declining must be indistinguishable from the feature being off.
+
+    Graph returns an empty uniqueBody for a legitimately empty body, so the
+    condition cannot simply be "the value is empty".
+    """
+
+    @pytest.mark.parametrize(
+        "unique_content",
+        [None, "", "   \r\n  ", "<html><body><div></div></body></html>"],
+        ids=["missing", "empty", "whitespace", "markup-without-text"],
+    )
+    def test_declines_when_the_value_carries_no_text(self, unique_content):
+        raw = HTML_AND_PLAIN_WITH_IMAGE_ATTACHMENT.read_bytes()
+
+        assert _reduce_message_body(raw, unique_content) is None
+
+    def test_declines_when_there_is_no_body_part_to_replace(self):
+        assert _reduce_message_body(ATTACHMENT_ONLY, UNIQUE_HTML) is None
+
+    def test_declines_for_an_entity_only_value(self):
+        """Non-breaking spaces are not text, and would blank a real body."""
+        assert _reduce_message_body(EMPTY_BODY, "<p>&nbsp;&nbsp;</p>") is None
+
+    def test_an_empty_body_and_an_empty_value_leave_the_message_alone(self):
+        assert _reduce_message_body(EMPTY_BODY, "") is None
+
+
+class TestPreferBodyRendering:
+    """Graph names its renderings "text" and "html"; MIME says "plain".
+
+    Passing a MIME subtype through unchanged makes Graph ignore the preference
+    and answer with HTML, which then lands inside a plain-text part.
+    """
+
+    def _request(self):
+        try:
+            from office365.runtime.http.request_options import RequestOptions
+        except ImportError:
+            pytest.skip("office365-rest-python-client not installed")
+        return RequestOptions("https://graph.microsoft.com/v1.0/users/alice/messages/m1")
+
+    def test_translates_the_mime_subtype_for_a_plain_body(self):
+        request = self._request()
+
+        _prefer_body_rendering("plain")(request)
+
+        assert request.headers["Prefer"] == 'outlook.body-content-type="text"'
+
+    def test_passes_html_through(self):
+        request = self._request()
+
+        _prefer_body_rendering("html")(request)
+
+        assert request.headers["Prefer"] == 'outlook.body-content-type="html"'
+
+    def test_every_subtype_the_body_lookup_can_return_is_translatable(self):
+        """The lookup can only ever yield these two, so neither may raise."""
+        for mime_subtype in BODY_PART_PREFERENCE:
+            _prefer_body_rendering(mime_subtype)(self._request())
+
+    def test_composes_with_a_preference_already_set(self):
+        """The immutable-id hook sets Prefer on the same client, so this appends."""
+        request = self._request()
+
+        _prefer_immutable_ids(request)
+        _prefer_body_rendering("html")(request)
+
+        assert request.headers["Prefer"] == 'IdType="ImmutableId", outlook.body-content-type="html"'
+
+
+class TestUniqueBodyRawPropertyLookup:
+    """Pins uniqueBody's shape on the pinned client, like changeKey above.
+
+    The connector reads the raw property because 2.6.2 declares no typed
+    accessor. If an upgrade adds one, this test says so rather than the
+    connector silently reading None and keeping every full body.
+    """
+
+    def _real_message(self):
+        try:
+            from office365.graph_client import GraphClient
+            from office365.outlook.mail.messages.message import Message
+            from office365.runtime.paths.resource_path import ResourcePath
+        except ImportError:
+            pytest.skip("office365-rest-python-client not installed")
+        client = GraphClient(lambda: {"access_token": "x", "token_type": "Bearer"})
+        return Message(client, ResourcePath("messages/abc"))
+
+    def test_there_is_no_typed_accessor(self):
+        assert not hasattr(self._real_message(), "unique_body")
+
+    def test_the_raw_property_holds_the_graph_payload(self):
+        message = self._real_message()
+        payload = {"contentType": "html", "content": "<p>new</p>"}
+
+        message.set_property(UNIQUE_BODY_FIELD, payload)
+
+        assert message.get_property(UNIQUE_BODY_FIELD) == payload
+
+
+class TestOutlookDownloaderConfigDefault:
+    def test_quoted_history_exclusion_is_off_by_default(self):
+        assert OutlookDownloaderConfig().exclude_quoted_history is False
+
+
+class TestCarriesText:
+    @pytest.mark.parametrize(
+        "value",
+        [None, "", "   ", "<div></div>", "<p>&nbsp;</p>", "<p>&#160;&#160;</p>"],
+        ids=["none", "empty", "spaces", "tags", "nbsp-entity", "numeric-entity"],
+    )
+    def test_values_without_words_are_not_text(self, value):
+        assert _carries_text(value) is False
+
+    @pytest.mark.parametrize(
+        "value",
+        ["hello", "<p>hello</p>", "<p>&amp;</p>"],
+        ids=["bare", "wrapped", "escaped-ampersand"],
+    )
+    def test_values_with_words_are_text(self, value):
+        assert _carries_text(value) is True
+
+
+class TestDownloaderQuotedHistoryRequest:
+    """The extra Graph request happens only when the setting is on."""
+
+    def _downloader(self, exclude_quoted_history: bool):
+        connection_config = OutlookConnectionConfig(
+            access_config=Secret(OutlookAccessConfig(oauth_token="ey.access.token")),
+        )
+        return OutlookDownloader(
+            connection_config=connection_config,
+            download_config=OutlookDownloaderConfig(exclude_quoted_history=exclude_quoted_history),
+        )
+
+    def _file_data(self):
+        return FileData(
+            identifier="msg-1",
+            connector_type="outlook",
+            source_identifiers=SourceIdentifiers(filename="msg-1.eml", fullpath="msg-1.eml"),
+            metadata=FileDataSourceMetadata(
+                record_locator={"message_id": "msg-1", "user_email": "alice@example.com"}
+            ),
+        )
+
+    def _client_writing(self, raw: bytes, unique_content: Optional[str]):
+        """A client whose download writes `raw` and whose select carries uniqueBody.
+
+        Returns the client and the message it hands out, so assertions name the
+        message directly rather than re-walking the mock.
+        """
+        message = MagicMock()
+
+        def _download(file_obj):
+            file_obj.write(raw)
+            return MagicMock()
+
+        message.download.side_effect = _download
+        message.select.return_value = message
+        # The pinned office365 client has no typed accessor for uniqueBody, so
+        # the connector reads the raw property dict Graph sent.
+        message.get_property.return_value = (
+            {"contentType": "html", "content": unique_content}
+            if unique_content is not None
+            else None
+        )
+
+        client = MagicMock()
+        client.users.__getitem__.return_value.messages.__getitem__.return_value = message
+        return client, message
+
+    def test_no_extra_request_when_the_setting_is_off(self, tmp_path: Path):
+        raw = HTML_AND_PLAIN_WITH_IMAGE_ATTACHMENT.read_bytes()
+        downloader = self._downloader(exclude_quoted_history=False)
+        client, message = self._client_writing(raw, UNIQUE_HTML)
+        download_path = tmp_path / "msg-1.eml"
+
+        with patch.object(OutlookConnectionConfig, "get_client", return_value=client):
+            downloader._download_message(self._file_data(), download_path)
+
+        message.select.assert_not_called()
+        assert download_path.read_bytes() == raw
+
+    def test_one_selected_request_when_the_setting_is_on(self, tmp_path: Path):
+        raw = HTML_AND_PLAIN_WITH_IMAGE_ATTACHMENT.read_bytes()
+        downloader = self._downloader(exclude_quoted_history=True)
+        client, message = self._client_writing(raw, UNIQUE_HTML)
+        download_path = tmp_path / "msg-1.eml"
+
+        with (
+            patch.object(OutlookConnectionConfig, "get_client", return_value=client),
+            patch(PREFER_BODY_RENDERING) as prefer,
+        ):
+            downloader._download_message(self._file_data(), download_path)
+
+        # An HTML body part must be matched by an HTML rendering request.
+        prefer.assert_called_once_with("html")
+
+        message.select.assert_called_once_with(["id", UNIQUE_BODY_FIELD])
+        client.execute_query.assert_called_once()
+
+    def test_the_written_file_carries_only_the_unique_text(self, tmp_path: Path):
+        raw = HTML_AND_PLAIN_WITH_IMAGE_ATTACHMENT.read_bytes()
+        downloader = self._downloader(exclude_quoted_history=True)
+        client, _ = self._client_writing(raw, UNIQUE_HTML)
+        download_path = tmp_path / "msg-1.eml"
+
+        with patch.object(OutlookConnectionConfig, "get_client", return_value=client):
+            downloader._download_message(self._file_data(), download_path)
+
+        written = download_path.read_bytes()
+        assert written != raw
+        body = _parse(written).get_body(preferencelist=BODY_PART_PREFERENCE)
+        assert "Only the newest sentence." in body.get_content()
+        assert _non_body_facts(_parse(written)) == _non_body_facts(_parse(raw))
+
+    def test_the_full_body_is_kept_when_graph_returns_nothing(self, tmp_path: Path):
+        raw = HTML_AND_PLAIN_WITH_IMAGE_ATTACHMENT.read_bytes()
+        downloader = self._downloader(exclude_quoted_history=True)
+        client, _ = self._client_writing(raw, None)
+        download_path = tmp_path / "msg-1.eml"
+
+        with patch.object(OutlookConnectionConfig, "get_client", return_value=client):
+            downloader._download_message(self._file_data(), download_path)
+
+        assert download_path.read_bytes() == raw
+
+    def test_one_client_serves_both_requests(self, tmp_path: Path):
+        """A second client would mean a second token acquisition per message."""
+        raw = HTML_AND_PLAIN_WITH_IMAGE_ATTACHMENT.read_bytes()
+        downloader = self._downloader(exclude_quoted_history=True)
+        client, _ = self._client_writing(raw, UNIQUE_HTML)
+        download_path = tmp_path / "msg-1.eml"
+
+        with patch.object(OutlookConnectionConfig, "get_client", return_value=client) as get_client:
+            downloader._download_message(self._file_data(), download_path)
+
+        get_client.assert_called_once()
+
+    def test_a_lost_reduction_is_warned_about(self, tmp_path: Path, caplog):
+        """A record keeping history it was meant to lose has to be visible."""
+        raw = HTML_AND_PLAIN_WITH_IMAGE_ATTACHMENT.read_bytes()
+        downloader = self._downloader(exclude_quoted_history=True)
+        client, _ = self._client_writing(raw, None)
+        download_path = tmp_path / "msg-1.eml"
+
+        with (
+            caplog.at_level(logging.WARNING),
+            patch.object(OutlookConnectionConfig, "get_client", return_value=client),
+        ):
+            downloader._download_message(self._file_data(), download_path)
+
+        assert any(record.levelno == logging.WARNING for record in caplog.records)
+
+    def test_an_empty_body_is_not_warned_about(self, tmp_path: Path, caplog):
+        """An attachment-only message has nothing to reduce, so a warning here
+        would make a healthy mailbox look broken."""
+        downloader = self._downloader(exclude_quoted_history=True)
+        client, _ = self._client_writing(EMPTY_BODY, "")
+        download_path = tmp_path / "msg-1.eml"
+
+        with (
+            caplog.at_level(logging.INFO),
+            patch.object(OutlookConnectionConfig, "get_client", return_value=client),
+        ):
+            downloader._download_message(self._file_data(), download_path)
+
+        assert download_path.read_bytes() == EMPTY_BODY
+        assert not [record for record in caplog.records if record.levelno >= logging.WARNING]
+
+    def test_a_plain_only_message_asks_for_the_plain_rendering(self, tmp_path: Path):
+        """A plain body must not be answered with HTML.
+
+        The MIME subtype here is "plain", which Graph does not accept; the
+        translation to its own "text" token happens inside the helper this
+        asserts on, and is covered by TestPreferBodyRendering.
+        """
+        downloader = self._downloader(exclude_quoted_history=True)
+        client, _ = self._client_writing(SINGLE_PART_PLAIN, "Only the newest sentence.")
+        download_path = tmp_path / "msg-1.eml"
+
+        with (
+            patch.object(OutlookConnectionConfig, "get_client", return_value=client),
+            patch(PREFER_BODY_RENDERING) as prefer,
+        ):
+            downloader._download_message(self._file_data(), download_path)
+
+        prefer.assert_called_once_with("plain")
+
+        written = _parse(download_path.read_bytes())
+        assert written.get_content_type() == "text/plain"
+        assert "<" not in written.get_content()
