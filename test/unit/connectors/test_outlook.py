@@ -29,7 +29,9 @@ from unstructured_ingest.processes.connectors.outlook import (
     OutlookDownloaderConfig,
     OutlookIndexer,
     OutlookIndexerConfig,
-    _carries_text,
+    _has_visible_text,
+    _is_unnamed_text_part,
+    _parse,
     _prefer_body_rendering,
     _prefer_immutable_ids,
     _primary_body_part,
@@ -501,21 +503,8 @@ EMPTY_BODY = (
 )
 
 
-def _parse(raw: bytes):
-    return email.message_from_bytes(raw, policy=email.policy.default)
-
-
 def _leaves(message):
     return [part for part in message.walk() if not part.is_multipart()]
-
-
-def _looks_like_body(part) -> bool:
-    """Body rendering rather than an attachment, judged from the wire only."""
-    return (
-        part.get_content_type() in ("text/plain", "text/html")
-        and part.get_content_disposition() != "attachment"
-        and part.get_filename() is None
-    )
 
 
 def _non_body_facts(message) -> list[tuple]:
@@ -528,7 +517,7 @@ def _non_body_facts(message) -> list[tuple]:
             part.get_payload(decode=True),
         )
         for part in _leaves(message)
-        if not _looks_like_body(part)
+        if not _is_unnamed_text_part(part)
     ]
 
 
@@ -571,9 +560,10 @@ class TestPrimaryBodyPart:
             b'Content-Disposition: inline; filename="report.html"\r\n\r\n'
             b"<p>Attached report contents.</p>\r\n--mix--\r\n"
         )
-        assert _parse(raw).get_body(preferencelist=BODY_PART_PREFERENCE).get_filename() == (
+        stdlib = email.message_from_bytes(raw, policy=email.policy.default)
+        assert stdlib.get_body(preferencelist=BODY_PART_PREFERENCE).get_filename() == (
             "report.html"
-        )
+        ), "premise: the standard library selects the named inline part as the body"
 
         body = _primary_body_part(raw)
 
@@ -655,11 +645,11 @@ class TestReduceMessageBody:
         feature a no-op, so the other renderings are removed rather than left.
         """
         raw = fixture.read_bytes()
-        assert len([p for p in _leaves(_parse(raw)) if _looks_like_body(p)]) > 1
+        assert len([p for p in _leaves(_parse(raw)) if _is_unnamed_text_part(p)]) > 1
 
         reduced = _reduce_message_body(raw, UNIQUE_HTML)
 
-        assert len([p for p in _leaves(_parse(reduced)) if _looks_like_body(p)]) == 1
+        assert len([p for p in _leaves(_parse(reduced)) if _is_unnamed_text_part(p)]) == 1
 
     @pytest.mark.parametrize("fixture", STRUCTURED_FIXTURES, ids=lambda p: p.name)
     def test_the_original_body_text_is_gone(self, fixture: Path):
@@ -1037,7 +1027,7 @@ class TestCarriesText:
         ids=["none", "empty", "spaces", "tags", "nbsp-entity", "numeric-entity"],
     )
     def test_markup_without_words_is_not_text(self, value):
-        assert _carries_text(value, is_markup=True) is False
+        assert _has_visible_text(value, is_markup=True) is False
 
     @pytest.mark.parametrize(
         "value",
@@ -1045,7 +1035,7 @@ class TestCarriesText:
         ids=["bare", "wrapped", "escaped-ampersand"],
     )
     def test_markup_with_words_is_text(self, value):
-        assert _carries_text(value, is_markup=True) is True
+        assert _has_visible_text(value, is_markup=True) is True
 
     @pytest.mark.parametrize(
         "value",
@@ -1053,7 +1043,7 @@ class TestCarriesText:
         ids=["bracketed-note", "bracketed-pointer", "comparison"],
     )
     def test_plain_text_in_angle_brackets_is_still_text(self, value):
-        assert _carries_text(value, is_markup=False) is True
+        assert _has_visible_text(value, is_markup=False) is True
 
     @pytest.mark.parametrize(
         "value",
@@ -1063,11 +1053,11 @@ class TestCarriesText:
     def test_the_same_values_read_as_empty_markup(self, value):
         """This is the miss the flag exists to prevent. Read as markup these
         strip to nothing, so a plain-text message would be left unreduced."""
-        assert _carries_text(value, is_markup=True) is False
+        assert _has_visible_text(value, is_markup=True) is False
 
     @pytest.mark.parametrize("value", [None, "", "  \r\n "], ids=["none", "empty", "whitespace"])
     def test_plain_text_still_has_to_hold_something(self, value):
-        assert _carries_text(value, is_markup=False) is False
+        assert _has_visible_text(value, is_markup=False) is False
 
 
 class TestDownloaderQuotedHistoryRequest:
@@ -1338,6 +1328,105 @@ class TestDownloaderQuotedHistoryRequest:
             downloader._download_message(self._file_data(), download_path)
 
         assert [path.name for path in tmp_path.iterdir()] == ["msg-1.eml"]
+
+    @pytest.mark.parametrize("failing_call", ["write_bytes", "replace"], ids=["write", "replace"])
+    def test_an_unwritable_file_keeps_the_download_instead_of_failing(
+        self, tmp_path: Path, failing_call: str
+    ):
+        """The download on disk is already complete, so a disk failure must not
+        fail the record: one unwritable file would otherwise fail the whole run,
+        because a non-empty pipeline status raises at the end of it."""
+        raw = HTML_AND_PLAIN_WITH_IMAGE_ATTACHMENT.read_bytes()
+        downloader = self._downloader(exclude_quoted_history=True)
+        client, _ = self._client_writing(raw, UNIQUE_HTML)
+        download_path = tmp_path / "msg-1.eml"
+
+        def boom(self, *args, **kwargs):
+            raise OSError("no space left on device")
+
+        with (
+            patch.object(OutlookConnectionConfig, "get_client", return_value=client),
+            patch.object(Path, failing_call, boom),
+        ):
+            downloader._download_message(self._file_data(), download_path)
+
+        assert download_path.read_bytes() == raw
+        assert [path.name for path in tmp_path.iterdir()] == ["msg-1.eml"]
+
+
+class TestReduceMessageBodyKeepsBodyPartHeaders:
+    """set_content clears every Content-* header on the part it rewrites.
+
+    Those headers say what the part is and where it sits, not what it holds:
+    a multipart/related start= points at Content-ID, and Outlook mail resolves
+    relative references to inline resources through Content-Location.
+    """
+
+    RELATED_BODY = (
+        b"From: sender@example.com\r\nSubject: related\r\nMIME-Version: 1.0\r\n"
+        b'Content-Type: multipart/related; boundary="rel"; start="<body@x>"\r\n\r\n'
+        b"--rel\r\nContent-Type: text/html; charset=utf-8\r\n"
+        b"Content-ID: <body@x>\r\n"
+        b"Content-Location: http://example.invalid/mail.htm\r\n"
+        b"Content-Language: en-GB\r\n"
+        b"Content-Disposition: inline\r\n\r\n"
+        b"<html><body>quoted history</body></html>\r\n\r\n"
+        b"--rel\r\nContent-Type: image/png\r\nContent-ID: <img@x>\r\n"
+        b"Content-Transfer-Encoding: base64\r\n\r\naGk=\r\n\r\n--rel--\r\n"
+    )
+
+    @pytest.mark.parametrize(
+        "header",
+        ["Content-ID", "Content-Location", "Content-Language", "Content-Disposition"],
+    )
+    def test_the_header_survives_the_replacement(self, header: str):
+        reduced = _reduce_message_body(self.RELATED_BODY, UNIQUE_HTML)
+
+        body = _parse(reduced).get_body(preferencelist=BODY_PART_PREFERENCE)
+        assert (
+            body[header]
+            == _parse(self.RELATED_BODY).get_body(preferencelist=BODY_PART_PREFERENCE)[header]
+        )
+
+    def test_the_container_start_parameter_still_resolves(self):
+        reduced = _parse(_reduce_message_body(self.RELATED_BODY, UNIQUE_HTML))
+
+        start = reduced.get_param("start")
+        assert start is not None
+        assert any(part["Content-ID"] == start for part in reduced.iter_parts())
+
+    def test_no_mime_version_is_added_to_a_sub_part(self):
+        """RFC 2045 defines MIME-Version for the outermost entity only."""
+        reduced = _reduce_message_body(self.RELATED_BODY, UNIQUE_HTML)
+
+        assert reduced.count(b"MIME-Version") == 1
+
+
+class TestReduceMessageBodyWithTwoTextBlocks:
+    def test_a_second_narrative_text_part_is_dropped(self):
+        """Some clients write text, an image, then more text, side by side.
+
+        The second block is swept as though it were another rendering. Graph
+        returns the unique body as one piece covering both blocks and it is
+        written into the first part, so the text is moved rather than lost.
+        Pinned because nothing else states it, and because the sweep is where
+        a future change would silently start losing the text for real.
+        """
+        raw = (
+            b"From: sender@example.com\r\nSubject: two blocks\r\nMIME-Version: 1.0\r\n"
+            b'Content-Type: multipart/mixed; boundary="mix"\r\n\r\n'
+            b"--mix\r\nContent-Type: text/plain; charset=utf-8\r\n\r\nFIRST BLOCK\r\n\r\n"
+            b"--mix\r\nContent-Type: image/png\r\nContent-Transfer-Encoding: base64\r\n\r\n"
+            b"aGk=\r\n\r\n"
+            b"--mix\r\nContent-Type: text/plain; charset=utf-8\r\n\r\nSECOND BLOCK\r\n\r\n"
+            b"--mix--\r\n"
+        )
+
+        reduced = _reduce_message_body(raw, "the whole unique body")
+
+        assert b"SECOND BLOCK" not in reduced
+        assert b"the whole unique body" in reduced
+        assert b"image/png" in reduced
 
 
 class TestReduceMessageBodyLeavesProtectedMessagesAlone:
