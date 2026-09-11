@@ -3787,7 +3787,7 @@ wheels = [
 
 [[package]]
 name = "office365-rest-python-client"
-version = "2.6.2"
+version = "3.0.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "msal" },
@@ -3795,9 +3795,9 @@ dependencies = [
     { name = "requests" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/bc/04/6dce2d581c54a8e55a3b128cf79a93821a68a62bb9a956e65476c5bb247e/office365_rest_python_client-2.6.2.tar.gz", hash = "sha256:ce27f5a1c0cc3ff97041ccd9b386145692be4c64739f243f7d6ac3edbe0a3c46", size = 659460, upload-time = "2025-05-11T10:24:21.895Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/79/63/6ccc58f2e20c770b9409ea5a4794aa8515e1158b23df2dd2bfe90b04aacd/office365_rest_python_client-3.0.0.tar.gz", hash = "sha256:3f95d29794ee0adc58e0b16f6574257c885c74af108e1789e4b3c286bc2ce5ac", size = 949771, upload-time = "2026-08-02T11:54:01.716Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/3a/a4/611155711f8af347875c15b8b83f5fd9e978bd4de45f90085b9a583b684d/Office365_REST_Python_Client-2.6.2-py3-none-any.whl", hash = "sha256:06fc6829c39b503897caa9d881db419d7f97a8e4f1c95c4c2d12db36ea6c955d", size = 1337139, upload-time = "2025-05-11T10:24:18.926Z" },
+    { url = "https://files.pythonhosted.org/packages/09/70/3abd5a09c4213fc57c2b563b599ebaa05aa51a2f9b74e68c681a881f4e95/office365_rest_python_client-3.0.0-py3-none-any.whl", hash = "sha256:3432a9780febe0aa571543d21288d97ef9e0a0287aa0a5047523a65557e41932", size = 2860038, upload-time = "2026-08-02T11:53:59.863Z" },
 ]
 
 [[package]]
