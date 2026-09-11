@@ -73,7 +73,7 @@ opensearch = [
     "boto3>=1.26.0",
     "botocore>=1.29.0",
 ]
-outlook = ["msal", "Office365-REST-Python-Client"]
+outlook = ["msal", "Office365-REST-Python-Client>=2.6.2,<4"]
 pinecone = ["pinecone"]
 postgres = ["pandas", "psycopg2-binary"]
 qdrant = ["qdrant-client"]

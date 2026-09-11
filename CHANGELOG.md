@@ -1,3 +1,9 @@
+## [1.11.12]
+
+### Enhancements
+
+- **feat(outlook): add `exclude_quoted_history` to the Outlook downloader.** Every message in a mail folder becomes its own record, and every reply quotes the chain beneath it, so a long conversation lands as many records whose text overlaps almost entirely: earlier text is re-extracted with every reply, and one query matches all of them. With this downloader setting on, each downloaded message keeps only the text unique to that message. Graph already computes this as a message's `uniqueBody`, so no quote-stripping heuristics are needed: the downloader reads it in one extra request per message, rendered to match the body part being replaced, and rewrites that part in the downloaded MIME. Headers, record identity, and every attachment and inline related part are untouched, so nothing downstream changes: the partitioner simply sees a smaller message. Any message Graph supplies no unique body for keeps its full body, which is today's behaviour. Off by default. Note that Graph exposes no way to tell a forward from a reply, so a forwarded message keeps only the comment its sender added and not the text they forwarded.
+
 ## [1.11.11]
 
 ### Fixes

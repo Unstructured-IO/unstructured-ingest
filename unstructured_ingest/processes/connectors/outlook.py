@@ -1,9 +1,10 @@
 import hashlib
 import time
+from contextlib import suppress
 from dataclasses import dataclass, field
 from datetime import timezone
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Coroutine, Generator, Optional
+from typing import TYPE_CHECKING, Any, Callable, Coroutine, Generator, Optional
 
 from pydantic import Field, Secret, model_validator
 
@@ -12,7 +13,7 @@ from unstructured_ingest.data_types.file_data import (
     FileDataSourceMetadata,
     SourceIdentifiers,
 )
-from unstructured_ingest.error import SourceConnectionError, ValueError
+from unstructured_ingest.error import SourceConnectionError, ValueError, safe_error_summary
 from unstructured_ingest.interfaces import (
     AccessConfig,
     ConnectionConfig,
@@ -26,6 +27,12 @@ from unstructured_ingest.logger import logger
 from unstructured_ingest.processes.connector_registry import (
     LocationShape,
     SourceRegistryEntry,
+)
+from unstructured_ingest.processes.connectors.outlook_mime import (
+    BodyRendering,
+    KeepOriginal,
+    ReplacementBody,
+    prepare_body_replacement,
 )
 from unstructured_ingest.utils.dep_check import requires_dependencies
 
@@ -56,6 +63,10 @@ MESSAGE_SELECT_FIELDS = [
     "importance",
 ]
 
+# Graph omits uniqueBody unless it is named in $select.
+UNIQUE_BODY_FIELD = "uniqueBody"
+_GRAPH_RENDERINGS = {BodyRendering.HTML: "html", BodyRendering.TEXT: "text"}
+
 if TYPE_CHECKING:
     from office365.graph_client import GraphClient
     from office365.outlook.mail.folders.folder import MailFolder
@@ -74,6 +85,53 @@ def _prefer_immutable_ids(request: "RequestOptions") -> None:
     that keys off FileData.identifier.
     """
     request.set_header("Prefer", 'IdType="ImmutableId"')
+
+
+def _prefer_body_rendering(rendering: BodyRendering) -> Callable[["RequestOptions"], None]:
+    """Ask Graph to render uniqueBody to match a MIME body part, keeping any other Prefer.
+
+    Graph's Prefer header calls MIME's "plain" rendering "text". Sending the
+    untranslated value is ignored (RFC 7240) and answered with Graph's HTML,
+    so translation stays in this Graph adapter.
+    """
+    preference = f'outlook.body-content-type="{_GRAPH_RENDERINGS[rendering]}"'
+
+    def hook(request: "RequestOptions") -> None:
+        existing = request.headers.get("Prefer")
+        request.set_header("Prefer", f"{existing}, {preference}" if existing else preference)
+
+    return hook
+
+
+def _replacement_from_graph(value: Any) -> Optional[ReplacementBody]:
+    """Normalise the client's answer, or None when there is nothing usable in it.
+
+    office365 2.x leaves a field it declares no accessor for as the raw JSON
+    dict, while 3.x deserialises uniqueBody into a typed ItemBody carrying an
+    enum contentType. Reading either shape keeps the connector working across
+    both, and keeps the one place that has to know about the difference to one
+    place. A content value that is not text is Graph breaking its own schema,
+    which is a reason to keep the downloaded message rather than to fail it.
+    """
+    if isinstance(value, dict):
+        content, content_type = value.get("content"), value.get("contentType")
+    elif value is not None and hasattr(value, "content"):
+        content, content_type = value.content, getattr(value, "contentType", None)
+    else:
+        return None
+
+    if not isinstance(content, str):
+        return None
+    content_type = getattr(content_type, "value", content_type)
+    rendering = next(
+        (
+            kind
+            for kind, name in _GRAPH_RENDERINGS.items()
+            if isinstance(content_type, str) and name == content_type.lower()
+        ),
+        None,
+    )
+    return ReplacementBody(rendering=rendering, content=content)
 
 
 class OutlookAccessConfig(AccessConfig):
@@ -173,7 +231,7 @@ class OutlookConnectionConfig(ConnectionConfig):
 
         client = GraphClient(self._acquire_token)
         # Registered directly on the pending request's event handler rather
-        # than via client.before_execute(): on the pinned 2.6.2 that
+        # than via client.before_execute(): on 2.6.2 that
         # context-level helper defaults to once=True, unregistering after the
         # first request, and on 3.0.0 it additionally no-ops on a fresh client
         # (early-returns when no query has been queued yet) and scopes the hook
@@ -315,7 +373,17 @@ class OutlookIndexer(Indexer):
 
 
 class OutlookDownloaderConfig(DownloaderConfig):
-    pass
+    exclude_quoted_history: bool = Field(
+        default=False,
+        description="Keep only the text unique to each message, dropping the quoted history of "
+        "earlier messages in the same conversation. Headers and attachments are unchanged. Costs "
+        "one extra Graph request per downloaded message. Graph decides what counts as unique, "
+        "with three consequences worth knowing: a forwarded message keeps only the comment its "
+        "sender added and not the text they forwarded; a reply typed inside the quoted block "
+        "rather than above it can lose that text; and where a message carries both an HTML and a "
+        "plain-text body, the HTML one is kept. Turning this on does not rewrite messages already "
+        "downloaded, since their record version has not changed.",
+    )
 
 
 @dataclass
@@ -355,11 +423,122 @@ class OutlookDownloader(Downloader):
         user_email = file_data.metadata.record_locator["user_email"]
         message_id = file_data.metadata.record_locator["message_id"]
 
-        message = self.connection_config.get_client().users[user_email].messages[message_id]
+        client = self.connection_config.get_client()
+        message = client.users[user_email].messages[message_id]
         download_path.parent.mkdir(exist_ok=True, parents=True)
 
         with open(download_path, "wb") as file:
             message.download(file).execute_query()
+
+        if self.download_config.exclude_quoted_history:
+            self._exclude_quoted_history(client, user_email, message_id, download_path)
+
+    def _exclude_quoted_history(
+        self, client: "GraphClient", user_email: str, message_id: str, download_path: Path
+    ) -> None:
+        """Rewrite the downloaded message to hold only its own new text.
+
+        Runs after the download, because the downloaded message decides which
+        rendering to ask Graph for. Any message Graph cannot supply a unique
+        body for is left exactly as downloaded, so the worst case is the
+        behaviour of leaving this setting off.
+        """
+        try:
+            prepared = prepare_body_replacement(download_path.read_bytes())
+        except Exception as e:
+            # The complete message is already on disk, so a message this cannot
+            # read is still a record: keep it rather than fail it.
+            logger.warning(
+                f"Could not read the body of message {message_id}, "
+                f"keeping the full body including any quoted history: {safe_error_summary(e)}"
+            )
+            return
+        if isinstance(prepared, KeepOriginal):
+            self._log_kept_body(message_id, prepared)
+            return
+
+        try:
+            unique = self._fetch_unique_body(client, user_email, message_id, prepared.rendering)
+            result = prepared.replace(unique)
+        except Exception as e:
+            # The full message is already on disk and usable, so a throttled or
+            # failed extra request must not fail the record.
+            logger.warning(
+                f"Could not reduce the body of message {message_id}, "
+                f"keeping the full body including any quoted history: {safe_error_summary(e)}"
+            )
+            return
+
+        if isinstance(result, KeepOriginal):
+            self._log_kept_body(message_id, result)
+            return
+
+        self._write_reduced(result, message_id, download_path)
+
+    @staticmethod
+    def _log_kept_body(message_id: str, reason: KeepOriginal) -> None:
+        explanations = {
+            KeepOriginal.NO_BODY_PART: "has no body part to reduce",
+            KeepOriginal.PROTECTED: "contains signed or encrypted MIME",
+            KeepOriginal.EMPTY_ORIGINAL: "has an empty body",
+            KeepOriginal.MISSING_CONTENT: "received no usable unique body",
+            KeepOriginal.RENDERING_MISMATCH: "received a mismatched or unnamed rendering",
+        }
+        log = (
+            logger.warning
+            if reason in (KeepOriginal.MISSING_CONTENT, KeepOriginal.RENDERING_MISMATCH)
+            else logger.info
+        )
+        log(f"Message {message_id} {explanations[reason]}, keeping it as downloaded.")
+
+    @staticmethod
+    def _write_reduced(
+        reduced: bytes,
+        message_id: str,
+        download_path: Path,
+    ) -> None:
+        """Stage the reduced message beside the target, then move it into place.
+
+        The download already on disk is complete and usable, so a failure here
+        leaves it alone rather than failing the record: one unwritable file must
+        not fail the run.
+        """
+        staged = download_path.with_name(download_path.name + ".reduced")
+        try:
+            staged.write_bytes(reduced)
+            staged.replace(download_path)
+        except Exception as e:
+            logger.warning(
+                f"Could not write the reduced body of message {message_id}, "
+                f"keeping the full body including any quoted history: {safe_error_summary(e)}"
+            )
+        finally:
+            with suppress(OSError):
+                staged.unlink(missing_ok=True)
+
+    @requires_dependencies(["office365"], extras="outlook")
+    def _fetch_unique_body(
+        self, client: "GraphClient", user_email: str, message_id: str, rendering: BodyRendering
+    ) -> Optional[ReplacementBody]:
+        """Read uniqueBody for one message, rendered to match its body part.
+
+        Reuses the client the download already built, so this costs one request
+        and no second token acquisition. The value comes off the raw property,
+        the same way the indexer reads changeKey; _replacement_from_graph absorbs
+        the difference between the shapes the office365 client returns it in.
+        """
+        # Deregistered afterwards: the hook appends, so one left on the client
+        # would stack a second preference onto every later request.
+        prefer = _prefer_body_rendering(rendering)
+        client.pending_request().beforeExecute += prefer
+        try:
+            message = client.users[user_email].messages[message_id]
+            message.select(["id", UNIQUE_BODY_FIELD]).get()
+            client.execute_query()
+        finally:
+            client.pending_request().beforeExecute -= prefer
+
+        return _replacement_from_graph(message.get_property(UNIQUE_BODY_FIELD))
 
 
 outlook_source_entry = SourceRegistryEntry(

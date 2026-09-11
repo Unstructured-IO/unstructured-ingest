@@ -256,9 +256,7 @@ class TestListMessagesPagination:
         indexer = _make_indexer(recursive=False)
         spanning_three_pages = [Mock() for _ in range(MESSAGES_PAGE_SIZE * 2 + 3)]
         root_folder = _make_folder("root")
-        root_folder.messages.get_all.return_value.execute_query.return_value = (
-            spanning_three_pages
-        )
+        root_folder.messages.get_all.return_value.execute_query.return_value = spanning_three_pages
 
         with patch.object(OutlookIndexer, "_get_selected_root_folders", return_value=[root_folder]):
             messages = indexer._list_messages(recursive=False)
