@@ -474,9 +474,9 @@ class OutlookDownloader(Downloader):
             # Graph may ignore an unsupported Prefer header and answer in its own
             # default, which would put markup into a plain-text part. An answer
             # that names no rendering at all is no more honoured than a wrong one.
-            answered = unique.rendering.graph_value if unique.rendering else "an unnamed"
+            answered = f"a {unique.rendering.graph_value}" if unique.rendering else "an unnamed"
             logger.warning(
-                f"Graph answered with a {answered} unique body for message {message_id} "
+                f"Graph answered with {answered} unique body for message {message_id} "
                 f"where {plan.rendering.graph_value} was requested, keeping the full body."
             )
             return
