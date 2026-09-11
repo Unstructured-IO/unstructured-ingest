@@ -33,7 +33,10 @@ _MARKUP_TAG = re.compile(r"<[^>]+>")
 # read a rule set as words and replace a full body with a sheet of CSS.
 _UNRENDERED_ELEMENT = re.compile(r"<(script|style)\b[^>]*>.*?</\1\s*>", re.IGNORECASE | re.DOTALL)
 
-# Rewriting a body would break the signature these carry.
+# Rewriting a body would break the signature these carry. One anywhere in the
+# tree is enough to decline the whole message, an attached signed message
+# included: a signature covers the exact bytes it was made over, and rebuilding
+# the message re-serialises every part, not only the one being replaced.
 _PROTECTED_CONTENT_TYPES = ("multipart/signed", "multipart/encrypted")
 
 # Headers that say what a body part is and where it sits, rather than what it
@@ -183,6 +186,11 @@ def apply_body_replacement(plan: BodyReplacement, content: str) -> bytes:
     set_content clears every Content-* header on the part and adds a
     MIME-Version a sub-part should not carry, so the headers describing this
     part's identity and place in the message are put back afterwards.
+
+    The Content-Type parameters are deliberately not among them. format=flowed
+    and delsp say how the text that used to be here was wrapped, and this is
+    different text that was not wrapped that way, so carrying them over would
+    tell a reader to unfold lines that were never folded.
     """
     part = plan.part
     preserved = [

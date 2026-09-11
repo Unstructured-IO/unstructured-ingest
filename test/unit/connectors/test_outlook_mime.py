@@ -48,11 +48,13 @@ def _reduced(raw: bytes, unique_content: str) -> bytes:
 
 
 def _declines(raw: bytes, unique_content: Optional[str]) -> bool:
-    """Whether the downloader would keep the message exactly as downloaded.
+    """Whether these two grounds alone would keep the message as downloaded.
 
-    The shipped conditions, in the shipped order: no part that may be rewritten,
-    no usable answer from Graph (which is what UniqueBody.from_graph reports as
-    None), or an answer with no words in it.
+    Only the grounds this module can see: no part that may be rewritten, and an
+    answer with no words in it, with None standing for an answer that
+    UniqueBody.from_graph could make nothing of. The downloader declines on a
+    third that needs the request to have been made, a rendering it did not ask
+    for, so test_outlook_quoted_history covers that one rather than this.
     """
     plan = plan_body_replacement(raw)
     if isinstance(plan, KeepFullBody):
