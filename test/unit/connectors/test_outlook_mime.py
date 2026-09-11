@@ -508,6 +508,30 @@ class TestHasVisibleText:
     def test_plain_text_still_has_to_hold_something(self, value):
         assert has_visible_text(value, BodyRendering.TEXT) is False
 
+    @pytest.mark.parametrize(
+        "value",
+        [
+            "<html><head><style>p.MsoNormal {margin:0cm; font-size:11.0pt}</style></head>"
+            "<body><p class=MsoNormal></p></body></html>",
+            "<html><head><script>var trackingId = 'abc123';</script></head><body></body></html>",
+            "<STYLE TYPE='text/css'>@media print { body { color: black } }</STYLE>",
+        ],
+        ids=["outlook-stylesheet", "script", "shouting-stylesheet"],
+    )
+    def test_a_stylesheet_or_a_script_is_not_words(self, value):
+        """Outlook writes a stylesheet into a body that says nothing at all.
+
+        Stripping only the tags would leave the rule set behind and read it as
+        words, so a body that says something would be replaced by one that says
+        nothing rather than being kept as it is.
+        """
+        assert has_visible_text(value, BodyRendering.HTML) is False
+
+    def test_words_beside_a_stylesheet_are_still_words(self):
+        value = "<html><head><style>p {margin:0}</style></head><body><p>new text</p></body></html>"
+
+        assert has_visible_text(value, BodyRendering.HTML) is True
+
 
 class TestBodyReplacementKeepsBodyPartHeaders:
     """set_content clears every Content-* header on the part it rewrites.
