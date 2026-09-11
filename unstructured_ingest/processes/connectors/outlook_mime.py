@@ -10,11 +10,11 @@ import email
 import email.policy
 import html
 import re
+from copy import deepcopy
 from dataclasses import dataclass
 from email.message import EmailMessage
 from enum import Enum
-from typing import Any, Optional, Union
-from uuid import uuid4
+from typing import Optional, Union
 
 # The only two renderings the email partitioner will read (its
 # VALID_CONTENT_SOURCES), in its own order of preference. It can be configured
@@ -56,55 +56,23 @@ _KEPT_BODY_HEADERS = frozenset(
 
 
 class BodyRendering(Enum):
-    """A rendering of a message body, under both of the names it goes by.
+    """The two supported MIME body renderings."""
 
-    MIME calls plain text "plain"; Graph's Prefer header and its answer call the
-    same rendering "text". Carrying both names on one member is what keeps the
-    two vocabularies from being translated by hand at each boundary, and what
-    lets "the rendering we asked for" and "the rendering we got" be compared
-    rather than string-matched.
-    """
-
-    HTML = ("html", "html")
-    TEXT = ("plain", "text")
-
-    def __init__(self, mime_subtype: str, graph_value: str) -> None:
-        self.mime_subtype = mime_subtype
-        self.graph_value = graph_value
-
-    @property
-    def is_markup(self) -> bool:
-        """Whether angle brackets in this rendering are tags rather than text."""
-        return self is BodyRendering.HTML
-
-    @classmethod
-    def of_part(cls, part: EmailMessage) -> "BodyRendering":
-        """The rendering a body part holds. Body selection yields only these two."""
-        return cls.HTML if part.get_content_subtype() == cls.HTML.mime_subtype else cls.TEXT
-
-    @classmethod
-    def of_graph(cls, content_type: Any) -> Optional["BodyRendering"]:
-        """The rendering Graph says it answered in, or None if it did not say.
-
-        The value is a plain string on office365 2.x and a BodyType enum on 3.x.
-        Anything else means Graph named a rendering this cannot honour, which is
-        not the same as naming the one that was asked for.
-        """
-        value = getattr(content_type, "value", content_type)
-        if not isinstance(value, str):
-            return None
-        named = value.lower()
-        return next((rendering for rendering in cls if rendering.graph_value == named), None)
+    HTML = "html"
+    TEXT = "plain"
 
 
-class KeepFullBody(Enum):
-    """Why a message's body cannot be replaced, in words that finish a log line."""
+class KeepOriginal(Enum):
+    """Why a message should remain as downloaded."""
 
     NO_BODY_PART = "has no body part to reduce"
     PROTECTED = "is signed or encrypted"
+    EMPTY_ORIGINAL = "has an empty body"
+    MISSING_CONTENT = "has no replacement body text"
+    RENDERING_MISMATCH = "has a replacement in a different or unknown rendering"
 
 
-class MailMessage(EmailMessage):
+class _MailMessage(EmailMessage):
     """A message whose named inline parts count as attachments.
 
     The standard library calls a part an attachment only when its disposition
@@ -117,12 +85,12 @@ class MailMessage(EmailMessage):
         return super().is_attachment() or self.get_filename() is not None
 
 
-def parse(raw: bytes) -> MailMessage:
-    """Parse a downloaded message, with every part a `MailMessage`."""
-    return email.message_from_bytes(raw, MailMessage, policy=MIME_POLICY)
+def _parse(raw: bytes) -> _MailMessage:
+    """Parse a downloaded message, with every part a `_MailMessage`."""
+    return email.message_from_bytes(raw, _MailMessage, policy=MIME_POLICY)
 
 
-def has_visible_text(content: str, rendering: BodyRendering) -> bool:
+def _has_visible_text(content: str, rendering: BodyRendering) -> bool:
     """Whether a body value holds any words a reader would see.
 
     A body with no words still arrives as a non-empty string of tags, which
@@ -132,82 +100,81 @@ def has_visible_text(content: str, rendering: BodyRendering) -> bool:
     """
     if not content:
         return False
-    if not rendering.is_markup:
+    if rendering is not BodyRendering.HTML:
         return bool(content.strip())
     rendered = _MARKUP_TAG.sub(" ", _UNRENDERED_ELEMENT.sub(" ", content))
     return bool(html.unescape(rendered).strip())
 
 
 @dataclass(frozen=True)
-class BodyReplacement:
-    """The body part a reduction would rewrite, and the rendering it must be given.
+class ReplacementBody:
+    """Replacement text and the rendering its provider returned."""
 
-    `part_has_text` is read before the rewrite, because it is the only way to
-    tell a message whose body was always empty from one whose body was lost.
-    """
-
-    message: MailMessage
-    part: EmailMessage
-    rendering: BodyRendering
-    part_has_text: bool
+    rendering: Optional[BodyRendering]
+    content: str
 
 
-def plan_body_replacement(raw: bytes) -> Union[BodyReplacement, KeepFullBody]:
-    """What replacing the body of `raw` would rewrite, or why it must not be tried.
+class PreparedReplacement:
+    """An eligible body prepared by `prepare_body_replacement`, with private MIME state."""
 
-    This is the only place that decides which part a partitioner will read and
-    which rendering has to be asked for, so the caller never has to derive
-    either for itself.
-    """
-    message = parse(raw)
+    def __init__(
+        self, message: _MailMessage, part: EmailMessage, rendering: BodyRendering, has_text: bool
+    ) -> None:
+        self._message = message
+        self._part = part
+        self._rendering = rendering
+        self._has_text = has_text
+
+    @property
+    def rendering(self) -> BodyRendering:
+        """The rendering required by the selected body part."""
+        return self._rendering
+
+    def replace(self, body: Optional[ReplacementBody]) -> Union[bytes, KeepOriginal]:
+        """Serialize an accepted replacement without changing this prepared message."""
+        if body is not None and body.rendering is not self.rendering:
+            return KeepOriginal.RENDERING_MISMATCH
+        if body is None or not _has_visible_text(body.content, self.rendering):
+            return KeepOriginal.MISSING_CONTENT if self._has_text else KeepOriginal.EMPTY_ORIGINAL
+
+        # Copy together so the selected part remains a member of the copied tree.
+        message, part = deepcopy((self._message, self._part))
+        preserved = [
+            (name, value) for name, value in part.items() if name.lower() in _KEPT_BODY_HEADERS
+        ]
+        had_mime_version = "MIME-Version" in part
+        # Base64 cannot contain a MIME delimiter line, even if the text contains one.
+        # set_content also removes obsolete format=flowed and delsp parameters.
+        part.set_content(body.content, subtype=self.rendering.value, charset="utf-8", cte="base64")
+        if not had_mime_version:
+            del part["MIME-Version"]
+        for name, value in preserved:
+            part[name] = value
+        _drop_other_body_renderings(message, part)
+        return message.as_bytes(policy=MIME_POLICY)
+
+
+def prepare_body_replacement(raw: bytes) -> Union[PreparedReplacement, KeepOriginal]:
+    """Select an eligible body and the rendering its replacement must use."""
+    message = _parse(raw)
     if any(part.get_content_type() in _PROTECTED_CONTENT_TYPES for part in message.walk()):
-        return KeepFullBody.PROTECTED
+        return KeepOriginal.PROTECTED
 
     part = message.get_body(preferencelist=BODY_PART_PREFERENCE)
     if part is None:
-        return KeepFullBody.NO_BODY_PART
+        return KeepOriginal.NO_BODY_PART
 
-    rendering = BodyRendering.of_part(part)
+    rendering = BodyRendering(part.get_content_subtype())
     try:
         text = part.get_content()
     except Exception:  # noqa: BLE001 - an undecodable body holds no readable text
         text = ""
-    return BodyReplacement(
+    return PreparedReplacement(
         message=message,
         part=part,
         rendering=rendering,
-        part_has_text=has_visible_text(text, rendering),
+        has_text=_has_visible_text(text, rendering),
     )
-
-
-def apply_body_replacement(plan: BodyReplacement, content: str) -> bytes:
-    """The planned message with its body part holding only `content`.
-
-    set_content clears every Content-* header on the part and adds a
-    MIME-Version a sub-part should not carry, so the headers describing this
-    part's identity and place in the message are put back afterwards.
-
-    The Content-Type parameters are deliberately not among them. format=flowed
-    and delsp say how the text that used to be here was wrapped, and this is
-    different text that was not wrapped that way, so carrying them over would
-    tell a reader to unfold lines that were never folded.
-    """
-    part = plan.part
-    preserved = [
-        (name, value) for name, value in part.items() if name.lower() in _KEPT_BODY_HEADERS
-    ]
-    had_mime_version = "MIME-Version" in part
-
-    part.set_content(content, subtype=plan.rendering.mime_subtype, charset="utf-8")
-
-    if not had_mime_version:
-        del part["MIME-Version"]
-    for name, value in preserved:
-        part[name] = value
-
-    _drop_other_body_renderings(plan.message, part)
-    _refresh_forged_boundaries(plan.message, content)
-    return plan.message.as_bytes(policy=MIME_POLICY)
 
 
 def _related_root(container: EmailMessage) -> Optional[EmailMessage]:
@@ -269,19 +236,3 @@ def _drop_other_body_renderings(part: EmailMessage, keep: EmailMessage) -> None:
 def _is_unnamed_text_part(part: EmailMessage) -> bool:
     """Whether a part is a rendering of the message body rather than a file."""
     return part.get_content_type() in ("text/plain", "text/html") and not part.is_attachment()
-
-
-def _refresh_forged_boundaries(message: EmailMessage, content: str) -> None:
-    """Re-boundary any container whose delimiter the new body text could forge.
-
-    A text part is written out verbatim under 7bit and quoted-printable alike,
-    and the generator reuses a boundary the message already carries without
-    scanning the payload for it. A line in the new body matching a container's
-    delimiter would therefore be re-read as a real one on the next parse: the
-    message silently gains a part it never had, or ends early with any
-    attachment past that point still in the file but unreachable.
-    """
-    for part in message.walk():
-        boundary = part.get_boundary()
-        if boundary and any(line.startswith(f"--{boundary}") for line in content.splitlines()):
-            part.set_boundary(uuid4().hex)

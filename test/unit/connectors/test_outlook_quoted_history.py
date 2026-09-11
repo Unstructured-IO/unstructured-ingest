@@ -1,3 +1,5 @@
+import email
+import email.policy
 import logging
 from contextlib import suppress
 from pathlib import Path
@@ -30,17 +32,20 @@ from unstructured_ingest.processes.connectors.outlook import (
     OutlookConnectionConfig,
     OutlookDownloader,
     OutlookDownloaderConfig,
-    UniqueBody,
     _prefer_body_rendering,
     _prefer_immutable_ids,
+    _replacement_from_graph,
 )
 from unstructured_ingest.processes.connectors.outlook_mime import (
     BODY_PART_PREFERENCE,
     BodyRendering,
-    BodyReplacement,
-    parse,
-    plan_body_replacement,
+    ReplacementBody,
 )
+
+
+def parse(raw: bytes):
+    return email.message_from_bytes(raw, policy=email.policy.default)
+
 
 PREFER_BODY_RENDERING = "unstructured_ingest.processes.connectors.outlook._prefer_body_rendering"
 
@@ -69,22 +74,22 @@ class TestUniqueBodyFromGraph:
             self.value = value
 
     def test_reads_the_raw_dict(self):
-        answer = UniqueBody.from_graph({"contentType": "html", "content": "<p>new</p>"})
+        answer = _replacement_from_graph({"contentType": "html", "content": "<p>new</p>"})
 
-        assert answer == UniqueBody(rendering=BodyRendering.HTML, content="<p>new</p>")
+        assert answer == ReplacementBody(rendering=BodyRendering.HTML, content="<p>new</p>")
 
     def test_reads_a_typed_body(self):
-        answer = UniqueBody.from_graph(self._ItemBody("only the new text", "text"))
+        answer = _replacement_from_graph(self._ItemBody("only the new text", "text"))
 
-        assert answer == UniqueBody(rendering=BodyRendering.TEXT, content="only the new text")
+        assert answer == ReplacementBody(rendering=BodyRendering.TEXT, content="only the new text")
 
     def test_reads_a_typed_body_whose_rendering_is_an_enum(self):
-        answer = UniqueBody.from_graph(self._ItemBody("<p>new</p>", self._BodyType("html")))
+        answer = _replacement_from_graph(self._ItemBody("<p>new</p>", self._BodyType("html")))
 
-        assert answer == UniqueBody(rendering=BodyRendering.HTML, content="<p>new</p>")
+        assert answer == ReplacementBody(rendering=BodyRendering.HTML, content="<p>new</p>")
 
     def test_reads_a_rendering_in_any_case(self):
-        answer = UniqueBody.from_graph({"contentType": "HTML", "content": "<p>new</p>"})
+        answer = _replacement_from_graph({"contentType": "HTML", "content": "<p>new</p>"})
 
         assert answer is not None and answer.rendering is BodyRendering.HTML
 
@@ -99,12 +104,12 @@ class TestUniqueBodyFromGraph:
         A missing contentType used to short-circuit the honour check, which put
         markup into a plain-text part for the partitioner to extract literally.
         """
-        answer = UniqueBody.from_graph({"contentType": content_type, "content": "<p>new</p>"})
+        answer = _replacement_from_graph({"contentType": content_type, "content": "<p>new</p>"})
 
         assert answer is not None and answer.rendering is None
 
     def test_a_rendering_with_no_key_at_all_is_not_a_rendering(self):
-        answer = UniqueBody.from_graph({"content": "<p>new</p>"})
+        answer = _replacement_from_graph({"content": "<p>new</p>"})
 
         assert answer is not None and answer.rendering is None
 
@@ -117,17 +122,17 @@ class TestUniqueBodyFromGraph:
         """Graph types content as a string; anything else is it breaking its own
         schema, which is a reason to keep the downloaded message rather than to
         raise past the downloader and fail the record."""
-        assert UniqueBody.from_graph({"contentType": "html", "content": content}) is None
+        assert _replacement_from_graph({"contentType": "html", "content": content}) is None
 
     @pytest.mark.parametrize("value", [None, "", 0, "a string"], ids=str)
     def test_an_answer_with_no_body_in_it_is_declined(self, value):
-        assert UniqueBody.from_graph(value) is None
+        assert _replacement_from_graph(value) is None
 
     def test_an_empty_body_is_read_rather_than_declined(self):
         """An empty uniqueBody is Graph's honest answer for an empty message."""
-        answer = UniqueBody.from_graph({"contentType": "html", "content": ""})
+        answer = _replacement_from_graph({"contentType": "html", "content": ""})
 
-        assert answer == UniqueBody(rendering=BodyRendering.HTML, content="")
+        assert answer == ReplacementBody(rendering=BodyRendering.HTML, content="")
 
     def test_the_client_round_trips_a_graph_payload(self):
         """Drives the installed client rather than a stand-in, so an upgrade that
@@ -145,7 +150,7 @@ class TestUniqueBodyFromGraph:
 
         message.set_property(UNIQUE_BODY_FIELD, {"contentType": "html", "content": "<p>new</p>"})
 
-        assert UniqueBody.from_graph(message.get_property(UNIQUE_BODY_FIELD)) == UniqueBody(
+        assert _replacement_from_graph(message.get_property(UNIQUE_BODY_FIELD)) == ReplacementBody(
             rendering=BodyRendering.HTML, content="<p>new</p>"
         )
 
@@ -277,8 +282,10 @@ class TestDownloaderQuotedHistoryRequest:
             file_obj.write(raw)
             return MagicMock()
 
-        plan = plan_body_replacement(raw)
-        rendering = plan.rendering.graph_value if isinstance(plan, BodyReplacement) else "html"
+        body = email.message_from_bytes(raw, policy=email.policy.default).get_body(
+            preferencelist=BODY_PART_PREFERENCE
+        )
+        rendering = "text" if body is not None and body.get_content_subtype() == "plain" else "html"
 
         message.download.side_effect = _download
         message.select.return_value = message
@@ -553,6 +560,84 @@ class TestDownloaderQuotedHistoryRequest:
 
         assert download_path.read_bytes() == ATTACHMENT_ONLY
         message.select.assert_not_called()
+
+    @pytest.mark.parametrize(
+        "content",
+        [
+            "<html><head><style>p {color:red}</style></head><body></body></html>",
+            "<html><script>alert(1)</script><body></body></html>",
+            "",
+        ],
+        ids=["stylesheet", "script", "empty"],
+    )
+    def test_an_invisible_answer_preserves_the_download(self, tmp_path: Path, caplog, content):
+        raw = HTML_AND_PLAIN_WITH_IMAGE_ATTACHMENT.read_bytes()
+        downloader = self._downloader(exclude_quoted_history=True)
+        client, message = self._client_writing(raw, content)
+        path = tmp_path / "msg-1.eml"
+        with (
+            caplog.at_level(logging.WARNING),
+            patch.object(OutlookConnectionConfig, "get_client", return_value=client),
+        ):
+            downloader._download_message(self._file_data(), path)
+        assert path.read_bytes() == raw
+        message.select.assert_called_once()
+        assert any(record.levelno == logging.WARNING for record in caplog.records)
+        assert list(tmp_path.iterdir()) == [path]
+
+    def test_parse_failure_preserves_the_download_without_a_graph_lookup(self, tmp_path: Path):
+        raw = HTML_AND_PLAIN_WITH_IMAGE_ATTACHMENT.read_bytes()
+        downloader = self._downloader(exclude_quoted_history=True)
+        client, message = self._client_writing(raw, UNIQUE_HTML)
+        path = tmp_path / "msg-1.eml"
+        with (
+            patch.object(OutlookConnectionConfig, "get_client", return_value=client),
+            patch(
+                "unstructured_ingest.processes.connectors.outlook.prepare_body_replacement",
+                side_effect=RecursionError("nested MIME"),
+            ),
+        ):
+            downloader._download_message(self._file_data(), path)
+        assert path.read_bytes() == raw
+        message.select.assert_not_called()
+        client.execute_query.assert_not_called()
+        assert list(tmp_path.iterdir()) == [path]
+
+    @pytest.mark.parametrize("protected_type", ["signed", "encrypted"])
+    def test_protected_attachment_preserves_the_outer_download(
+        self, tmp_path: Path, protected_type
+    ):
+        raw = (
+            b'Content-Type: multipart/mixed; boundary="outer"\r\n\r\n'
+            b"--outer\r\nContent-Type: text/plain\r\n\r\nOuter history\r\n"
+            b"--outer\r\nContent-Type: message/rfc822\r\n"
+            b"Content-Disposition: attachment\r\n\r\n"
+            + SIGNED_MESSAGE.replace(b"multipart/signed", f"multipart/{protected_type}".encode())
+            + b"\r\n--outer--\r\n"
+        )
+        downloader = self._downloader(exclude_quoted_history=True)
+        client, message = self._client_writing(raw, "new")
+        path = tmp_path / "msg-1.eml"
+        with patch.object(OutlookConnectionConfig, "get_client", return_value=client):
+            downloader._download_message(self._file_data(), path)
+        assert path.read_bytes() == raw
+        message.select.assert_not_called()
+
+    def test_serialization_failure_preserves_the_download(self, tmp_path: Path):
+        raw = HTML_AND_PLAIN_WITH_IMAGE_ATTACHMENT.read_bytes()
+        downloader = self._downloader(exclude_quoted_history=True)
+        client, message = self._client_writing(raw, UNIQUE_HTML)
+        path = tmp_path / "msg-1.eml"
+        with (
+            patch.object(OutlookConnectionConfig, "get_client", return_value=client),
+            patch(
+                "email.message.EmailMessage.as_bytes", side_effect=ValueError("cannot serialize")
+            ),
+        ):
+            downloader._download_message(self._file_data(), path)
+        assert path.read_bytes() == raw
+        message.select.assert_called_once()
+        assert list(tmp_path.iterdir()) == [path]
 
     def test_a_signed_message_is_left_alone(self, tmp_path: Path):
         """Replacing the body of a signed message would leave it claiming a

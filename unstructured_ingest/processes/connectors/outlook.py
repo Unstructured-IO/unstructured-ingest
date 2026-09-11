@@ -4,7 +4,7 @@ from contextlib import suppress
 from dataclasses import dataclass, field
 from datetime import timezone
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable, Coroutine, Generator, NamedTuple, Optional
+from typing import TYPE_CHECKING, Any, Callable, Coroutine, Generator, Optional
 
 from pydantic import Field, Secret, model_validator
 
@@ -30,11 +30,9 @@ from unstructured_ingest.processes.connector_registry import (
 )
 from unstructured_ingest.processes.connectors.outlook_mime import (
     BodyRendering,
-    BodyReplacement,
-    KeepFullBody,
-    apply_body_replacement,
-    has_visible_text,
-    plan_body_replacement,
+    KeepOriginal,
+    ReplacementBody,
+    prepare_body_replacement,
 )
 from unstructured_ingest.utils.dep_check import requires_dependencies
 
@@ -67,6 +65,7 @@ MESSAGE_SELECT_FIELDS = [
 
 # Graph omits uniqueBody unless it is named in $select.
 UNIQUE_BODY_FIELD = "uniqueBody"
+_GRAPH_RENDERINGS = {BodyRendering.HTML: "html", BodyRendering.TEXT: "text"}
 
 if TYPE_CHECKING:
     from office365.graph_client import GraphClient
@@ -93,9 +92,9 @@ def _prefer_body_rendering(rendering: BodyRendering) -> Callable[["RequestOption
 
     Graph's Prefer header calls MIME's "plain" rendering "text". Sending the
     untranslated value is ignored (RFC 7240) and answered with Graph's HTML,
-    so the name comes off BodyRendering rather than being mapped here.
+    so translation stays in this Graph adapter.
     """
-    preference = f'outlook.body-content-type="{rendering.graph_value}"'
+    preference = f'outlook.body-content-type="{_GRAPH_RENDERINGS[rendering]}"'
 
     def hook(request: "RequestOptions") -> None:
         existing = request.headers.get("Prefer")
@@ -104,33 +103,35 @@ def _prefer_body_rendering(rendering: BodyRendering) -> Callable[["RequestOption
     return hook
 
 
-class UniqueBody(NamedTuple):
-    """Graph's answer for uniqueBody. The rendering rides along because Graph may not honour it."""
+def _replacement_from_graph(value: Any) -> Optional[ReplacementBody]:
+    """Normalise the client's answer, or None when there is nothing usable in it.
 
-    rendering: Optional[BodyRendering]
-    content: str
+    office365 2.x leaves a field it declares no accessor for as the raw JSON
+    dict, while 3.x deserialises uniqueBody into a typed ItemBody carrying an
+    enum contentType. Reading either shape keeps the connector working across
+    both, and keeps the one place that has to know about the difference to one
+    place. A content value that is not text is Graph breaking its own schema,
+    which is a reason to keep the downloaded message rather than to fail it.
+    """
+    if isinstance(value, dict):
+        content, content_type = value.get("content"), value.get("contentType")
+    elif value is not None and hasattr(value, "content"):
+        content, content_type = value.content, getattr(value, "contentType", None)
+    else:
+        return None
 
-    @classmethod
-    def from_graph(cls, value: Any) -> Optional["UniqueBody"]:
-        """Normalise the client's answer, or None when there is nothing usable in it.
-
-        office365 2.x leaves a field it declares no accessor for as the raw JSON
-        dict, while 3.x deserialises uniqueBody into a typed ItemBody carrying an
-        enum contentType. Reading either shape keeps the connector working across
-        both, and keeps the one place that has to know about the difference to one
-        place. A content value that is not text is Graph breaking its own schema,
-        which is a reason to keep the downloaded message rather than to fail it.
-        """
-        if isinstance(value, dict):
-            content, content_type = value.get("content"), value.get("contentType")
-        elif value is not None and hasattr(value, "content"):
-            content, content_type = value.content, getattr(value, "contentType", None)
-        else:
-            return None
-
-        if not isinstance(content, str):
-            return None
-        return cls(rendering=BodyRendering.of_graph(content_type), content=content)
+    if not isinstance(content, str):
+        return None
+    content_type = getattr(content_type, "value", content_type)
+    rendering = next(
+        (
+            kind
+            for kind, name in _GRAPH_RENDERINGS.items()
+            if isinstance(content_type, str) and name == content_type.lower()
+        ),
+        None,
+    )
+    return ReplacementBody(rendering=rendering, content=content)
 
 
 class OutlookAccessConfig(AccessConfig):
@@ -443,7 +444,7 @@ class OutlookDownloader(Downloader):
         behaviour of leaving this setting off.
         """
         try:
-            plan = plan_body_replacement(download_path.read_bytes())
+            prepared = prepare_body_replacement(download_path.read_bytes())
         except Exception as e:
             # The complete message is already on disk, so a message this cannot
             # read is still a record: keep it rather than fail it.
@@ -452,59 +453,47 @@ class OutlookDownloader(Downloader):
                 f"keeping the full body including any quoted history: {safe_error_summary(e)}"
             )
             return
-        if isinstance(plan, KeepFullBody):
-            logger.info(f"Message {message_id} {plan.value}, keeping it as downloaded.")
+        if isinstance(prepared, KeepOriginal):
+            self._log_kept_body(message_id, prepared)
             return
 
         try:
-            unique = self._fetch_unique_body(client, user_email, message_id, plan.rendering)
+            unique = self._fetch_unique_body(client, user_email, message_id, prepared.rendering)
+            result = prepared.replace(unique)
         except Exception as e:
             # The full message is already on disk and usable, so a throttled or
             # failed extra request must not fail the record.
             logger.warning(
-                f"Could not read the unique body of message {message_id}, "
+                f"Could not reduce the body of message {message_id}, "
                 f"keeping the full body including any quoted history: {safe_error_summary(e)}"
             )
             return
 
-        if unique is None:
-            self._log_nothing_to_reduce(message_id, plan)
-            return
-        if unique.rendering is not plan.rendering:
-            # Graph may ignore an unsupported Prefer header and answer in its own
-            # default, which would put markup into a plain-text part. An answer
-            # that names no rendering at all is no more honoured than a wrong one.
-            answered = f"a {unique.rendering.graph_value}" if unique.rendering else "an unnamed"
-            logger.warning(
-                f"Graph answered with {answered} unique body for message {message_id} "
-                f"where {plan.rendering.graph_value} was requested, keeping the full body."
-            )
-            return
-        if not has_visible_text(unique.content, plan.rendering):
-            self._log_nothing_to_reduce(message_id, plan)
+        if isinstance(result, KeepOriginal):
+            self._log_kept_body(message_id, result)
             return
 
-        self._write_reduced(plan, unique.content, message_id, download_path)
+        self._write_reduced(result, message_id, download_path)
 
     @staticmethod
-    def _log_nothing_to_reduce(message_id: str, plan: BodyReplacement) -> None:
-        """Say whether a body that cannot be reduced was empty all along, or lost.
-
-        An empty body legitimately yields an empty uniqueBody, so only a message
-        that had text to lose is worth warning about.
-        """
-        if plan.part_has_text:
-            logger.warning(
-                f"Graph returned no unique body for message {message_id}, "
-                "keeping the full body including any quoted history."
-            )
-        else:
-            logger.info(f"Message {message_id} has an empty body, keeping it as downloaded.")
+    def _log_kept_body(message_id: str, reason: KeepOriginal) -> None:
+        explanations = {
+            KeepOriginal.NO_BODY_PART: "has no body part to reduce",
+            KeepOriginal.PROTECTED: "contains signed or encrypted MIME",
+            KeepOriginal.EMPTY_ORIGINAL: "has an empty body",
+            KeepOriginal.MISSING_CONTENT: "received no usable unique body",
+            KeepOriginal.RENDERING_MISMATCH: "received a mismatched or unnamed rendering",
+        }
+        log = (
+            logger.warning
+            if reason in (KeepOriginal.MISSING_CONTENT, KeepOriginal.RENDERING_MISMATCH)
+            else logger.info
+        )
+        log(f"Message {message_id} {explanations[reason]}, keeping it as downloaded.")
 
     @staticmethod
     def _write_reduced(
-        plan: BodyReplacement,
-        content: str,
+        reduced: bytes,
         message_id: str,
         download_path: Path,
     ) -> None:
@@ -516,7 +505,7 @@ class OutlookDownloader(Downloader):
         """
         staged = download_path.with_name(download_path.name + ".reduced")
         try:
-            staged.write_bytes(apply_body_replacement(plan, content))
+            staged.write_bytes(reduced)
             staged.replace(download_path)
         except Exception as e:
             logger.warning(
@@ -530,12 +519,12 @@ class OutlookDownloader(Downloader):
     @requires_dependencies(["office365"], extras="outlook")
     def _fetch_unique_body(
         self, client: "GraphClient", user_email: str, message_id: str, rendering: BodyRendering
-    ) -> Optional[UniqueBody]:
+    ) -> Optional[ReplacementBody]:
         """Read uniqueBody for one message, rendered to match its body part.
 
         Reuses the client the download already built, so this costs one request
         and no second token acquisition. The value comes off the raw property,
-        the same way the indexer reads changeKey; UniqueBody.from_graph absorbs
+        the same way the indexer reads changeKey; _replacement_from_graph absorbs
         the difference between the shapes the office365 client returns it in.
         """
         # Deregistered afterwards: the hook appends, so one left on the client
@@ -549,7 +538,7 @@ class OutlookDownloader(Downloader):
         finally:
             client.pending_request().beforeExecute -= prefer
 
-        return UniqueBody.from_graph(message.get_property(UNIQUE_BODY_FIELD))
+        return _replacement_from_graph(message.get_property(UNIQUE_BODY_FIELD))
 
 
 outlook_source_entry = SourceRegistryEntry(

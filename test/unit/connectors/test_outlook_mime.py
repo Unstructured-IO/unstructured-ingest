@@ -3,7 +3,6 @@ import email.policy
 import re
 from email.message import EmailMessage
 from pathlib import Path
-from typing import Optional
 
 import pytest
 
@@ -19,49 +18,32 @@ from test.unit.connectors.outlook_messages import (
     STRUCTURED_FIXTURES,
     UNIQUE_HTML,
     _header_facts,
+    _is_unnamed_text_part,
     _leaves,
     _non_body_facts,
 )
 from unstructured_ingest.processes.connectors.outlook_mime import (
-    BODY_PART_PREFERENCE,
     BodyRendering,
-    BodyReplacement,
-    KeepFullBody,
-    _is_unnamed_text_part,
-    apply_body_replacement,
-    has_visible_text,
-    parse,
-    plan_body_replacement,
+    KeepOriginal,
+    PreparedReplacement,
+    ReplacementBody,
+    prepare_body_replacement,
 )
+
+BODY_PART_PREFERENCE = ("html", "plain")
+
+
+def parse(raw: bytes) -> EmailMessage:
+    return email.message_from_bytes(raw, policy=email.policy.default)
 
 
 def _reduced(raw: bytes, unique_content: str) -> bytes:
-    """The bytes the downloader would write for this message and this unique body.
-
-    Plan, then apply: the two calls the downloader makes once Graph has
-    answered, in the order it makes them. Nothing is decided here that the
-    connector does not decide for itself.
-    """
-    plan = plan_body_replacement(raw)
-    assert isinstance(plan, BodyReplacement), f"expected a plan, got {plan}"
-    return apply_body_replacement(plan, unique_content)
-
-
-def _declines(raw: bytes, unique_content: Optional[str]) -> bool:
-    """Whether these two grounds alone would keep the message as downloaded.
-
-    Only the grounds this module can see: no part that may be rewritten, and an
-    answer with no words in it, with None standing for an answer that
-    UniqueBody.from_graph could make nothing of. The downloader declines on a
-    third that needs the request to have been made, a rendering it did not ask
-    for, so test_outlook_quoted_history covers that one rather than this.
-    """
-    plan = plan_body_replacement(raw)
-    if isinstance(plan, KeepFullBody):
-        return True
-    if unique_content is None:
-        return True
-    return not has_visible_text(unique_content, plan.rendering)
+    """Call the same replacement boundary the downloader uses."""
+    prepared = prepare_body_replacement(raw)
+    assert isinstance(prepared, PreparedReplacement)
+    result = prepared.replace(ReplacementBody(prepared.rendering, unique_content))
+    assert isinstance(result, bytes)
+    return result
 
 
 class TestPlanBodyReplacement:
@@ -73,17 +55,17 @@ class TestPlanBodyReplacement:
 
     @pytest.mark.parametrize("fixture", STRUCTURED_FIXTURES, ids=lambda p: p.name)
     def test_prefers_html_when_the_message_carries_both(self, fixture: Path):
-        part = plan_body_replacement(fixture.read_bytes()).part
-        assert part is not None
-        assert part.get_content_subtype() == "html"
+        prepared = prepare_body_replacement(fixture.read_bytes())
+        assert isinstance(prepared, PreparedReplacement)
+        assert prepared.rendering is BodyRendering.HTML
 
     def test_reports_plain_when_there_is_no_html_rendering(self):
-        part = plan_body_replacement(SINGLE_PART_PLAIN).part
-        assert part is not None
-        assert part.get_content_subtype() == "plain"
+        prepared = prepare_body_replacement(SINGLE_PART_PLAIN)
+        assert isinstance(prepared, PreparedReplacement)
+        assert prepared.rendering is BodyRendering.TEXT
 
     def test_reports_none_when_there_is_no_body_part(self):
-        assert plan_body_replacement(ATTACHMENT_ONLY) is KeepFullBody.NO_BODY_PART
+        assert prepare_body_replacement(ATTACHMENT_ONLY) is KeepOriginal.NO_BODY_PART
 
     def test_excludes_a_named_inline_html_part(self):
         raw = (
@@ -98,11 +80,9 @@ class TestPlanBodyReplacement:
             "report.html"
         ), "premise: the standard library selects the named inline part as the body"
 
-        body = plan_body_replacement(raw).part
-
-        assert body is not None
-        assert body.get_content_type() == "text/plain"
-        assert "actual message body" in body.get_content()
+        prepared = prepare_body_replacement(raw)
+        assert isinstance(prepared, PreparedReplacement)
+        assert prepared.rendering is BodyRendering.TEXT
 
 
 class TestBodyReplacement:
@@ -219,7 +199,7 @@ class TestBodyReplacement:
         named = next(part for part in rebuilt.walk() if part.get_filename() == "report.html")
         assert named.get_content_disposition() == "inline"
         assert "Attached report contents." in named.get_content()
-        body = plan_body_replacement(reduced).part
+        body = rebuilt.get_body(preferencelist=("plain",))
         assert body is not None
         assert "Only the newest sentence." in body.get_content()
 
@@ -448,11 +428,14 @@ class TestBodyReplacementDeclines:
     )
     def test_declines_when_the_value_carries_no_text(self, unique_content):
         raw = HTML_AND_PLAIN_WITH_IMAGE_ATTACHMENT.read_bytes()
-
-        assert _declines(raw, unique_content)
+        prepared = prepare_body_replacement(raw)
+        replacement = (
+            None if unique_content is None else ReplacementBody(BodyRendering.HTML, unique_content)
+        )
+        assert prepared.replace(replacement) is KeepOriginal.MISSING_CONTENT
 
     def test_declines_when_there_is_no_body_part_to_replace(self):
-        assert _declines(ATTACHMENT_ONLY, UNIQUE_HTML)
+        assert prepare_body_replacement(ATTACHMENT_ONLY) is KeepOriginal.NO_BODY_PART
 
     def test_declines_for_an_entity_only_value(self):
         """Non-breaking spaces are not text, and would blank a real body.
@@ -463,10 +446,17 @@ class TestBodyReplacementDeclines:
         """
         raw = HTML_AND_PLAIN_WITH_IMAGE_ATTACHMENT.read_bytes()
 
-        assert _declines(raw, "<p>&nbsp;&nbsp;</p>")
+        prepared = prepare_body_replacement(raw)
+        assert (
+            prepared.replace(ReplacementBody(BodyRendering.HTML, "<p>&nbsp;&nbsp;</p>"))
+            is KeepOriginal.MISSING_CONTENT
+        )
 
     def test_an_empty_body_and_an_empty_value_leave_the_message_alone(self):
-        assert _declines(EMPTY_BODY, "")
+        prepared = prepare_body_replacement(EMPTY_BODY)
+        assert (
+            prepared.replace(ReplacementBody(BodyRendering.TEXT, "")) is KeepOriginal.EMPTY_ORIGINAL
+        )
 
 
 class TestHasVisibleText:
@@ -478,7 +468,9 @@ class TestHasVisibleText:
         ids=["none", "empty", "spaces", "tags", "nbsp-entity", "numeric-entity"],
     )
     def test_markup_without_words_is_not_text(self, value):
-        assert has_visible_text(value, BodyRendering.HTML) is False
+        prepared = prepare_body_replacement(HTML_AND_PLAIN_WITH_IMAGE_ATTACHMENT.read_bytes())
+        replacement = None if value is None else ReplacementBody(BodyRendering.HTML, value)
+        assert prepared.replace(replacement) is KeepOriginal.MISSING_CONTENT
 
     @pytest.mark.parametrize(
         "value",
@@ -486,7 +478,8 @@ class TestHasVisibleText:
         ids=["bare", "wrapped", "escaped-ampersand"],
     )
     def test_markup_with_words_is_text(self, value):
-        assert has_visible_text(value, BodyRendering.HTML) is True
+        reduced = _reduced(HTML_AND_PLAIN_WITH_IMAGE_ATTACHMENT.read_bytes(), value)
+        assert parse(reduced).get_body().get_content().strip() == value
 
     @pytest.mark.parametrize(
         "value",
@@ -494,7 +487,7 @@ class TestHasVisibleText:
         ids=["bracketed-note", "bracketed-pointer", "comparison"],
     )
     def test_plain_text_in_angle_brackets_is_still_text(self, value):
-        assert has_visible_text(value, BodyRendering.TEXT) is True
+        assert parse(_reduced(SINGLE_PART_PLAIN, value)).get_content().strip() == value
 
     @pytest.mark.parametrize(
         "value",
@@ -504,11 +497,17 @@ class TestHasVisibleText:
     def test_the_same_values_read_as_empty_markup(self, value):
         """This is the miss the flag exists to prevent. Read as markup these
         strip to nothing, so a plain-text message would be left unreduced."""
-        assert has_visible_text(value, BodyRendering.HTML) is False
+        prepared = prepare_body_replacement(HTML_AND_PLAIN_WITH_IMAGE_ATTACHMENT.read_bytes())
+        assert (
+            prepared.replace(ReplacementBody(BodyRendering.HTML, value))
+            is KeepOriginal.MISSING_CONTENT
+        )
 
     @pytest.mark.parametrize("value", [None, "", "  \r\n "], ids=["none", "empty", "whitespace"])
     def test_plain_text_still_has_to_hold_something(self, value):
-        assert has_visible_text(value, BodyRendering.TEXT) is False
+        prepared = prepare_body_replacement(SINGLE_PART_PLAIN)
+        replacement = None if value is None else ReplacementBody(BodyRendering.TEXT, value)
+        assert prepared.replace(replacement) is KeepOriginal.MISSING_CONTENT
 
     @pytest.mark.parametrize(
         "value",
@@ -527,12 +526,17 @@ class TestHasVisibleText:
         words, so a body that says something would be replaced by one that says
         nothing rather than being kept as it is.
         """
-        assert has_visible_text(value, BodyRendering.HTML) is False
+        prepared = prepare_body_replacement(HTML_AND_PLAIN_WITH_IMAGE_ATTACHMENT.read_bytes())
+        assert (
+            prepared.replace(ReplacementBody(BodyRendering.HTML, value))
+            is KeepOriginal.MISSING_CONTENT
+        )
 
     def test_words_beside_a_stylesheet_are_still_words(self):
         value = "<html><head><style>p {margin:0}</style></head><body><p>new text</p></body></html>"
 
-        assert has_visible_text(value, BodyRendering.HTML) is True
+        reduced = _reduced(HTML_AND_PLAIN_WITH_IMAGE_ATTACHMENT.read_bytes(), value)
+        assert parse(reduced).get_body().get_content().strip() == value
 
 
 class TestBodyReplacementKeepsBodyPartHeaders:
@@ -618,18 +622,18 @@ class TestBodyReplacementWithTwoTextBlocks:
         reduced = _reduced(raw, "the whole unique body")
 
         assert b"SECOND BLOCK" not in reduced
-        assert b"the whole unique body" in reduced
+        assert parse(reduced).get_body().get_content().strip() == "the whole unique body"
         assert b"image/png" in reduced
 
 
 class TestBodyReplacementLeavesProtectedMessagesAlone:
     def test_a_signed_message_declines(self):
-        assert _declines(SIGNED_MESSAGE, UNIQUE_HTML)
+        assert prepare_body_replacement(SIGNED_MESSAGE) is KeepOriginal.PROTECTED
 
     def test_an_encrypted_message_declines(self):
         encrypted = SIGNED_MESSAGE.replace(b"multipart/signed", b"multipart/encrypted")
 
-        assert _declines(encrypted, UNIQUE_HTML)
+        assert prepare_body_replacement(encrypted) is KeepOriginal.PROTECTED
 
 
 class TestBodyReplacementDoesNotForgeAPart:
@@ -657,13 +661,19 @@ class TestBodyReplacementDoesNotForgeAPart:
         # forged marker has to, or the test proves nothing.
         forged = "".join(f"\r\n--{boundary}{suffix}" for boundary in boundaries)
 
-        reduced = parse(
-            _reduced(raw, f"<html><body><p>opening</p>{forged}\r\n<p>closing</p></body></html>")
-        )
+        value = f"<html><body><p>opening</p>{forged}\r\n<p>closing</p></body></html>"
+        reduced = parse(_reduced(raw, value))
 
         body = reduced.get_body(preferencelist=BODY_PART_PREFERENCE)
-        assert "opening" in body.get_content()
-        assert "closing" in body.get_content(), "the body ended at a forged delimiter"
+        assert body.get_content() == value + "\r\n"
+        original_boundaries = {
+            part.get_content_type(): part.get_boundary()
+            for part in original.walk()
+            if part.get_boundary() is not None
+        }
+        for part in reduced.walk():
+            if part.get_boundary() is not None:
+                assert part.get_boundary() == original_boundaries[part.get_content_type()]
         assert _non_body_facts(reduced) == _non_body_facts(original)
         assert [defect for part in reduced.walk() for defect in part.defects] == []
 
@@ -674,8 +684,84 @@ class TestBodyReplacementDoesNotForgeAPart:
 
         body = parse(_reduced(raw, value)).get_body(preferencelist=BODY_PART_PREFERENCE)
 
-        assert "before" in body.get_content()
-        assert "after" in body.get_content()
+        assert body.get_content() == value + "\r\n"
+
+
+class TestPreparedReplacement:
+    def test_repeated_calls_start_from_the_original_message(self):
+        raw = HTML_AND_PLAIN_WITH_IMAGE_ATTACHMENT.read_bytes()
+        prepared = prepare_body_replacement(raw)
+        first = prepared.replace(ReplacementBody(BodyRendering.HTML, "<p>first</p>"))
+        second = prepared.replace(ReplacementBody(BodyRendering.HTML, "<p>second</p>"))
+        repeated = prepared.replace(ReplacementBody(BodyRendering.HTML, "<p>first</p>"))
+
+        assert repeated == first
+        assert parse(first).get_body().get_content().strip() == "<p>first</p>"
+        assert parse(second).get_body().get_content().strip() == "<p>second</p>"
+        assert _non_body_facts(parse(second)) == _non_body_facts(parse(raw))
+
+    def test_a_failed_replacement_can_be_retried(self, monkeypatch):
+        prepared = prepare_body_replacement(HTML_AND_PLAIN_WITH_IMAGE_ATTACHMENT.read_bytes())
+        original = EmailMessage.set_content
+        attempts = 0
+
+        def fail_once(part, *args, **kwargs):
+            nonlocal attempts
+            attempts += 1
+            if attempts == 1:
+                # Fail after mutation, so retry must not reuse the changed tree.
+                original(part, "partially replaced")
+                raise ValueError("serialization setup failed")
+            return original(part, *args, **kwargs)
+
+        monkeypatch.setattr(EmailMessage, "set_content", fail_once)
+        replacement = ReplacementBody(BodyRendering.HTML, UNIQUE_HTML)
+        with pytest.raises(ValueError, match="serialization setup failed"):
+            prepared.replace(replacement)
+
+        retried = prepared.replace(replacement)
+        assert parse(retried).get_body().get_content().strip() == UNIQUE_HTML
+        assert retried == _reduced(HTML_AND_PLAIN_WITH_IMAGE_ATTACHMENT.read_bytes(), UNIQUE_HTML)
+
+    @pytest.mark.parametrize("rendering", [BodyRendering.HTML, None])
+    def test_mismatched_or_unspecified_rendering_declines(self, rendering):
+        prepared = prepare_body_replacement(SINGLE_PART_PLAIN)
+        assert (
+            prepared.replace(ReplacementBody(rendering, "new text"))
+            is KeepOriginal.RENDERING_MISMATCH
+        )
+        assert (
+            parse(prepared.replace(ReplacementBody(BodyRendering.TEXT, "valid")))
+            .get_content()
+            .strip()
+            == "valid"
+        )
+
+    def test_missing_body_declines(self):
+        prepared = prepare_body_replacement(SINGLE_PART_PLAIN)
+        assert prepared.replace(None) is KeepOriginal.MISSING_CONTENT
+
+    def test_replacing_flowed_text_removes_old_format_parameters(self):
+        raw = SINGLE_PART_PLAIN.replace(
+            b"charset=us-ascii", b"charset=us-ascii; format=flowed; delsp=yes"
+        )
+        value = "first line \r\nsecond line\r\n> quoted-looking text\r\nlast line"
+        body = parse(_reduced(raw, value))
+
+        assert body.get_param("format") is None
+        assert body.get_param("delsp") is None
+        assert body.get_content() == value + "\r\n"
+
+    @pytest.mark.parametrize("subtype", ["signed", "encrypted"])
+    def test_protected_descendant_inside_attached_message_declines(self, subtype):
+        protected = parse(
+            SIGNED_MESSAGE.replace(b"multipart/signed", f"multipart/{subtype}".encode())
+        )
+        outer = EmailMessage()
+        outer.set_content("outer body")
+        outer.add_attachment(protected)
+
+        assert prepare_body_replacement(outer.as_bytes()) is KeepOriginal.PROTECTED
 
 
 class TestBodyReplacementKeepsRelatedSiblings:

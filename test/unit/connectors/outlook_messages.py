@@ -6,8 +6,6 @@ assertions shared by test_outlook_mime.py and test_outlook_quoted_history.py.
 
 from pathlib import Path
 
-from unstructured_ingest.processes.connectors.outlook_mime import _is_unnamed_text_part
-
 EML_DIR = Path(__file__).resolve().parents[3] / "example-docs" / "eml"
 
 # Committed fixtures chosen for MIME structure rather than content.
@@ -62,6 +60,15 @@ EMPTY_BODY = (
 
 def _leaves(message):
     return [part for part in message.walk() if not part.is_multipart()]
+
+
+def _is_unnamed_text_part(part):
+    """Fixture classification independent of the production MIME implementation."""
+    return (
+        part.get_content_type() in ("text/plain", "text/html")
+        and part.get_content_disposition() != "attachment"
+        and part.get_filename() is None
+    )
 
 
 def _non_body_facts(message) -> list[tuple]:
