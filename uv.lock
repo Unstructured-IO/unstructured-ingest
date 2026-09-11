@@ -7432,7 +7432,7 @@ requires-dist = [
     { name = "networkx", marker = "extra == 'neo4j'" },
     { name = "notion-client", marker = "extra == 'notion'" },
     { name = "office365-rest-python-client", marker = "extra == 'onedrive'" },
-    { name = "office365-rest-python-client", marker = "extra == 'outlook'" },
+    { name = "office365-rest-python-client", marker = "extra == 'outlook'", specifier = ">=2.6.2,<4" },
     { name = "office365-rest-python-client", marker = "extra == 'sharepoint'" },
     { name = "openai", marker = "extra == 'octoai'" },
     { name = "openai", marker = "extra == 'openai'", specifier = ">=2.20,<3" },
