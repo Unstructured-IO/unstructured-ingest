@@ -306,9 +306,7 @@ class TestUploadDataframeConnectionErrors:
                 file_data=self._file_data(),
             )
 
-    def test_schema_probe_failure_wrapped(
-        self, mocker: MockerFixture, mock_uploader: SQLUploader
-    ):
+    def test_schema_probe_failure_wrapped(self, mocker: MockerFixture, mock_uploader: SQLUploader):
         # can_delete()/_fit_to_schema() hit the DB (schema probe) before any
         # INSERT batch; a connection drop there must be wrapped too.
         mock_uploader.upload_config.table_name = "elements"

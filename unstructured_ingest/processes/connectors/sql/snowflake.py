@@ -152,9 +152,7 @@ class SnowflakeDownloader(SQLDownloader):
                 table_name=table_name,
                 id_column=id_column,
                 fields=(
-                    ",".join(
-                        list(dict.fromkeys([id_column] + self.download_config.fields))
-                    )
+                    ",".join(list(dict.fromkeys([id_column] + self.download_config.fields)))
                     if self.download_config.fields
                     else "*"
                 ),
@@ -229,9 +227,7 @@ class SnowflakeUploader(SQLUploader):
         if self._variant_columns is None:
             variant_cols = []
             with self.connection_config.get_cursor() as cursor:
-                rows = cursor.execute(
-                    f"SHOW COLUMNS IN {self.upload_config.table_name}"
-                ).fetchall()
+                rows = cursor.execute(f"SHOW COLUMNS IN {self.upload_config.table_name}").fetchall()
             for row in rows:
                 data_type = {}
                 if isinstance(row, dict):

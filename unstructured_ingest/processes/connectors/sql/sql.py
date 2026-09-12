@@ -292,9 +292,7 @@ class SQLUploadStager(UploadStager):
             df[column] = df[column].apply(str)
         for column in df.columns:
             if df[column].apply(lambda x: isinstance(x, dict)).any():
-                df[column] = df[column].apply(
-                    lambda x: json.dumps(x) if isinstance(x, dict) else x
-                )
+                df[column] = df[column].apply(lambda x: json.dumps(x) if isinstance(x, dict) else x)
         return df
 
     def write_output(self, output_path: Path, data: list[dict]) -> Path:
@@ -642,9 +640,7 @@ class SQLUploader(Uploader):
             raise
         except Exception as e:
             logger.error(f"failed to upload: {safe_error_summary(e)}")
-            raise DestinationConnectionError(
-                f"failed to upload: {safe_error_summary(e)}"
-            ) from None
+            raise DestinationConnectionError(f"failed to upload: {safe_error_summary(e)}") from None
 
     def get_table_columns(self) -> list[str]:
         if self._columns is None:

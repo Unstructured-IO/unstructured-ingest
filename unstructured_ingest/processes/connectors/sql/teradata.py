@@ -70,16 +70,18 @@ _TERADATA_ERROR_CODE_RE = re.compile(r"\[Error (\d+)\]")
 # pre-created with the wrong column type for the value being inserted/queried,
 # but can also fire on arbitrary expression-level conversions; the descriptor
 # stays generic.
-_USER_FAULT_TERADATA_CODES: Mapping[int, str] = MappingProxyType({
-    3807: "object does not exist or user has no privilege on it",
-    3523: "user does not have the required privilege",
-    3706: "SQL syntax error",
-    3707: "SQL syntax error",
-    3753: "floating-point overflow during implicit conversion",
-    3754: "implicit type conversion failed",
-    5612: "user does not have any access to the object",
-    5315: "user does not have any access to the database",
-})
+_USER_FAULT_TERADATA_CODES: Mapping[int, str] = MappingProxyType(
+    {
+        3807: "object does not exist or user has no privilege on it",
+        3523: "user does not have the required privilege",
+        3706: "SQL syntax error",
+        3707: "SQL syntax error",
+        3753: "floating-point overflow during implicit conversion",
+        3754: "implicit type conversion failed",
+        5612: "user does not have any access to the object",
+        5315: "user does not have any access to the database",
+    }
+)
 
 
 def _is_teradata_driver_error(exc: BaseException) -> bool:
@@ -141,9 +143,7 @@ def _raise_classified_teradata_error(
         unrecognised; preserves historical per-call-site message shapes.
     """
     if direction not in ("source", "destination"):
-        raise AssertionError(
-            f"direction must be 'source' or 'destination', got {direction!r}"
-        )
+        raise AssertionError(f"direction must be 'source' or 'destination', got {direction!r}")
     code = _extract_teradata_error_code(exc)
     if code in _USER_FAULT_TERADATA_CODES:
         descriptor = _USER_FAULT_TERADATA_CODES[code]
@@ -152,16 +152,12 @@ def _raise_classified_teradata_error(
         # message is NOT interpolated and the chain is suppressed so the
         # Go-driver text (which embeds host/user/password) can't reach the
         # response surface or resurface via traceback logging.
-        raise UserError(
-            f"Teradata error {code} ({descriptor}){target}."
-        ) from None
+        raise UserError(f"Teradata error {code} ({descriptor}){target}.") from None
 
     conn_error_cls = (
         DestinationConnectionError if direction == "destination" else SourceConnectionError
     )
-    raise conn_error_cls(
-        _summarize_error(host, exc, context=fallback_context)
-    ) from None
+    raise conn_error_cls(_summarize_error(host, exc, context=fallback_context)) from None
 
 
 def _summarize_error(host: str, raw: Exception, context: str = "") -> str:
@@ -534,9 +530,7 @@ class TeradataUploader(SQLUploader):
             logger.error(
                 f"failed to create destination table '{table_name}': {safe_error_summary(e)}",
             )
-            _raise_classified_teradata_error(
-                e, host=self.connection_config.host, table=table_name
-            )
+            _raise_classified_teradata_error(e, host=self.connection_config.host, table=table_name)
         return True
 
     def precheck(self) -> None:
