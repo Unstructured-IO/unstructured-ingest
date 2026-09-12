@@ -1,0 +1,49 @@
+unstructured_ingest/processes/connectors/sql/sql.py
+  s_6f57852f7782cb::t_649b86c9dee1d2 367-491,536,539,541
+  s_6f57852f7782cb::t_cfb537b9152617 4,9,25,492
+  s_6f57852f7782cb::t_3cec67e9d3e4ea 493-535,537-538,540
+test/unit/connectors/sql/test_sqlite.py
+  s_6f57852f7782cb::t_20548745581bd1 1-59
+test/unit/connectors/sql/test_sql.py
+  s_6f57852f7782cb::t_5feee3b139ddce 2,11,419-671
+test/unit/connectors/sql/test_singlestore.py
+  s_6f57852f7782cb::t_bd284912a23441 1-59
+unstructured_ingest/processes/connectors/sql/teradata.py
+  s_6f57852f7782cb::t_2eb285a4228fa6 467-473,549-579
+unstructured_ingest/processes/connectors/sql/snowflake.py
+  s_6f57852f7782cb::t_91440a8a71d1d1 184-191,199-221
+unstructured_ingest/processes/connectors/sql/sqlite.py
+  s_6f57852f7782cb::t_358509d1e712e6 5,144-171
+unstructured_ingest/__version__.py
+  s_6f57852f7782cb::t_6456b075a6043c 1
+test/integration/connectors/sql/test_postgres.py
+  s_6f57852f7782cb::t_38147b7b19fc9f 25,35,207-294
+test/unit/connectors/sql/test_postgres.py
+  s_6f57852f7782cb::t_5c9d9ce2d99ec3 1-84
+unstructured_ingest/processes/connectors/sql/singlestore.py
+  s_6f57852f7782cb::t_112412c5ab95cc 135-140,152-170
+test/unit/connectors/sql/test_teradata.py
+  s_6f57852f7782cb::t_55ec8179901002 624-626,629-632,656-667,670-671,1855-1960
+CHANGELOG.md
+  s_6f57852f7782cb::t_ecb976cb99a89d 1-6
+test/unit/connectors/sql/test_snowflake.py
+  s_6f57852f7782cb::t_ac6db0225667bd 309-362
+unstructured_ingest/processes/connectors/sql/postgres.py
+  s_6f57852f7782cb::t_9ccaa44f30fe81 160-194
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "a725337e1aeb1f7e618dfdba500710e0a07243c6",
+  "prompts": {},
+  "sessions": {
+    "s_6f57852f7782cb": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a69dbf52-776b-4f6d-bea2-8c420b4c5711",
+        "model": "claude-opus-5"
+      },
+      "human_author": "paulkarayan <pk@unstructured.io>"
+    }
+  }
+}
