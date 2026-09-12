@@ -132,6 +132,12 @@ class SingleStoreUploadStager(SQLUploadStager):
     upload_stager_config: SingleStoreUploadStagerConfig
 
 
+# MySQL error numbers SingleStore reuses for "you may not touch this".
+# 1044 ER_DBACCESS_DENIED_ERROR, 1142 ER_TABLEACCESS_DENIED_ERROR,
+# 1143 ER_COLUMNACCESS_DENIED_ERROR.
+_WRITE_DENIAL_ERRNOS = frozenset({1044, 1142, 1143})
+
+
 class SingleStoreUploaderConfig(SQLUploaderConfig):
     pass
 
@@ -142,6 +148,25 @@ class SingleStoreUploader(SQLUploader):
     connection_config: SingleStoreConnectionConfig
     values_delimiter: str = "%s"
     connector_type: str = CONNECTOR_TYPE
+
+    def classify_write_denial(self, error: Exception, privilege: str) -> Optional[str]:
+        """Recognize the MySQL access-denied error numbers SingleStore reuses.
+
+        SingleStore speaks the MySQL protocol and reuses its error numbers;
+        ``singlestoredb`` puts the number on ``errno``. 1142 carries the refused command
+        in its own message, so INSERT and DELETE arrive under the same number and
+        ``privilege`` is what names the missing grant. Measured against SingleStore: a
+        user with SELECT and INSERT and no DELETE is refused `errno=1142`,
+        ``DELETE command denied to user ... for table 'elements'``, by the DELETE probe
+        while the INSERT probe passes.
+
+        1045 (access denied for user, i.e. a rejected password) is deliberately absent:
+        that is authentication, it fails at connect long before this runs, and treating
+        it as a missing grant would send the customer to fix the wrong thing.
+        """
+        if getattr(error, "errno", None) in _WRITE_DENIAL_ERRNOS:
+            return self._write_denied_message(privilege)
+        return None
 
     @requires_dependencies(["pandas"], extras="singlestore")
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:

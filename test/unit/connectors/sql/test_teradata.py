@@ -621,11 +621,15 @@ def test_teradata_uploader_precheck_success(
     teradata_uploader: TeradataUploader,
     mock_get_cursor: MagicMock,
 ):
-    """Test that uploader precheck only validates connection, not table existence."""
+    """Test that uploader precheck validates the connection and the INSERT right."""
+    mock_cursor.description = [("id",), ("record_id",)]
+
     teradata_uploader.precheck()
 
-    assert mock_cursor.execute.call_count == 1
-    assert mock_cursor.execute.call_args[0][0] == "SELECT 1"
+    calls = [call[0][0] for call in mock_cursor.execute.call_args_list]
+    assert calls[0] == "SELECT 1"
+    assert any(c.startswith('INSERT INTO "test_table"') for c in calls)
+    assert any(c.startswith('DELETE FROM "test_table"') for c in calls)
 
 
 def test_teradata_uploader_precheck_connection_failure(
@@ -649,12 +653,22 @@ def test_teradata_uploader_precheck_does_not_check_table(
     teradata_uploader: TeradataUploader,
     mock_get_cursor: MagicMock,
 ):
-    """Precheck never checks table existence; create_destination handles missing tables."""
-    teradata_uploader.precheck()
+    """Precheck never FAILS on a missing table; create_destination handles those.
+
+    The insert-permission probe reads the table's columns, so a SELECT TOP does go out
+    now. What matters is that a table which is not there yet still passes: the probe
+    reports unknown and raises nothing.
+    """
+    mock_cursor.execute.side_effect = [
+        None,  # SELECT 1
+        _FakeTeradataDriverError("[Teradata Database] [Error 3807] table does not exist"),
+    ]
+
+    teradata_uploader.precheck()  # must not raise
 
     calls = [call[0][0] for call in mock_cursor.execute.call_args_list]
-    assert calls == ["SELECT 1"]
-    assert not any("SELECT TOP" in c for c in calls)
+    assert calls[0] == "SELECT 1"
+    assert not any(c.startswith("INSERT INTO") for c in calls)
 
 
 def test_teradata_uploader_config_preserves_user_table_name_for_precheck(
@@ -1838,3 +1852,109 @@ def test_uploader_insert_batch_failure_does_not_log_secret(
 
     assert "SUPERSECRET123" not in caplog.text
     assert "db.internal" not in caplog.text
+
+
+@pytest.mark.parametrize("code", [3523, 5315, 5612])
+@pytest.mark.parametrize("privilege", ["INSERT", "DELETE"])
+def test_teradata_no_privilege_codes_are_write_denials(
+    teradata_uploader: TeradataUploader, code: int, privilege: str
+):
+    error = _FakeTeradataDriverError(
+        f"[Version 20.0.0.0] [Session 1] [Teradata Database] [Error {code}] denied"
+    )
+
+    reason = teradata_uploader.classify_write_denial(error, privilege=privilege)
+
+    assert reason is not None
+    assert f"{privilege} permission on table 'test_table'" in reason
+
+
+@pytest.mark.parametrize(
+    "code",
+    [
+        # Teradata hides objects a user cannot see, so 3807 means "no such table" or
+        # "no rights on it" and cannot be reported as either one.
+        3807,
+        3706,
+        3754,
+        9999,
+    ],
+)
+def test_teradata_other_codes_are_not_write_denials(teradata_uploader: TeradataUploader, code: int):
+    error = _FakeTeradataDriverError(f"[Teradata Database] [Error {code}] something")
+
+    assert teradata_uploader.classify_write_denial(error, privilege="INSERT") is None
+
+
+def test_teradata_untagged_driver_error_is_not_a_write_denial(
+    teradata_uploader: TeradataUploader,
+):
+    error = _FakeTeradataDriverError("no code")
+    assert teradata_uploader.classify_write_denial(error, privilege="INSERT") is None
+
+
+def test_teradata_non_driver_exception_is_not_a_write_denial(
+    teradata_uploader: TeradataUploader,
+):
+    assert (
+        teradata_uploader.classify_write_denial(TimeoutError("[Error 3523]"), privilege="DELETE")
+        is None
+    )
+
+
+def test_teradata_write_probes_quote_every_identifier(
+    teradata_uploader: TeradataUploader, mocker: MockerFixture, mock_get_cursor, mock_cursor
+):
+    mocker.patch.object(
+        TeradataUploader, "get_table_columns", return_value=["id", "record_id", "select"]
+    )
+
+    teradata_uploader.check_write_permissions()
+
+    assert [call[0][0] for call in mock_cursor.execute.call_args_list] == [
+        'INSERT INTO "test_table" ("id","record_id","select") '
+        'SELECT "id","record_id","select" FROM "test_table" WHERE 1 = 0',
+        'DELETE FROM "test_table" WHERE 1 = 0',
+    ]
+
+
+def test_teradata_precheck_refuses_a_credential_that_cannot_insert(
+    teradata_uploader: TeradataUploader, mocker: MockerFixture, mock_get_cursor, mock_cursor
+):
+    mocker.patch.object(TeradataUploader, "get_table_columns", return_value=["id"])
+    mock_cursor.execute.side_effect = [
+        None,  # SELECT 1
+        _FakeTeradataDriverError("[Teradata Database] [Error 3523] no INSERT access"),
+    ]
+
+    with pytest.raises(UserError, match="INSERT permission on table 'test_table'"):
+        teradata_uploader.precheck()
+
+
+def test_teradata_precheck_refuses_a_credential_that_cannot_delete(
+    teradata_uploader: TeradataUploader, mocker: MockerFixture, mock_get_cursor, mock_cursor
+):
+    """Upload is delete-then-insert, so INSERT alone is not enough to write."""
+    mocker.patch.object(TeradataUploader, "get_table_columns", return_value=["id", "record_id"])
+    mock_cursor.execute.side_effect = [
+        None,  # SELECT 1
+        None,  # INSERT probe: this credential may insert
+        _FakeTeradataDriverError("[Teradata Database] [Error 3523] no DELETE access"),
+    ]
+
+    with pytest.raises(UserError, match="DELETE permission on table 'test_table'"):
+        teradata_uploader.precheck()
+
+
+def test_teradata_precheck_skips_the_probe_when_the_table_is_auto_created(
+    teradata_connection_config: TeradataConnectionConfig, mocker: MockerFixture, mock_get_cursor
+):
+    uploader = TeradataUploader(
+        connection_config=teradata_connection_config,
+        upload_config=TeradataUploaderConfig(table_name=None),
+    )
+    probed = mocker.patch.object(TeradataUploader, "check_write_permissions")
+
+    uploader.precheck()
+
+    probed.assert_not_called()
