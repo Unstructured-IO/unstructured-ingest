@@ -70,16 +70,18 @@ _TERADATA_ERROR_CODE_RE = re.compile(r"\[Error (\d+)\]")
 # pre-created with the wrong column type for the value being inserted/queried,
 # but can also fire on arbitrary expression-level conversions; the descriptor
 # stays generic.
-_USER_FAULT_TERADATA_CODES: Mapping[int, str] = MappingProxyType({
-    3807: "object does not exist or user has no privilege on it",
-    3523: "user does not have the required privilege",
-    3706: "SQL syntax error",
-    3707: "SQL syntax error",
-    3753: "floating-point overflow during implicit conversion",
-    3754: "implicit type conversion failed",
-    5612: "user does not have any access to the object",
-    5315: "user does not have any access to the database",
-})
+_USER_FAULT_TERADATA_CODES: Mapping[int, str] = MappingProxyType(
+    {
+        3807: "object does not exist or user has no privilege on it",
+        3523: "user does not have the required privilege",
+        3706: "SQL syntax error",
+        3707: "SQL syntax error",
+        3753: "floating-point overflow during implicit conversion",
+        3754: "implicit type conversion failed",
+        5612: "user does not have any access to the object",
+        5315: "user does not have any access to the database",
+    }
+)
 
 
 def _is_teradata_driver_error(exc: BaseException) -> bool:
@@ -141,9 +143,7 @@ def _raise_classified_teradata_error(
         unrecognised; preserves historical per-call-site message shapes.
     """
     if direction not in ("source", "destination"):
-        raise AssertionError(
-            f"direction must be 'source' or 'destination', got {direction!r}"
-        )
+        raise AssertionError(f"direction must be 'source' or 'destination', got {direction!r}")
     code = _extract_teradata_error_code(exc)
     if code in _USER_FAULT_TERADATA_CODES:
         descriptor = _USER_FAULT_TERADATA_CODES[code]
@@ -152,16 +152,12 @@ def _raise_classified_teradata_error(
         # message is NOT interpolated and the chain is suppressed so the
         # Go-driver text (which embeds host/user/password) can't reach the
         # response surface or resurface via traceback logging.
-        raise UserError(
-            f"Teradata error {code} ({descriptor}){target}."
-        ) from None
+        raise UserError(f"Teradata error {code} ({descriptor}){target}.") from None
 
     conn_error_cls = (
         DestinationConnectionError if direction == "destination" else SourceConnectionError
     )
-    raise conn_error_cls(
-        _summarize_error(host, exc, context=fallback_context)
-    ) from None
+    raise conn_error_cls(_summarize_error(host, exc, context=fallback_context)) from None
 
 
 def _summarize_error(host: str, raw: Exception, context: str = "") -> str:
@@ -464,6 +460,13 @@ class TeradataUploadStager(SQLUploadStager):
         return df
 
 
+# The subset of _USER_FAULT_TERADATA_CODES that means "no privilege" and cannot also
+# mean something else. 3523 "the user does not have <privilege> access to <object>",
+# 5612 no access to the object, 5315 no access to the database. 3807 is excluded: it is
+# also Teradata's "object does not exist".
+_WRITE_DENIAL_TERADATA_CODES = frozenset({3523, 5315, 5612})
+
+
 class TeradataUploaderConfig(SQLUploaderConfig):
     table_name: Optional[str] = Field(
         default=None,
@@ -527,9 +530,7 @@ class TeradataUploader(SQLUploader):
             logger.error(
                 f"failed to create destination table '{table_name}': {safe_error_summary(e)}",
             )
-            _raise_classified_teradata_error(
-                e, host=self.connection_config.host, table=table_name
-            )
+            _raise_classified_teradata_error(e, host=self.connection_config.host, table=table_name)
         return True
 
     def precheck(self) -> None:
@@ -539,6 +540,37 @@ class TeradataUploader(SQLUploader):
         except Exception as e:
             logger.error(f"failed to validate connection: {safe_error_summary(e)}")
             raise DestinationConnectionError(_summarize_error(self.connection_config.host, e))
+        if self.upload_config.table_name:
+            # Skipped when the table name is unset, because then the table does not
+            # exist yet and create_destination() makes it at upload time.
+            self.check_write_permissions()
+
+    def _quote_identifier(self, identifier: str) -> str:
+        # Matches upload_dataframe, which double-quotes both the table and every
+        # column so a reserved word or a case-sensitive name still resolves.
+        return f'"{identifier}"'
+
+    def classify_write_denial(self, error: Exception, privilege: str) -> Optional[str]:
+        """Recognize the Teradata codes that unambiguously mean "you have no rights".
+
+        teradatasql's exceptions carry no code attribute at all -- ``teradatasql.Error``
+        is a bare ``Exception`` subclass -- so the code has to come from the
+        ``[Error NNNN]`` tag in the message, via the parser this module already uses to
+        classify driver errors on the upload path. 3523 names the refused privilege in
+        its own text and covers INSERT and DELETE alike, so ``privilege`` is what names
+        the missing grant in the message.
+
+        Only the three codes that say "no privilege" and nothing else are treated as a
+        refusal. 3807 is in ``_USER_FAULT_TERADATA_CODES`` and is deliberately left out
+        here: Teradata returns it both for an object that does not exist and for one the
+        user has no rights on, because it hides the existence of objects a user cannot
+        see, and a wrong table name must not be reported as a permissions problem.
+        """
+        if not _is_teradata_driver_error(error):
+            return None
+        if _extract_teradata_error_code(error) in _WRITE_DENIAL_TERADATA_CODES:
+            return self._write_denied_message(privilege)
+        return None
 
     def get_table_columns(self) -> list[str]:
         if self._columns is None:

@@ -152,9 +152,7 @@ class SnowflakeDownloader(SQLDownloader):
                 table_name=table_name,
                 id_column=id_column,
                 fields=(
-                    ",".join(
-                        list(dict.fromkeys([id_column] + self.download_config.fields))
-                    )
+                    ",".join(list(dict.fromkeys([id_column] + self.download_config.fields)))
                     if self.download_config.fields
                     else "*"
                 ),
@@ -181,6 +179,14 @@ class SnowflakeUploaderConfig(SQLUploaderConfig):
     pass
 
 
+# Snowflake's access-control refusal: error 003001, "SQL access control error:
+# Insufficient privileges to operate on <object type> '<name>'", carrying the ANSI
+# insufficient-privilege SQLSTATE. Either identifies it; both are checked because the
+# connector fills errno from the server response and sqlstate is the stabler of the two.
+_ACCESS_CONTROL_SQLSTATE = "42501"
+_ACCESS_CONTROL_ERRNO = 3001
+
+
 @dataclass
 class SnowflakeUploader(SQLUploader):
     upload_config: SnowflakeUploaderConfig = field(default_factory=SnowflakeUploaderConfig)
@@ -188,8 +194,29 @@ class SnowflakeUploader(SQLUploader):
     connector_type: str = CONNECTOR_TYPE
     values_delimiter: str = "?"
 
-    _embeddings_dimension: Optional[int] = None
-    _variant_columns: Optional[list[str]] = None
+    def classify_write_denial(self, error: Exception, privilege: str) -> Optional[str]:
+        """Recognize Snowflake's access-control error.
+
+        One error covers every refused right, so the same code arrives for the INSERT
+        and the DELETE probe and ``privilege`` is what names the missing grant in the
+        message.
+
+        Snowflake reports a refused right against whichever object in the chain the role
+        is short on -- the table, or the schema or database above it -- so the message
+        points at the table being written and asks for the grant there, which is where
+        it is missing in the case this probe is for.
+
+        Error 002003, "Object does not exist, or operation cannot be performed", is
+        deliberately not here: Snowflake uses that one wording for a name that is absent
+        and for one the role may not see, so it cannot distinguish a typo'd table from a
+        missing grant.
+        """
+        if (
+            getattr(error, "sqlstate", None) == _ACCESS_CONTROL_SQLSTATE
+            or getattr(error, "errno", None) == _ACCESS_CONTROL_ERRNO
+        ):
+            return self._write_denied_message(privilege)
+        return None
 
     @property
     def variant_columns(self) -> list[str]:
@@ -200,9 +227,7 @@ class SnowflakeUploader(SQLUploader):
         if self._variant_columns is None:
             variant_cols = []
             with self.connection_config.get_cursor() as cursor:
-                rows = cursor.execute(
-                    f"SHOW COLUMNS IN {self.upload_config.table_name}"
-                ).fetchall()
+                rows = cursor.execute(f"SHOW COLUMNS IN {self.upload_config.table_name}").fetchall()
             for row in rows:
                 data_type = {}
                 if isinstance(row, dict):

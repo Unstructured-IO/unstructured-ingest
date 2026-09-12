@@ -1,12 +1,12 @@
 import hashlib
 import json
 from abc import ABC, abstractmethod
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 from time import time
-from typing import TYPE_CHECKING, Any, Generator, Union
+from typing import TYPE_CHECKING, Any, Generator, Optional, Union
 
 from dateutil import parser
 from pydantic import BaseModel, Field, Secret
@@ -22,6 +22,7 @@ from unstructured_ingest.error import (
     DestinationConnectionError,
     SourceConnectionError,
     UnstructuredIngestError,
+    UserError,
     safe_error_summary,
 )
 from unstructured_ingest.interfaces import (
@@ -291,9 +292,7 @@ class SQLUploadStager(UploadStager):
             df[column] = df[column].apply(str)
         for column in df.columns:
             if df[column].apply(lambda x: isinstance(x, dict)).any():
-                df[column] = df[column].apply(
-                    lambda x: json.dumps(x) if isinstance(x, dict) else x
-                )
+                df[column] = df[column].apply(lambda x: json.dumps(x) if isinstance(x, dict) else x)
         return df
 
     def write_output(self, output_path: Path, data: list[dict]) -> Path:
@@ -363,6 +362,181 @@ class SQLUploader(Uploader):
             raise DestinationConnectionError(
                 f"failed to validate connection: {safe_error_summary(e)}"
             ) from None
+        # Outside the block above on purpose: a connection failure must keep its
+        # existing DestinationConnectionError, and the probe raises only UserError.
+        self.check_write_permissions()
+
+    def check_write_permissions(self) -> None:
+        """Refuse a destination credential the database says cannot perform the write.
+
+        ``SELECT 1`` above runs against the session, so it succeeds on any credential
+        the driver can open a connection with, whatever rights that credential holds on
+        the table this uploader writes to. A credential that can connect and read
+        therefore passes the connection check and then fails on every record at write
+        time, which is the failure this asks about up front instead.
+
+        The probe's privilege surface has to match the upload's exactly -- no wider, no
+        narrower. Wider refuses a credential that works; narrower passes one that cannot
+        write, which is the whole failure being fixed. ``upload_dataframe`` is
+        delete-then-insert, so this asks both questions, each with the real statement
+        made harmless:
+
+        * ``INSERT INTO <table> (<columns>) SELECT <columns> FROM <table> WHERE 1 = 0``
+        * ``DELETE FROM <table> WHERE 1 = 0``, and only when :meth:`can_delete` is true,
+          which is the same gate ``upload_dataframe`` puts the DELETE behind. On a table
+          with no record-id column the upload skips the delete and warns, so asking for
+          DELETE there would refuse a credential that never needs it.
+
+        The engine runs the privilege check when it plans the statement, before any row
+        is produced, so a refusal arrives while the row count is still zero. Nothing is
+        written or removed even where the driver is in autocommit and the rollback below
+        is a no-op, because neither statement has rows to commit. ``WHERE 1 = 0`` rather
+        than ``WHERE FALSE`` because Teradata has no boolean literal; every dialect in
+        this package accepts ``1 = 0``. Measured on postgres 16: the zero-row DELETE
+        returns ``rowcount=0`` for a credential that holds the right and ``42501`` for
+        one that does not.
+
+        The DELETE names no column, which is deliberate and is what keeps the surface
+        equal rather than wider. The real DELETE filters on the record-id column, so it
+        needs SELECT on that column too -- and the INSERT probe above already asks for
+        SELECT on every column, because ``get_table_columns()`` does.
+
+        ``<columns>`` is :meth:`get_table_columns`, which is also what the uploader's own
+        INSERT names: :meth:`_fit_to_schema` conforms the frame to exactly the table's
+        columns before ``upload_dataframe`` reads ``df.columns`` off it. Deriving both
+        from that one call is the point -- grants are per-column on every engine here, so
+        a probe that asks for rights on more columns than the write path uses refuses
+        credentials that would have worked. Naming the columns also keeps the two
+        statements the same shape: a column-less ``INSERT INTO t SELECT * FROM t`` asks
+        for INSERT on every column of the table, which stops matching the moment anyone
+        narrows what the uploader writes.
+        ``test_write_probe_columns_match_the_uploaders_insert`` pins that agreement.
+
+        Both probes run even when the first is refused, so a credential short of both
+        rights is told both at once instead of learning about the second only after
+        fixing the first.
+
+        The result is one-sided. A denial is raised only when
+        :meth:`classify_write_denial` recognizes the driver's answer as an unambiguous
+        refusal. Everything else passes: a timeout, a dropped connection, a table that
+        does not exist, a schema or type error, an unrecognized driver error, a dialect
+        with no classifier at all, an exception from the classifier itself. None of
+        those establish that a working credential cannot write, and refusing on them
+        would break destinations that work today. This method raises ``UserError`` and
+        nothing else.
+
+        It cannot see a rule evaluated per row -- a PostgreSQL row-level-security
+        ``WITH CHECK`` policy, a Snowflake row access policy -- because a zero-row
+        statement never reaches one. Those pass here and can still refuse the upload,
+        which is the direction this is allowed to be wrong in.
+        """
+        try:
+            columns = self.get_table_columns()
+        except Exception as e:
+            # Includes the table not existing. Not our question, and the uploader
+            # surfaces it with its own message when the job runs.
+            logger.info(
+                f"write-permission check skipped, table schema unavailable: {safe_error_summary(e)}"
+            )
+            return
+        if not columns:
+            return
+
+        probes = [("INSERT", self._insert_probe_statement(columns=columns))]
+        try:
+            deletes = self.can_delete()
+        except Exception as e:
+            logger.info(f"write-permission check inconclusive: {safe_error_summary(e)}")
+            deletes = False
+        if deletes:
+            probes.append(("DELETE", self._delete_probe_statement()))
+
+        reasons: list[str] = []
+        for privilege, statement in probes:
+            reason = self._run_write_probe(privilege=privilege, statement=statement)
+            if reason is not None and reason not in reasons:
+                reasons.append(reason)
+        if reasons:
+            raise UserError(" ".join(reasons))
+
+    def _run_write_probe(self, privilege: str, statement: str) -> Optional[str]:
+        """Run one zero-row probe. Return a confirmed refusal, else None. Never raises."""
+        try:
+            with self.get_cursor() as cursor:
+                try:
+                    logger.debug(f"running {privilege} permission probe: {statement}")
+                    cursor.execute(statement)
+                finally:
+                    connection = getattr(cursor, "connection", None)
+                    if connection is not None:
+                        # Autocommit drivers, and drivers whose rollback fails on an
+                        # already-aborted transaction. Zero rows either way.
+                        with suppress(Exception):
+                            connection.rollback()
+        except Exception as e:
+            try:
+                reason = self.classify_write_denial(e, privilege=privilege)
+            except Exception:
+                reason = None
+            if reason is None:
+                logger.info(f"{privilege} permission check inconclusive: {safe_error_summary(e)}")
+                return None
+            logger.error(
+                f"destination credentials cannot {privilege.lower()}: {safe_error_summary(e)}"
+            )
+            return reason
+        return None
+
+    def _quote_identifier(self, identifier: str) -> str:
+        """Render a table or column name for the probe.
+
+        Unquoted by default because that is how ``upload_dataframe`` renders the same
+        names in the statements this probe stands in for. Overridden where the uploader
+        quotes (teradata).
+        """
+        return identifier
+
+    def _insert_probe_statement(self, columns: list[str]) -> str:
+        table = self._quote_identifier(self.upload_config.table_name)
+        column_list = ",".join(self._quote_identifier(column) for column in columns)
+        return f"INSERT INTO {table} ({column_list}) SELECT {column_list} FROM {table} WHERE 1 = 0"
+
+    def _delete_probe_statement(self) -> str:
+        return f"DELETE FROM {self._quote_identifier(self.upload_config.table_name)} WHERE 1 = 0"
+
+    def classify_write_denial(self, error: Exception, privilege: str) -> Optional[str]:
+        """Return a user-facing reason iff this error is an unambiguous refusal.
+
+        ``privilege`` is the right the refused statement needed, ``INSERT`` or
+        ``DELETE``. It belongs in the message: telling a customer whose credential holds
+        INSERT and not DELETE that they lack INSERT sends them to grant the wrong thing.
+
+        Return ``None`` for everything else, including an error that may or may not be a
+        privilege problem: PostgreSQL and Teradata both report "no such object" and "you
+        may not see this object" with the same code, and guessing turns a wrong table
+        name into a permissions accusation.
+
+        A refusal here is NOT an authentication failure. The credential is valid and the
+        connection is open; what is missing is a grant. Reporting it as an auth problem
+        sends the customer off to rotate a working key, so the message must say which
+        grant on which table, and the raised type is ``UserError`` (422) and never
+        ``UserAuthError`` (401).
+
+        Only the reason string is surfaced. Driver text is not: these messages routinely
+        embed the host, user, and password from the connection string.
+
+        The base returns ``None``, so a dialect without a verified denial code never
+        refuses anything.
+        """
+        return None
+
+    def _write_denied_message(self, privilege: str) -> str:
+        return (
+            f"The destination credentials can connect to the database but do not have "
+            f"{privilege} permission on table '{self.upload_config.table_name}'. Records "
+            f"would fail to write. Grant {privilege} on that table to the user this "
+            f"connector authenticates as."
+        )
 
     @contextmanager
     def get_cursor(self) -> Generator[Any, None, None]:
@@ -466,9 +640,7 @@ class SQLUploader(Uploader):
             raise
         except Exception as e:
             logger.error(f"failed to upload: {safe_error_summary(e)}")
-            raise DestinationConnectionError(
-                f"failed to upload: {safe_error_summary(e)}"
-            ) from None
+            raise DestinationConnectionError(f"failed to upload: {safe_error_summary(e)}") from None
 
     def get_table_columns(self) -> list[str]:
         if self._columns is None:
