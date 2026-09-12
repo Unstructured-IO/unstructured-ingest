@@ -1,4 +1,5 @@
 import json
+from contextlib import contextmanager
 from pathlib import Path
 from unittest.mock import MagicMock
 
@@ -7,7 +8,7 @@ import pytest
 from pytest_mock import MockerFixture
 
 from unstructured_ingest.data_types.file_data import BatchItem, FileData, SourceIdentifiers
-from unstructured_ingest.error import DestinationConnectionError, UserError
+from unstructured_ingest.error import DestinationConnectionError, UserAuthError, UserError
 from unstructured_ingest.interfaces import DownloadResponse
 from unstructured_ingest.processes.connectors.sql.sql import (
     SqlAdditionalMetadata,
@@ -415,3 +416,256 @@ class TestGenerateDownloadResponse:
 
         response = downloader.generate_download_response(result=result_df, file_data=file_data)
         assert response == mock_response
+
+
+class _FakeDriverError(Exception):
+    """Stands in for a driver exception the base class has no classifier for."""
+
+
+class _ProbeUploader(SQLUploader):
+    """SQLUploader with the two DB calls replaced, so the probes can be driven alone."""
+
+    def __init__(self, columns, execute):
+        super().__init__(
+            upload_config=SQLUploaderConfig(table_name="elements"),
+            connection_config=MagicMock(spec=SQLConnectionConfig),
+            connector_type="sql_test",
+        )
+        self._fake_columns = columns
+        self._execute = execute
+        self.statements: list[str] = []
+        self.rollbacks = 0
+
+    def get_table_columns(self) -> list[str]:
+        if isinstance(self._fake_columns, Exception):
+            raise self._fake_columns
+        return self._fake_columns
+
+    @contextmanager
+    def get_cursor(self):
+        uploader = self
+
+        class _Connection:
+            def rollback(self_inner):
+                uploader.rollbacks += 1
+
+        class _Cursor:
+            connection = _Connection()
+
+            def execute(self_inner, statement, *args):
+                uploader.statements.append(statement)
+                uploader._execute(statement)
+
+            def executemany(self_inner, statement, *args):
+                uploader.statements.append(statement)
+                uploader._execute(statement)
+
+        yield _Cursor()
+
+
+def _ok(statement: str) -> None:
+    return None
+
+
+def _raise(statement: str) -> None:
+    raise _FakeDriverError("something else entirely")
+
+
+def _deny(*privileges: str):
+    """A classifier that confirms a refusal for the named privileges only."""
+
+    def classify(error, privilege):
+        return f"no {privilege} for you" if privilege in privileges else None
+
+    return classify
+
+
+INSERT_PROBE = (
+    "INSERT INTO elements (id,record_id,text) SELECT id,record_id,text FROM elements WHERE 1 = 0"
+)
+DELETE_PROBE = "DELETE FROM elements WHERE 1 = 0"
+
+
+def test_write_probes_cover_insert_and_delete_and_touch_no_rows():
+    """The upload is delete-then-insert, so the probe has to be both.
+
+    A credential holding INSERT and no DELETE fails every record at upload; an
+    insert-only probe passes it, which is the failure this check exists to catch.
+    """
+    uploader = _ProbeUploader(columns=["id", "record_id", "text"], execute=_ok)
+
+    uploader.check_write_permissions()
+
+    assert uploader.statements == [INSERT_PROBE, DELETE_PROBE]
+
+
+def test_delete_probe_is_gated_the_way_the_upload_gates_its_delete():
+    """No record-id column means upload_dataframe skips the DELETE and warns.
+
+    Asking for DELETE there would refuse a credential that never needs it -- the probe
+    must be no wider than the write path, not just no narrower.
+    """
+    uploader = _ProbeUploader(columns=["id", "text"], execute=_ok)
+    assert uploader.can_delete() is False
+
+    uploader.check_write_permissions()
+
+    assert uploader.statements == [
+        "INSERT INTO elements (id,text) SELECT id,text FROM elements WHERE 1 = 0"
+    ]
+
+
+def test_write_probe_columns_match_the_uploaders_insert(mocker: MockerFixture):
+    """The probe must ask for exactly the rights upload_dataframe's INSERT asks for.
+
+    Pinned rather than assumed: the probe derives its column list from
+    get_table_columns(), and the uploader's INSERT derives its own from _fit_to_schema
+    conforming the frame to the same call. Narrowing what the uploader writes without
+    narrowing the probe would make the probe refuse credentials that still work.
+    """
+    table_columns = ["id", "record_id", "text", "type"]
+    uploader = _ProbeUploader(columns=table_columns, execute=_ok)
+    mocker.patch.object(SQLUploader, "can_delete", return_value=False)
+
+    uploader.upload_dataframe(
+        df=pd.DataFrame([{"id": "1", "text": "hello", "not_a_column": "dropped"}]),
+        file_data=MagicMock(spec=FileData),
+    )
+    insert = next(s for s in uploader.statements if s.startswith("INSERT INTO"))
+    upload_columns = insert.split("(", 1)[1].split(")", 1)[0].split(",")
+
+    uploader.statements.clear()
+    uploader.check_write_permissions()
+    probe = uploader.statements[0]
+    probe_columns = probe.split("(", 1)[1].split(")", 1)[0].split(",")
+
+    assert set(probe_columns) == set(upload_columns) == set(table_columns)
+
+
+def test_every_probe_rolls_back_whether_or_not_the_statement_raised():
+    passing = _ProbeUploader(columns=["id", "record_id"], execute=_ok)
+    passing.check_write_permissions()
+    assert passing.rollbacks == 2
+
+    failing = _ProbeUploader(columns=["id", "record_id"], execute=_raise)
+    failing.check_write_permissions()
+    assert failing.rollbacks == 2
+
+
+@pytest.mark.parametrize(
+    "denied,expected",
+    [
+        (("INSERT",), "no INSERT for you"),
+        (("DELETE",), "no DELETE for you"),
+        # Short of both rights: told both at once, rather than learning about the
+        # second only after granting the first and re-running.
+        (("INSERT", "DELETE"), "no INSERT for you no DELETE for you"),
+    ],
+)
+def test_a_confirmed_denial_names_the_right_that_was_refused(denied, expected):
+    uploader = _ProbeUploader(columns=["id", "record_id"], execute=_raise)
+    uploader.classify_write_denial = _deny(*denied)
+
+    with pytest.raises(UserError) as caught:
+        uploader.check_write_permissions()
+
+    assert str(caught.value) == expected
+    # A missing grant is not a rejected credential: UserAuthError (401) would send the
+    # customer off to rotate a key that works.
+    assert not isinstance(caught.value, UserAuthError)
+    assert caught.value.__cause__ is None
+
+
+def test_one_reason_covering_both_probes_is_reported_once():
+    """A read-only connection refuses both statements with the same sentence."""
+    uploader = _ProbeUploader(columns=["id", "record_id"], execute=_raise)
+    uploader.classify_write_denial = lambda error, privilege: "the connection is read-only"
+
+    with pytest.raises(UserError) as caught:
+        uploader.check_write_permissions()
+
+    assert str(caught.value) == "the connection is read-only"
+
+
+@pytest.mark.parametrize(
+    "columns,execute,classifier",
+    [
+        # An error the dialect does not recognize, and a dialect with no classifier.
+        (["id", "record_id"], "raise", None),
+        # The classifier itself blowing up.
+        (["id", "record_id"], "raise", "raise"),
+        # The table's schema being unreadable, which includes the table not existing.
+        (_FakeDriverError("no such table"), None, None),
+        # A table the driver reports as having no columns.
+        ([], None, None),
+    ],
+)
+def test_write_probes_pass_on_anything_they_cannot_confirm(columns, execute, classifier):
+    uploader = _ProbeUploader(columns=columns, execute=_raise if execute else _ok)
+    if classifier == "raise":
+
+        def _boom(error, privilege):
+            raise RuntimeError("classifier is broken")
+
+        uploader.classify_write_denial = _boom
+
+    uploader.check_write_permissions()
+
+
+def test_write_probes_pass_when_the_connection_cannot_be_opened(mocker: MockerFixture):
+    uploader = _ProbeUploader(columns=["id", "record_id"], execute=_ok)
+    mocker.patch.object(
+        _ProbeUploader, "get_cursor", side_effect=_FakeDriverError("connection gone")
+    )
+
+    uploader.check_write_permissions()
+
+
+def test_write_probes_pass_when_can_delete_cannot_be_answered(mocker: MockerFixture):
+    uploader = _ProbeUploader(columns=["id", "record_id", "text"], execute=_ok)
+    mocker.patch.object(_ProbeUploader, "can_delete", side_effect=_FakeDriverError("schema gone"))
+
+    uploader.check_write_permissions()
+
+    assert uploader.statements == [INSERT_PROBE]
+
+
+@pytest.mark.parametrize("privilege", ["INSERT", "DELETE"])
+def test_base_dialect_confirms_no_denial(privilege: str):
+    """A dialect without a verified denial code never refuses anything."""
+    uploader = _ProbeUploader(columns=["id"], execute=_ok)
+
+    assert (
+        uploader.classify_write_denial(
+            _FakeDriverError("insufficient privilege"), privilege=privilege
+        )
+        is None
+    )
+
+
+def test_precheck_runs_the_connection_check_before_the_write_probes(mocker: MockerFixture):
+    uploader = _ProbeUploader(columns=["id"], execute=_ok)
+    calls = []
+    mocker.patch.object(
+        _ProbeUploader,
+        "check_write_permissions",
+        side_effect=lambda: calls.append("probe"),
+    )
+
+    uploader.precheck()
+
+    assert uploader.statements == ["SELECT 1;"]
+    assert calls == ["probe"]
+
+
+def test_precheck_does_not_probe_when_the_connection_check_failed(mocker: MockerFixture):
+    def _unreachable(statement):
+        raise _FakeDriverError("host unreachable")
+
+    uploader = _ProbeUploader(columns=["id"], execute=_unreachable)
+    probed = mocker.patch.object(_ProbeUploader, "check_write_permissions")
+
+    with pytest.raises(DestinationConnectionError):
+        uploader.precheck()
+
+    probed.assert_not_called()

@@ -22,6 +22,7 @@ from test.integration.connectors.utils.validation.source import (
     source_filedata_display_name_set_check,
 )
 from unstructured_ingest.data_types.file_data import FileData, SourceIdentifiers
+from unstructured_ingest.error import UserError
 from unstructured_ingest.processes.connectors.sql.postgres import (
     CONNECTOR_TYPE,
     PostgresAccessConfig,
@@ -31,6 +32,7 @@ from unstructured_ingest.processes.connectors.sql.postgres import (
     PostgresIndexer,
     PostgresIndexerConfig,
     PostgresUploader,
+    PostgresUploaderConfig,
     PostgresUploadStager,
 )
 
@@ -202,3 +204,91 @@ def test_postgres_stager(
         stager=stager,
         tmp_dir=tmp_path,
     )
+
+
+PRECHECK_ROLES_SQL = """
+CREATE ROLE reader LOGIN PASSWORD 'test';
+GRANT CONNECT ON DATABASE elements TO reader;
+GRANT USAGE ON SCHEMA public TO reader;
+GRANT SELECT ON elements TO reader;
+
+CREATE ROLE inserter LOGIN PASSWORD 'test';
+GRANT CONNECT ON DATABASE elements TO inserter;
+GRANT USAGE ON SCHEMA public TO inserter;
+GRANT SELECT, INSERT ON elements TO inserter;
+
+CREATE ROLE writer LOGIN PASSWORD 'test';
+GRANT CONNECT ON DATABASE elements TO writer;
+GRANT USAGE ON SCHEMA public TO writer;
+GRANT SELECT, INSERT, DELETE ON elements TO writer;
+
+CREATE ROLE standby LOGIN PASSWORD 'test';
+GRANT CONNECT ON DATABASE elements TO standby;
+GRANT USAGE ON SCHEMA public TO standby;
+GRANT SELECT, INSERT, DELETE ON elements TO standby;
+ALTER ROLE standby SET default_transaction_read_only = on;
+"""
+
+
+def _precheck_uploader(username: str) -> PostgresUploader:
+    return PostgresUploader(
+        connection_config=PostgresConnectionConfig(
+            host="localhost",
+            port=5433,
+            database="elements",
+            username=username,
+            access_config=PostgresAccessConfig(password="test"),
+        ),
+        upload_config=PostgresUploaderConfig(table_name="elements"),
+    )
+
+
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, SQL_TAG)
+def test_postgres_destination_precheck_refuses_a_credential_that_cannot_write():
+    """A credential that can connect and read must not pass the destination precheck.
+
+    `SELECT 1` runs against the session, so it answers nothing about the table being
+    written to: a role holding CONNECT, USAGE and SELECT passed the check and then
+    failed on every record at write time. The write path is delete-then-insert, so
+    INSERT alone is not enough either. Each role below is granted exactly what the
+    scenario describes and nothing more.
+    """
+    with docker_compose_context(
+        docker_compose_path=env_setup_path / "sql" / "postgres" / "destination"
+    ):
+        admin = {
+            "host": "localhost",
+            "port": 5433,
+            "dbname": "elements",
+            "user": "unstructured",
+            "password": "test",
+        }
+        with connect(**admin) as setup_connection:
+            with setup_connection.cursor() as cursor:
+                cursor.execute(PRECHECK_ROLES_SQL)
+            setup_connection.commit()
+
+        # Short of both rights: told about both, in one message.
+        with pytest.raises(UserError) as reader_refusal:
+            _precheck_uploader("reader").precheck()
+        assert "INSERT permission on table 'elements'" in str(reader_refusal.value)
+        assert "DELETE permission on table 'elements'" in str(reader_refusal.value)
+
+        # Can insert, cannot delete. upload_dataframe deletes by record id first, so
+        # this credential fails on every record; the message has to name DELETE and
+        # must not accuse it of lacking INSERT.
+        with pytest.raises(UserError) as inserter_refusal:
+            _precheck_uploader("inserter").precheck()
+        assert "DELETE permission on table 'elements'" in str(inserter_refusal.value)
+        assert "INSERT permission" not in str(inserter_refusal.value)
+
+        with pytest.raises(UserError, match="read-only"):
+            _precheck_uploader("standby").precheck()
+
+        # The credential that can write is not refused ...
+        _precheck_uploader("writer").precheck()
+
+        # ... and none of the probes wrote or removed anything.
+        with connect(**admin) as check_connection, check_connection.cursor() as cursor:
+            cursor.execute("SELECT count(*) FROM elements")
+            assert cursor.fetchone()[0] == 0

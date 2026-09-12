@@ -306,3 +306,57 @@ def test_prepare_data_non_variant_column_passthrough(snowflake_uploader: Snowfla
     result = snowflake_uploader.prepare_data(columns, data)
 
     assert result == [("hello", 42)]
+
+
+def _snowflake_error(**kwargs):
+    from snowflake.connector.errors import ProgrammingError
+
+    return ProgrammingError(msg="SQL access control error", **kwargs)
+
+
+@pytest.mark.parametrize("privilege", ["INSERT", "DELETE"])
+def test_access_control_sqlstate_is_a_write_denial(
+    snowflake_uploader: SnowflakeUploader, privilege: str
+):
+    # One access-control error covers every refused right, so the probe's privilege is
+    # what names the missing grant.
+    reason = snowflake_uploader.classify_write_denial(
+        _snowflake_error(sqlstate="42501"), privilege=privilege
+    )
+
+    assert reason is not None
+    assert f"{privilege} permission on table" in reason
+
+
+def test_access_control_errno_is_a_write_denial(snowflake_uploader: SnowflakeUploader):
+    reason = snowflake_uploader.classify_write_denial(
+        _snowflake_error(errno=3001), privilege="DELETE"
+    )
+
+    assert reason is not None
+    assert "DELETE permission on table" in reason
+
+
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        # "Object does not exist, or operation cannot be performed" — Snowflake uses one
+        # wording for an absent name and for one the role may not see.
+        {"errno": 2003, "sqlstate": "42S02"},
+        {"errno": 1003, "sqlstate": "42000"},
+        {"errno": 604},
+        {},
+    ],
+)
+def test_other_snowflake_errors_are_not_write_denials(
+    snowflake_uploader: SnowflakeUploader, kwargs
+):
+    error = _snowflake_error(**kwargs)
+    assert snowflake_uploader.classify_write_denial(error, privilege="INSERT") is None
+
+
+def test_a_non_driver_exception_is_not_a_write_denial(snowflake_uploader: SnowflakeUploader):
+    assert (
+        snowflake_uploader.classify_write_denial(TimeoutError("no answer"), privilege="DELETE")
+        is None
+    )

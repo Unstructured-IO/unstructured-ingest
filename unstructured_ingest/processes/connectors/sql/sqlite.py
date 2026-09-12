@@ -2,7 +2,7 @@ import json
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Generator
+from typing import TYPE_CHECKING, Any, Generator, Optional
 
 from pydantic import Field, Secret, model_validator
 
@@ -140,6 +140,34 @@ class SQLiteUploader(SQLUploader):
     upload_config: SQLiteUploaderConfig = field(default_factory=SQLiteUploaderConfig)
     connection_config: SQLiteConnectionConfig
     connector_type: str = CONNECTOR_TYPE
+
+    def classify_write_denial(self, error: Exception, privilege: str) -> Optional[str]:
+        """Recognize a database file that cannot be written to.
+
+        SQLite has no users, roles or grants, so the missing-privilege case this probe
+        was built for cannot arise, and ``privilege`` does not change the answer: a
+        read-only file refuses the INSERT and the DELETE alike. The failure it is really
+        about still happens, and with the same shape: the destination is a file, and a
+        file whose permissions, mount or open mode deny writing is read by the
+        connection check perfectly well and then refuses every write.
+
+        SQLite says so exactly, so the probe is worth running here. ``SQLITE_READONLY``
+        is a primary result code; the driver reports the extended code, whose low byte
+        is the primary one, and the seven ``SQLITE_READONLY_*`` extended codes all
+        reduce to it. Masking rather than listing them means a new extended code in a
+        future SQLite still lands in the right place.
+        """
+        import sqlite3
+
+        code = getattr(error, "sqlite_errorcode", None)
+        if isinstance(code, int) and code & 0xFF == sqlite3.SQLITE_READONLY:
+            return (
+                f"The destination database file "
+                f"'{self.connection_config.database_path}' is read-only, so no record "
+                f"can be written to table '{self.upload_config.table_name}'. Check the "
+                f"file's permissions and that it is not on a read-only mount."
+            )
+        return None
 
     @requires_dependencies(["pandas"])
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:

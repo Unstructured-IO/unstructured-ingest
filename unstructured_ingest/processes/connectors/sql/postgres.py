@@ -157,6 +157,41 @@ class PostgresUploader(SQLUploader):
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
         super().run(path=path, file_data=file_data, **kwargs)
 
+    @requires_dependencies(["psycopg2"], extras="postgres")
+    def classify_write_denial(self, error: Exception, privilege: str) -> Optional[str]:
+        """Recognize the two SQLSTATEs that mean the probe's statement was refused.
+
+        psycopg2 puts the server's SQLSTATE on ``pgcode`` and names both of these in
+        ``psycopg2.errorcodes``, so neither is spelled out here as a literal. PostgreSQL
+        uses ``42501`` for every missing table privilege, so the same code covers the
+        INSERT and the DELETE probe; ``privilege`` is what tells them apart in the
+        message. Measured on postgres 16: a role with SELECT and INSERT and no DELETE
+        passes the INSERT probe and is refused ``42501`` by the DELETE probe.
+
+        ``25006`` matters separately: a hot standby, or a session on a pooler routed to a
+        read replica, holds grants that look right in the catalog and refuses every
+        write anyway. It is not about one right, so its message names none.
+
+        ``42P01`` (undefined_table) is deliberately not here. PostgreSQL raises it for a
+        table that does not exist and for one the credential may not see, and the
+        connector cannot tell those apart -- calling a typo'd table name a permissions
+        problem is the false refusal this probe exists to avoid.
+        """
+        from psycopg2 import errorcodes
+
+        pgcode = getattr(error, "pgcode", None)
+        if pgcode == errorcodes.INSUFFICIENT_PRIVILEGE:
+            return self._write_denied_message(privilege)
+        if pgcode == errorcodes.READ_ONLY_SQL_TRANSACTION:
+            return (
+                f"The destination credentials can connect to the database but the "
+                f"connection is read-only, so no record can be written to table "
+                f"'{self.upload_config.table_name}'. This is usually a read replica or "
+                f"standby endpoint, or a user or database with "
+                f"default_transaction_read_only set."
+            )
+        return None
+
 
 postgres_source_entry = SourceRegistryEntry(
     connection_config=PostgresConnectionConfig,
