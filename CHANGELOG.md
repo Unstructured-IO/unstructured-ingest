@@ -1,3 +1,10 @@
+## [1.11.13]
+
+### Fixes
+
+- **fix(databricks-volumes): make the source connection check contact Databricks (PLU-637).** The Volumes indexer `precheck` only built the SDK client, which sends no request under token auth, so a bad token, an unreachable host, or a volume the user cannot read all passed the connection test and failed later as a job. The precheck now calls `current_user.me()` and pulls one entry from a non-recursive listing of the configured path; an empty path still passes. A Volumes source that was already unusable now fails the connection test instead of passing it.
+- **fix(databricks-volumes): drop `DatabricksVolumesDownloader.precheck`.** It could never run: the connection test only exercises the indexer. It was the one downloader in this repo that defined a `precheck`, and the base no-op now applies as it does everywhere else.
+
 ## [1.11.12]
 
 ### Enhancements

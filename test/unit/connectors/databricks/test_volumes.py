@@ -1,4 +1,5 @@
 import logging
+import traceback
 
 import pytest
 from pytest_mock import MockerFixture
@@ -77,6 +78,106 @@ def test_wrap_error_unhandled_log_redacts(caplog: pytest.LogCaptureFixture):
 
     assert SECRET not in caplog.text
     assert "hunter2" not in caplog.text
+
+
+def _indexer(
+    mocker: MockerFixture, client, volume_path: str = "path"
+) -> DatabricksNativeVolumesIndexer:
+    mocker.patch.object(DatabricksNativeVolumesConnectionConfig, "get_client", return_value=client)
+    return DatabricksNativeVolumesIndexer(
+        connection_config=_connection_config(),
+        index_config=DatabricksNativeVolumesIndexerConfig(
+            catalog="catalog", schema="schema", volume="volume", volume_path=volume_path
+        ),
+    )
+
+
+def test_indexer_precheck_raises_when_credentials_are_rejected(mocker: MockerFixture):
+    # Constructing the client makes no request under token auth, so without a live
+    # call the connection check passes for a token the workspace rejects and the
+    # failure only surfaces when the job runs.
+    pytest.importorskip("databricks.sdk")
+    from databricks.sdk.errors.platform import STATUS_CODE_MAPPING
+
+    client = mocker.MagicMock()
+    client.current_user.me.side_effect = STATUS_CODE_MAPPING[401](SECRET)
+
+    with pytest.raises(UserAuthError) as exc_info:
+        _indexer(mocker, client).precheck()
+
+    assert SECRET not in str(exc_info.value)
+    client.current_user.me.assert_called_once()
+
+
+def test_indexer_precheck_raises_when_volume_path_is_missing(mocker: MockerFixture):
+    pytest.importorskip("databricks.sdk")
+    from databricks.sdk.errors.platform import STATUS_CODE_MAPPING
+
+    client = mocker.MagicMock()
+    client.dbfs.list.side_effect = STATUS_CODE_MAPPING[404]("path does not exist")
+
+    with pytest.raises(UserError):
+        _indexer(mocker, client).precheck()
+
+
+def test_indexer_precheck_raises_when_volume_read_is_not_granted(mocker: MockerFixture):
+    # Credentials are good but the Unity Catalog READ VOLUME grant is missing: the
+    # me() call succeeds and only the listing fails.
+    pytest.importorskip("databricks.sdk")
+    from databricks.sdk.errors.platform import STATUS_CODE_MAPPING
+
+    client = mocker.MagicMock()
+    client.dbfs.list.side_effect = STATUS_CODE_MAPPING[403]("insufficient permissions")
+
+    with pytest.raises(UserAuthError):
+        _indexer(mocker, client).precheck()
+
+
+def test_indexer_precheck_lists_the_configured_path_without_recursing(mocker: MockerFixture):
+    pytest.importorskip("databricks.sdk")
+    client = mocker.MagicMock()
+    client.dbfs.list.return_value = iter(
+        [mocker.MagicMock(is_dir=False, path="/Volumes/catalog/schema/volume/path/example.pdf")]
+    )
+
+    _indexer(mocker, client).precheck()
+
+    client.dbfs.list.assert_called_once_with(
+        path="/Volumes/catalog/schema/volume/path", recursive=False
+    )
+
+
+def test_indexer_precheck_accepts_an_empty_volume_path(mocker: MockerFixture):
+    # With no volume_path the source is the volume root, and an empty listing there
+    # is a valid (empty) source, not a connection failure.
+    pytest.importorskip("databricks.sdk")
+    client = mocker.MagicMock()
+    client.dbfs.list.return_value = iter([])
+
+    _indexer(mocker, client, volume_path="").precheck()
+
+    # precheck validates BOTH credentials (me()) and resource access (list()); assert both,
+    # since the empty-path case must still prove the connection was actually contacted.
+    client.current_user.me.assert_called_once()
+    client.dbfs.list.assert_called_once_with(path="/Volumes/catalog/schema/volume", recursive=False)
+
+
+def test_indexer_precheck_error_does_not_leak_raw_text_in_traceback(mocker: MockerFixture):
+    # wrap_error sanitizes the message, but if the raw SDK exception survives as the
+    # implicit __context__ then a full traceback (logger.exception / format_exception)
+    # reprints its secret-bearing text. The precheck must suppress the context.
+    pytest.importorskip("databricks.sdk")
+    from databricks.sdk.errors.platform import STATUS_CODE_MAPPING
+
+    client = mocker.MagicMock()
+    client.current_user.me.side_effect = STATUS_CODE_MAPPING[401](SECRET)
+
+    with pytest.raises(UserAuthError) as exc_info:
+        _indexer(mocker, client).precheck()
+
+    formatted = "".join(traceback.format_exception(exc_info.value))
+    assert SECRET not in formatted
+    assert "hunter2" not in formatted
 
 
 def test_indexed_file_reports_modification_time_in_epoch_seconds(mocker: MockerFixture):
