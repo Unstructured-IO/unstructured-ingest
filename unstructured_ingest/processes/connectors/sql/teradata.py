@@ -70,6 +70,25 @@ _TERADATA_ERROR_CODE_RE = re.compile(r"\[Error (\d+)\]")
 # pre-created with the wrong column type for the value being inserted/queried,
 # but can also fire on arbitrary expression-level conversions; the descriptor
 # stays generic.
+#
+# The second group (2621-6706) is the row-rejection family: the server accepted
+# the statement, inspected a row, and refused it. These arrive on the INSERT path
+# from `upload_dataframe`, and before they were listed here they fell through to
+# `_summarize_error`, whose catch-all branch returns the bare
+# "Failed to connect to server {host}" — telling a customer their network was at
+# fault for a value their own table definition rejected. They are as
+# customer-fixable as the privilege and syntax errors above: fix the value, or
+# fix the column it is going into.
+#
+# Descriptors MIRROR Teradata's own message wording with the interpolated
+# identifiers removed -- "Invalid date supplied for {table}.{column}" becomes
+# "invalid date". That is deliberate and is the rule for anything added here: the
+# customer can then match what we print against the same error in their DBS log or
+# DBQL, and we are not inventing a second vocabulary for errors Teradata already
+# names. What must NOT cross is the interpolated part (the table, the column, the
+# offending value) and the driver's wrapper text, which carries host/user/password.
+# Keep them short, keep them Teradata's words, do not grow them into remediation
+# advice.
 _USER_FAULT_TERADATA_CODES: Mapping[int, str] = MappingProxyType({
     3807: "object does not exist or user has no privilege on it",
     3523: "user does not have the required privilege",
@@ -79,6 +98,11 @@ _USER_FAULT_TERADATA_CODES: Mapping[int, str] = MappingProxyType({
     3754: "implicit type conversion failed",
     5612: "user does not have any access to the object",
     5315: "user does not have any access to the database",
+    2621: "bad character in format or data",
+    2665: "invalid date",
+    2801: "duplicate value for a unique primary index",
+    5407: "invalid operation for datetime or interval",
+    6706: "the string contains an untranslatable character",
 })
 
 
