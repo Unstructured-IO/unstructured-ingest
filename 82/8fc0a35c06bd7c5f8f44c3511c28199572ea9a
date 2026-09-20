@@ -1,0 +1,35 @@
+test/unit/connectors/sql/test_sql.py
+  s_1584bf1d69e987::t_e4666aa0f75202 21,419-637
+CHANGELOG.md
+  s_5ae5e1a66d53e8::t_caf885862544a7 1-6
+test/integration/connectors/sql/test_postgres.py
+  s_5ae5e1a66d53e8::t_040666bd3cb2bf 25,191-286
+unstructured_ingest/processes/connectors/sql/sql.py
+  s_5ae5e1a66d53e8::t_615f0e60020ae5 9,25,57-148,446-451,465-539
+unstructured_ingest/__version__.py
+  s_5ae5e1a66d53e8::t_3d3ddd2443cbb5 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "828fc0a35c06bd7c5f8f44c3511c28199572ea9a",
+  "prompts": {},
+  "sessions": {
+    "s_1584bf1d69e987": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d1634654-4874-4503-a957-928112509f5d",
+        "model": "claude-opus-5"
+      },
+      "human_author": "paulkarayan <pk@unstructured.io>"
+    },
+    "s_5ae5e1a66d53e8": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e3e20ba1-d4e1-41f0-b3f7-3573b9458528",
+        "model": "claude-opus-5"
+      },
+      "human_author": "paulkarayan <pk@unstructured.io>"
+    }
+  }
+}
