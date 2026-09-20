@@ -1841,11 +1841,15 @@ def test_uploader_insert_batch_failure_does_not_log_secret(
     assert "db.internal" not in caplog.text
 
 
-# --- The row-rejection family ------------------------------------------------
-# The server accepted the statement, inspected a row and refused it. Before these
-# codes were listed in `_USER_FAULT_TERADATA_CODES` they fell through to
-# `_summarize_error`'s catch-all and reached the customer as
-# "Failed to connect to server {host}" — a network story for a data problem.
+# --- The value-rejection family ----------------------------------------------
+# The server accepted the statement and refused the value being written against the
+# customer's own column definition. Before these codes were listed in
+# `_USER_FAULT_TERADATA_CODES` they fell through to `_summarize_error`'s catch-all
+# and reached the customer as "Failed to connect to server {host}" — a network story
+# for a data problem.
+#
+# 2801 is absent on purpose: a retry can re-insert rows an earlier batch committed,
+# so a duplicate-key rejection is not reliably the customer's. See the map comment.
 
 # (code, a representative driver message, the descriptor the map must supply)
 ROW_REJECTION_CASES = [
@@ -1857,13 +1861,14 @@ ROW_REJECTION_CASES = [
     ),
     (
         2665,
-        "[Teradata Database] [Error 2665] Invalid date supplied for test_table.last_modified.",
+        "[Teradata Database] [Error 2665] Invalid date.",
         "invalid date",
     ),
     (
-        2801,
-        "[Teradata Database] [Error 2801] Duplicate unique prime key error in test_table.",
-        "duplicate value for a unique primary index",
+        # The column-qualified sibling of 2665, and the one a batch insert reports.
+        2666,
+        "[Teradata Database] [Error 2666] Invalid date supplied for test_table.last_modified.",
+        "invalid date",
     ),
     (
         5407,
@@ -1946,7 +1951,6 @@ def test_row_rejection_never_surfaces_the_driver_text(
     # the table/column it named and the connection string the Go driver appended.
     assert "last_modified" not in message
     assert "CONNECTION=" not in message
-    assert "Duplicate unique prime key error in" not in message
     # And the chain is suppressed, so traceback logging cannot resurface it either.
     assert excinfo.value.__cause__ is None
 

@@ -71,14 +71,26 @@ _TERADATA_ERROR_CODE_RE = re.compile(r"\[Error (\d+)\]")
 # but can also fire on arbitrary expression-level conversions; the descriptor
 # stays generic.
 #
-# The second group (2621-6706) is the row-rejection family: the server accepted
-# the statement, inspected a row, and refused it. These arrive on the INSERT path
+# The second group (2621-6706) is the value-rejection family: the server accepted
+# the statement and refused the value being written against the customer's own
+# column definition (or their session's date form). These arrive on the INSERT path
 # from `upload_dataframe`, and before they were listed here they fell through to
 # `_summarize_error`, whose catch-all branch returns the bare
 # "Failed to connect to server {host}" — telling a customer their network was at
 # fault for a value their own table definition rejected. They are as
 # customer-fixable as the privilege and syntax errors above: fix the value, or
 # fix the column it is going into.
+#
+# 2665 and 2666 are two distinct errors and both are listed. 2665 is the bare
+# "Invalid date."; 2666 is the column-qualified "Invalid date supplied for
+# {table}.{column}", which is the one a driver batch insert reports.
+#
+# 2801 (duplicate unique prime key) is deliberately NOT listed. When can_delete()
+# is False a retry re-inserts rows an earlier batch already committed (see
+# upload_dataframe), so the duplicate can be this connector's doing rather than the
+# customer's, and the other Teradata write path in the platform classifies 2801 as
+# provider-side for that reason. An audience we cannot determine from the code
+# stays unlisted.
 #
 # Descriptors MIRROR Teradata's own message wording with the interpolated
 # identifiers removed -- "Invalid date supplied for {table}.{column}" becomes
@@ -100,7 +112,7 @@ _USER_FAULT_TERADATA_CODES: Mapping[int, str] = MappingProxyType({
     5315: "user does not have any access to the database",
     2621: "bad character in format or data",
     2665: "invalid date",
-    2801: "duplicate value for a unique primary index",
+    2666: "invalid date",
     5407: "invalid operation for datetime or interval",
     6706: "the string contains an untranslatable character",
 })
