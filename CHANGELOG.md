@@ -1,3 +1,9 @@
+## [1.11.15]
+
+### Enhancements
+
+- **feat(teradata): add live integration coverage for the SQL destination, including the rejection path.** The Teradata SQL destination had no integration test: the SQL suite covers Postgres, SingleStore and SQLite on containers, Snowflake on an emulator and Databricks on a real workspace, and Teradata has neither a container image nor an emulator, so nothing has ever exercised the `teradatasql` path against a real server. The new module covers the upload and, deliberately, two REJECTIONS: a duplicate value against a `UNIQUE PRIMARY INDEX` and a character with no representation in a `LATIN` column. Asserting only a row count would miss what actually breaks here, since a row the server refuses is classified rather than written, and it is the classification that has been wrong. Not wired into CI, following the Databricks precedent: it is gated on `TERADATA_HOST`/`TERADATA_USER`/`TERADATA_PASSWORD`/`TERADATA_DATABASE` and skips without them, because the only free endpoint is a 60-day trial whose credential would rot in CI secrets.
+
 ## [1.11.13]
 
 ### Fixes
