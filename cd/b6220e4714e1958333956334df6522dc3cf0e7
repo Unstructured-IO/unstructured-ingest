@@ -1,0 +1,37 @@
+test/integration/connectors/env_setup/sql/teradata/destination/schema_strict.sql
+  s_b67f057c3e8226::t_4026fca3da0dda 1-15
+unstructured_ingest/__version__.py
+  s_f52b5c80431a12::t_87edd7e1ea35a4 1
+test/integration/connectors/env_setup/sql/teradata/destination/schema.sql
+  s_b67f057c3e8226::t_4fb7c36f887d06 1-11
+test/integration/connectors/expected_results/teradata/stager/DA-1p-with-duplicate-pages.pdf.json
+  s_f52b5c80431a12::t_51903b990d1c3a 1-310
+test/integration/connectors/sql/test_teradata.py
+  s_f52b5c80431a12::t_195d06331abc6d 1-274
+CHANGELOG.md
+  s_f52b5c80431a12::t_c84a88c915d264 1-6
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "cdb6220e4714e1958333956334df6522dc3cf0e7",
+  "prompts": {},
+  "sessions": {
+    "s_b67f057c3e8226": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e9c18fce-0c90-42ee-a691-7973be5941e2",
+        "model": "claude-opus-5"
+      },
+      "human_author": "paulkarayan <pk@unstructured.io>"
+    },
+    "s_f52b5c80431a12": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "42a941d7-b952-4f9e-bdd7-bc4729265fe8",
+        "model": "claude-opus-5"
+      },
+      "human_author": "paulkarayan <pk@unstructured.io>"
+    }
+  }
+}
