@@ -151,8 +151,9 @@ def _raise_classified_teradata_error(
 
     Classification rules:
       * Server-side codes listed in ``_USER_FAULT_TERADATA_CODES`` → ``UserError``
-        (status_code 422) carrying only the numeric code and the fixed
-        descriptor from the map — never the raw driver message, which embeds
+        (status_code 422) carrying the numeric code, the fixed descriptor from
+        the map, and the ``table`` the CALLER passed (connector configuration,
+        never driver text) — never the raw driver message itself, which embeds
         host/user/password. Applies to BOTH source and destination directions
         — this means indexer callers historically catching
         ``SourceConnectionError`` will now see ``UserError`` for codes in the
@@ -164,9 +165,11 @@ def _raise_classified_teradata_error(
         ``"table 'X' not found or not accessible"``).
 
     Always raises; never returns. The source exception is NOT chained
-    (``from None``) so its raw text can't resurface through traceback logging;
-    the full driver text is still emitted (redacted) at the connector's own
-    log sites before this is called.
+    (``from None``), which sets ``__suppress_context__`` so default traceback
+    formatting hides it. That is the whole of the guarantee: the driver exception
+    is still reachable as ``__context__``, so anything walking the chain itself
+    still sees the raw text. The full driver text is also emitted (redacted) at
+    the connector's own log sites before this is called.
 
     :param exc: the original driver exception; used only to extract the numeric
         error code, never surfaced verbatim.
@@ -184,10 +187,11 @@ def _raise_classified_teradata_error(
     if code in _USER_FAULT_TERADATA_CODES:
         descriptor = _USER_FAULT_TERADATA_CODES[code]
         target = f" for '{table}'" if table else ""
-        # code + descriptor are safe (int + fixed map value); the raw driver
-        # message is NOT interpolated and the chain is suppressed so the
-        # Go-driver text (which embeds host/user/password) can't reach the
-        # response surface or resurface via traceback logging.
+        # code + descriptor are safe (int + fixed map value) and target is the
+        # caller's own config; the raw driver message is NOT interpolated, so the
+        # Go-driver text (which embeds host/user/password) can't reach the response
+        # surface. `from None` keeps it out of default traceback formatting too,
+        # though it stays reachable as __context__.
         raise UserError(
             f"Teradata error {code} ({descriptor}){target}."
         ) from None

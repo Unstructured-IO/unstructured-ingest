@@ -1851,6 +1851,9 @@ def test_uploader_insert_batch_failure_does_not_log_secret(
 # 2801 is absent on purpose: a retry can re-insert rows an earlier batch committed,
 # so a duplicate-key rejection is not reliably the customer's. See the map comment.
 
+# A stand-in for the row content the driver echoes back in a batch-insert failure.
+OFFENDING_VALUE = "1899-02-30T25:61:61Z"
+
 # (code, a representative driver message, the descriptor the map must supply)
 ROW_REJECTION_CASES = [
     (
@@ -1933,7 +1936,10 @@ def test_row_rejection_never_surfaces_the_driver_text(
     """The raw driver message names the table, the column and the offending value, and
     the Go driver wraps it in text that embeds host/user/password. Only the code and
     the fixed descriptor may cross."""
-    leaky = f"{driver_message} CONNECTION=host=db.example.com,user=dbc,password=hunter2"
+    leaky = (
+        f"{driver_message} Parameter values: ('rec-1','{OFFENDING_VALUE}'). "
+        f"CONNECTION=host=db.example.com,user=dbc,password=hunter2"
+    )
 
     with pytest.raises(UserError) as excinfo:
         try:
@@ -1948,11 +1954,17 @@ def test_row_rejection_never_surfaces_the_driver_text(
     assert "db.example.com" not in message
     # The interpolated identifiers are the part that must not cross. The descriptor
     # legitimately echoes Teradata's own wording, so assert on what the DRIVER added:
-    # the table/column it named and the connection string the Go driver appended.
+    # the offending value, the table/column it named, and the connection string the
+    # Go driver appended.
+    assert OFFENDING_VALUE not in message
+    assert "Parameter values:" not in message
     assert "last_modified" not in message
     assert "CONNECTION=" not in message
-    # And the chain is suppressed, so traceback logging cannot resurface it either.
-    assert excinfo.value.__cause__ is None
+    # `from None` is what keeps the driver text out of default traceback formatting.
+    # `__cause__ is None` would hold with or without it, so it pins nothing; this is
+    # the assertion that fails if the `from None` goes. The driver exception is still
+    # reachable as __context__ — that part is not a guarantee we make.
+    assert excinfo.value.__suppress_context__ is True
 
 
 def test_an_unlisted_code_still_takes_the_connection_path():
@@ -1970,6 +1982,36 @@ def test_an_unlisted_code_still_takes_the_connection_path():
             )
 
     assert str(excinfo.value) == "Failed to connect to server db.example.com"
+
+
+@pytest.mark.parametrize("code,driver_message,descriptor", ROW_REJECTION_CASES)
+def test_source_table_probe_row_rejection_raises_user_error(
+    mock_cursor: MagicMock,
+    teradata_indexer: TeradataIndexer,
+    mock_get_cursor: MagicMock,
+    code: int,
+    driver_message: str,
+    descriptor: str,
+):
+    """The map is direction-neutral, so these codes change the source path too: the
+    indexer's table probe raises the same 422 instead of `SourceConnectionError` with
+    the historical "table 'X' not found or not accessible" context. 6706 and 2621 are
+    the realistic ones on a `SELECT TOP 1 *`; the rest are pinned so the two
+    directions cannot drift apart."""
+    mock_cursor.execute.side_effect = [
+        None,  # SELECT 1 succeeds
+        _FakeTeradataDriverError(driver_message),
+    ]
+
+    with pytest.raises(UserError) as excinfo:
+        teradata_indexer.precheck()
+
+    message = str(excinfo.value)
+    assert f"Teradata error {code}" in message
+    assert descriptor in message
+    assert excinfo.value.status_code == 422
+    assert "not found or not accessible" not in message
+    assert "Failed to connect" not in message
 
 
 @pytest.mark.parametrize("code,driver_message,descriptor", ROW_REJECTION_CASES)
