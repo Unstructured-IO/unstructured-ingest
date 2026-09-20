@@ -10,6 +10,8 @@ from unstructured_ingest.processes.connectors.databricks.volumes_native import (
     DatabricksNativeVolumesConnectionConfig,
     DatabricksNativeVolumesIndexer,
     DatabricksNativeVolumesIndexerConfig,
+    DatabricksNativeVolumesUploader,
+    DatabricksNativeVolumesUploaderConfig,
 )
 from unstructured_ingest.utils.string_and_date_utils import parse_timestamp
 
@@ -200,3 +202,152 @@ def test_indexed_file_reports_modification_time_in_epoch_seconds(mocker: MockerF
     file_data = next(iter(indexer.run()))
 
     assert parse_timestamp(file_data.metadata.date_modified) == 1729186569.0
+
+
+def _uploader(
+    mocker: MockerFixture, client, volume_path: str = "path"
+) -> DatabricksNativeVolumesUploader:
+    mocker.patch.object(DatabricksNativeVolumesConnectionConfig, "get_client", return_value=client)
+    return DatabricksNativeVolumesUploader(
+        connection_config=_connection_config(),
+        upload_config=DatabricksNativeVolumesUploaderConfig(
+            catalog="catalog", schema="schema", volume="volume", volume_path=volume_path
+        ),
+    )
+
+
+def test_uploader_precheck_raises_when_credentials_are_rejected(mocker: MockerFixture):
+    pytest.importorskip("databricks.sdk")
+    from databricks.sdk.errors.platform import STATUS_CODE_MAPPING
+
+    client = mocker.MagicMock()
+    client.current_user.me.side_effect = STATUS_CODE_MAPPING[401](SECRET)
+
+    with pytest.raises(UserAuthError) as exc_info:
+        _uploader(mocker, client).precheck()
+
+    assert SECRET not in str(exc_info.value)
+    client.files.upload.assert_not_called()
+
+
+def test_uploader_precheck_error_does_not_leak_raw_text_in_traceback(mocker: MockerFixture):
+    # Same trap as the indexer: wrap_error sanitizes the message, but the raw SDK
+    # exception surviving as __context__ reprints its secret-bearing text in any
+    # full traceback.
+    pytest.importorskip("databricks.sdk")
+    from databricks.sdk.errors.platform import STATUS_CODE_MAPPING
+
+    client = mocker.MagicMock()
+    client.current_user.me.side_effect = STATUS_CODE_MAPPING[401](SECRET)
+
+    with pytest.raises(UserAuthError) as exc_info:
+        _uploader(mocker, client).precheck()
+
+    formatted = "".join(traceback.format_exception(exc_info.value))
+    assert SECRET not in formatted
+    assert "hunter2" not in formatted
+
+
+def test_uploader_precheck_writes_a_probe_at_the_configured_path_and_removes_it(
+    mocker: MockerFixture,
+):
+    # me() proves only the token. The write probe is what proves the destination,
+    # so it must land under the configured volume path and be cleaned up again.
+    pytest.importorskip("databricks.sdk")
+    client = mocker.MagicMock()
+
+    _uploader(mocker, client).precheck()
+
+    client.current_user.me.assert_called_once()
+    client.files.upload.assert_called_once()
+    probe_path = client.files.upload.call_args.kwargs["file_path"]
+    assert probe_path.startswith("/Volumes/catalog/schema/volume/path/")
+    assert client.files.upload.call_args.kwargs["overwrite"] is True
+    client.files.delete.assert_called_once_with(file_path=probe_path)
+
+
+def test_uploader_precheck_probes_the_volume_root_when_no_volume_path_is_set(
+    mocker: MockerFixture,
+):
+    pytest.importorskip("databricks.sdk")
+    client = mocker.MagicMock()
+
+    _uploader(mocker, client, volume_path="").precheck()
+
+    probe_path = client.files.upload.call_args.kwargs["file_path"]
+    assert probe_path.startswith("/Volumes/catalog/schema/volume/")
+
+
+def test_uploader_precheck_raises_when_volume_write_is_not_granted(mocker: MockerFixture):
+    # Credentials are good but the Unity Catalog WRITE VOLUME grant is missing:
+    # me() succeeds and only the write probe fails.
+    pytest.importorskip("databricks.sdk")
+    from databricks.sdk.errors.platform import STATUS_CODE_MAPPING
+
+    client = mocker.MagicMock()
+    client.files.upload.side_effect = STATUS_CODE_MAPPING[403]("insufficient permissions")
+
+    with pytest.raises(UserAuthError) as exc_info:
+        _uploader(mocker, client).precheck()
+
+    # The path is the fact the old check hid; the failure has to name it.
+    assert "/Volumes/catalog/schema/volume/path" in str(exc_info.value)
+
+
+def test_uploader_precheck_raises_when_volume_path_is_missing(mocker: MockerFixture):
+    pytest.importorskip("databricks.sdk")
+    from databricks.sdk.errors.platform import STATUS_CODE_MAPPING
+
+    client = mocker.MagicMock()
+    client.files.upload.side_effect = STATUS_CODE_MAPPING[404]("volume does not exist")
+
+    with pytest.raises(UserError) as exc_info:
+        _uploader(mocker, client).precheck()
+
+    assert "/Volumes/catalog/schema/volume/path" in str(exc_info.value)
+
+
+@pytest.mark.parametrize("status_code", [429, 500, 503])
+def test_uploader_precheck_passes_when_the_probe_is_not_a_permission_answer(
+    mocker: MockerFixture, status_code: int
+):
+    # A throttle or a Databricks-side outage says nothing about write access. Failing
+    # the check on it would break a connector that works today, so it warns and passes.
+    pytest.importorskip("databricks.sdk")
+    from databricks.sdk.errors.platform import STATUS_CODE_MAPPING
+
+    client = mocker.MagicMock()
+    client.files.upload.side_effect = STATUS_CODE_MAPPING[status_code]("try again later")
+
+    _uploader(mocker, client).precheck()
+
+
+def test_uploader_precheck_passes_on_an_unrecognised_probe_failure(
+    mocker: MockerFixture, caplog: pytest.LogCaptureFixture
+):
+    pytest.importorskip("databricks.sdk")
+    client = mocker.MagicMock()
+    client.files.upload.side_effect = RuntimeError(SECRET)
+
+    with caplog.at_level(logging.WARNING, logger="unstructured_ingest"):
+        _uploader(mocker, client).precheck()
+
+    assert SECRET not in caplog.text
+    assert "hunter2" not in caplog.text
+
+
+def test_uploader_precheck_passes_when_the_probe_cannot_be_cleaned_up(
+    mocker: MockerFixture, caplog: pytest.LogCaptureFixture
+):
+    # The write question is already answered by then; a failed cleanup must not
+    # turn a working destination into a failed connection test.
+    pytest.importorskip("databricks.sdk")
+    from databricks.sdk.errors.platform import STATUS_CODE_MAPPING
+
+    client = mocker.MagicMock()
+    client.files.delete.side_effect = STATUS_CODE_MAPPING[403]("cannot delete")
+
+    with caplog.at_level(logging.WARNING, logger="unstructured_ingest"):
+        _uploader(mocker, client).precheck()
+
+    assert "/Volumes/catalog/schema/volume/path/" in caplog.text

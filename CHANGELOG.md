@@ -1,3 +1,9 @@
+## [1.11.21]
+
+### Fixes
+
+- **fix(databricks-volumes): make the destination connection check prove write access.** The Volumes uploader `precheck` asserted `current_user.me().active` and never read the configured path, so a volume that does not exist, a path typo, a principal with no `WRITE VOLUME` grant, and a catalog or schema the principal cannot `USE` all passed the connection test and failed at `files.upload` mid-job, after every file had already been partitioned, enriched and embedded. The precheck now writes a zero-byte probe file at the configured path with the same `files.upload` the run uses, then deletes it. Only a 401, 403 or 404 fails the check; a throttle, a Databricks-side 5xx or an unrecognised error is logged and allowed through, so no destination that works today starts failing. The failure names the volume path, which is the one thing the old check hid.
+
 ## [1.11.20]
 
 ### Fixes

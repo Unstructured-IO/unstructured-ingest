@@ -4,7 +4,7 @@ from abc import ABC
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Generator, Optional
-from uuid import NAMESPACE_DNS, uuid5
+from uuid import NAMESPACE_DNS, uuid4, uuid5
 
 from pydantic import BaseModel, Field, Secret
 
@@ -36,6 +36,30 @@ from unstructured_ingest.utils.dep_check import requires_dependencies
 
 if TYPE_CHECKING:
     from databricks.sdk import WorkspaceClient
+
+
+# Unity Catalog answers "you may not write here" with 403 and "that catalog, schema or
+# volume does not exist" with 404, and a token the workspace rejects with 401. Those are
+# the only verdicts the destination write probe is entitled to act on. A throttle, a
+# Databricks-side 5xx, a socket error or an SDK exception this mapping does not know are
+# not answers to the permission question, so they are logged and allowed through: a
+# destination that works today must not start failing its connection test.
+_WRITE_PROBE_FATAL_STATUS_CODES = frozenset({401, 403, 404})
+
+# Prefix for the zero-byte file the destination precheck writes and then removes.
+# Recognisable on sight in the volume if a cleanup ever fails.
+_WRITE_PROBE_FILENAME_PREFIX = "unstructured_precheck_"
+
+
+def _databricks_status_code(e: Exception) -> Optional[int]:
+    """The HTTP status behind a Databricks SDK exception, or None if it is not one."""
+    from databricks.sdk.errors.base import DatabricksError
+    from databricks.sdk.errors.platform import STATUS_CODE_MAPPING
+
+    if not isinstance(e, DatabricksError):
+        return None
+    reverse_mapping = {v: k for k, v in STATUS_CODE_MAPPING.items()}
+    return reverse_mapping.get(type(e))
 
 
 class DatabricksPathMixin(BaseModel):
@@ -238,9 +262,65 @@ class DatabricksVolumesUploader(Uploader, ABC):
 
     def precheck(self) -> None:
         try:
-            assert self.connection_config.get_client().current_user.me().active
+            client = self.connection_config.get_client()
+            # me() is a live request that proves the credentials and the host, as the
+            # indexer does since PLU-637; the write probe below proves the rest.
+            client.current_user.me()
         except Exception as e:
-            raise self.connection_config.wrap_error(e=e)
+            # from None suppresses the implicit __context__ so the raw SDK exception text
+            # cannot resurface through full-traceback logging; wrap_error already redacts.
+            raise self.connection_config.wrap_error(e=e) from None
+        self._verify_write_access(client=client)
+
+    def _verify_write_access(self, client: "WorkspaceClient") -> None:
+        """Prove this connector can write where it is configured to write.
+
+        ``current_user.me()`` proves only that the token authenticates and the principal
+        is enabled. It never reads ``upload_config.path``, so a volume that does not
+        exist, a path typo, a principal with no WRITE VOLUME grant and a catalog or
+        schema the principal cannot USE all produced a green connector, and the run then
+        failed at ``files.upload``.
+
+        The probe is the write itself: a zero-byte file at the configured path, through
+        the same ``files.upload`` the run uses, so it collects the same verdict.
+        """
+        path = self.upload_config.path
+        probe_path = os.path.join(path, f"{_WRITE_PROBE_FILENAME_PREFIX}{uuid4().hex[:16]}")
+        try:
+            client.files.upload(file_path=probe_path, contents=io.BytesIO(b""), overwrite=True)
+        except Exception as e:
+            if _databricks_status_code(e) not in _WRITE_PROBE_FATAL_STATUS_CODES:
+                logger.warning(
+                    f"skipping write-access precheck for {path}: the probe failed for a "
+                    f"reason that is not a permission answer ({safe_error_summary(e)})"
+                )
+                return
+            wrapped = self.connection_config.wrap_error(e=e)
+            # wrap_error classifies and redacts but has no idea what was being written,
+            # and the path is exactly the fact the old check hid. Re-raise its verdict
+            # with the path attached; from None for the same reason as above.
+            raise type(wrapped)(
+                f"cannot write to Databricks volume path {path}: {wrapped}"
+            ) from None
+        self._remove_write_probe(client=client, probe_path=probe_path)
+
+    def _remove_write_probe(self, client: "WorkspaceClient", probe_path: str) -> None:
+        """Delete the probe file.
+
+        The fsspec uploader leaves its ``_empty`` marker in the destination forever; this
+        does not, because a Unity Catalog volume is routinely read back by a table, an
+        Auto Loader stream or another ingest job, so a stray file there is not inert.
+        WRITE VOLUME already covers the delete, so cleaning up asks for no grant the run
+        does not need. If it fails anyway the write question has already been answered,
+        so this warns and names the file left behind rather than failing the check.
+        """
+        try:
+            client.files.delete(file_path=probe_path)
+        except Exception as e:
+            logger.warning(
+                f"write-access precheck could not remove its probe file {probe_path}: "
+                f"{safe_error_summary(e)}"
+            )
 
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
         output_path = self.get_output_path(file_data=file_data)
