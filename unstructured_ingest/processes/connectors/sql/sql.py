@@ -1,12 +1,12 @@
 import hashlib
 import json
 from abc import ABC, abstractmethod
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 from time import time
-from typing import TYPE_CHECKING, Any, Generator, Union
+from typing import TYPE_CHECKING, Any, Generator, Optional, Union
 
 from dateutil import parser
 from pydantic import BaseModel, Field, Secret
@@ -22,6 +22,7 @@ from unstructured_ingest.error import (
     DestinationConnectionError,
     SourceConnectionError,
     UnstructuredIngestError,
+    UserError,
     safe_error_summary,
 )
 from unstructured_ingest.interfaces import (
@@ -363,6 +364,265 @@ class SQLUploader(Uploader):
             raise DestinationConnectionError(
                 f"failed to validate connection: {safe_error_summary(e)}"
             ) from None
+        # Outside the block above on purpose: a connection failure must keep its
+        # existing DestinationConnectionError, and the probe raises only UserError.
+        self.check_write_permissions()
+
+    def check_write_permissions(self) -> None:
+        """Refuse a destination credential the database says cannot perform the write.
+
+        ``SELECT 1`` above runs against the session, so it succeeds on any credential
+        the driver can open a connection with, whatever rights that credential holds on
+        the table this uploader writes to. A credential that can connect and read
+        therefore passes the connection check and then fails on every record at write
+        time, which is the failure this asks about up front instead.
+
+        The probe's privilege surface has to match the upload's exactly -- no wider, no
+        narrower. Wider refuses a credential that works; narrower passes one that cannot
+        write, which is the whole failure being fixed. ``upload_dataframe`` is
+        delete-then-insert, so this asks both questions, each with the real statement
+        made harmless:
+
+        * ``INSERT INTO <table> (<columns>) SELECT <columns> FROM <table> WHERE 1 = 0``
+        * ``DELETE FROM <table> WHERE 1 = 0``, and only when :meth:`can_delete` is true,
+          which is the same gate ``upload_dataframe`` puts the DELETE behind. On a table
+          with no record-id column the upload skips the delete and warns, so asking for
+          DELETE there would refuse a credential that never needs it.
+
+        The engine runs the privilege check when it plans the statement, before any row
+        is produced, so a refusal arrives while the row count is still zero. What makes
+        this harmless is the zero rows, not the rollback: the rollback is a no-op on an
+        autocommit driver, and ``get_connection`` commits in its own ``finally`` on
+        postgres and teradata alike, immediately after it. ``WHERE 1 = 0`` rather than
+        ``WHERE FALSE`` because Teradata has no boolean literal; every dialect in this
+        package accepts ``1 = 0``. Measured on postgres 16: the zero-row DELETE returns
+        ``rowcount=0`` for a credential that holds the right and ``42501`` for one that
+        does not.
+
+        The DELETE names no column, which is deliberate and is what keeps the surface
+        equal rather than wider. The real DELETE filters on the record-id column, so it
+        needs SELECT on that column too -- and the INSERT probe above already asks for
+        SELECT on every column, because ``get_table_columns()`` does.
+
+        ``<columns>`` is :meth:`get_table_columns`, which is also what the uploader's own
+        INSERT names: :meth:`_fit_to_schema` conforms the frame to exactly the table's
+        columns before ``upload_dataframe`` reads ``df.columns`` off it. Deriving both
+        from that one call is the point -- grants are per-column on every engine here, so
+        a probe that asks for rights on more columns than the write path uses refuses
+        credentials that would have worked. Naming the columns also keeps the two
+        statements the same shape: a column-less ``INSERT INTO t SELECT * FROM t`` asks
+        for INSERT on every column of the table, which stops matching the moment anyone
+        narrows what the uploader writes.
+        ``test_write_probe_columns_match_the_uploaders_insert`` pins that agreement.
+
+        Both probes run even when the first is refused, so a credential short of both
+        rights is told both at once instead of learning about the second only after
+        fixing the first.
+
+        The result is one-sided. A denial is raised only when
+        :meth:`classify_write_denial` recognizes the driver's answer as an unambiguous
+        refusal. Everything else passes: a timeout, a dropped connection, a table that
+        does not exist, a schema or type error, an unrecognized driver error, a dialect
+        with no classifier at all, an exception from the classifier itself. None of
+        those establish that a working credential cannot write, and refusing on them
+        would break destinations that work today. This method raises ``UserError`` and
+        nothing else.
+
+        It cannot see a rule evaluated per row -- a PostgreSQL row-level-security
+        ``WITH CHECK`` policy, a Snowflake row access policy -- because a zero-row
+        statement never reaches one. Those pass here and can still refuse the upload,
+        which is the direction this is allowed to be wrong in.
+
+        The one side effect a zero-row statement can still have is a statement-level
+        trigger, which fires whether or not any row qualifies. It is not reached on
+        postgres: psycopg2 opens a transaction (``autocommit`` defaults to False and this
+        package never sets it), so the rollback above discards whatever the trigger did.
+        Measured on postgres 16.15 with ``AFTER INSERT`` and ``AFTER DELETE ... FOR EACH
+        STATEMENT`` triggers writing to an audit table: both probes leave 0 audit rows
+        through this connector's connection, and 2 if the same connection is forced into
+        autocommit. SQLite has no statement triggers at all, only ``FOR EACH ROW``, which
+        zero rows cannot fire. That leaves Teradata, whose driver is in autocommit and
+        which does have statement triggers: an ``AFTER ... FOR EACH STATEMENT`` trigger on
+        the destination table there would fire once per precheck and its side effect would
+        stand. Not guarded, because the guard is a transaction-semantics change on the one
+        dialect this branch could not test against a live server.
+
+        Reading the grant tables instead -- ``has_table_privilege``, ``SHOW GRANTS`` --
+        would avoid both the trigger and the column-list question, and is not what this
+        does. It answers a different question: what the catalog records, rather than what
+        the session is allowed to do. The two come apart exactly where this check matters
+        -- role composition and inheritance, a pooler or proxy holding a session under a
+        different role than the one that authenticated, ``default_transaction_read_only``
+        and a standby endpoint (which no grant table shows), and column-level grants,
+        where a per-column answer has to be assembled and compared against the uploader's
+        column list by hand. It is also four dialect-specific catalog queries rather than
+        one statement each dialect already runs. The statement the upload itself issues is
+        the only thing that answers "can this credential perform this write".
+        """
+        try:
+            columns = self.get_table_columns()
+        except Exception as e:
+            reason = self._classify_schema_read_denial(e)
+            if reason is not None:
+                raise UserError(reason)
+            # Includes the table not existing. Not our question, and the uploader
+            # surfaces it with its own message when the job runs.
+            logger.info(
+                f"write-permission check skipped, table schema unavailable: "
+                f"{self._probe_error_detail(e)}"
+            )
+            return
+        if not columns:
+            return
+
+        probes = [("INSERT", self._insert_probe_statement(columns=columns))]
+        try:
+            deletes = self.can_delete()
+        except Exception as e:
+            logger.info(f"write-permission check inconclusive: {safe_error_summary(e)}")
+            deletes = False
+        if deletes:
+            probes.append(("DELETE", self._delete_probe_statement()))
+
+        reasons: list[str] = []
+        for privilege, statement in probes:
+            reason = self._run_write_probe(privilege=privilege, statement=statement)
+            if reason is not None and reason not in reasons:
+                reasons.append(reason)
+        if reasons:
+            raise UserError(" ".join(reasons))
+
+    def _classify_schema_read_denial(self, error: Exception) -> Optional[str]:
+        """Refuse a credential the database says cannot even read the destination table.
+
+        ``get_table_columns()`` runs ``SELECT * FROM <table> LIMIT 1``, and a credential
+        refused there passed the old ``SELECT 1`` check and reached ``upload_dataframe``,
+        which calls the same method and fails the same way -- the whole write path needs
+        that read, both to conform the frame and to name the columns of its own INSERT. So
+        a refused schema read is the same customer problem arriving a job later, and this
+        is what stopped the check from covering the credential with no rights at all,
+        which is the one the title is about.
+
+        Same one-sided contract as the probes, and the same classifier: refuse only on an
+        answer the dialect calls an unambiguous denial, pass on everything else, including
+        the table not existing yet. A column-level grant covering every column reads fine
+        and is not refused (measured on postgres 16 for the role holding only those).
+
+        Not closed on teradata, deliberately. Its ``get_table_columns()`` override
+        classifies the driver error itself and raises ``UserError``, so what arrives here
+        is already wrapped and the dialect classifier, which tests the exception's module,
+        does not recognize it. Re-raising that ``UserError`` unconditionally is the obvious
+        move and is wrong: ``_USER_FAULT_TERADATA_CODES`` maps 3807 to "object does not
+        exist or user has no privilege on it", and a configured table that does not exist
+        yet is a working teradata destination, because ``create_destination()`` builds it
+        at upload time. That would refuse a destination that works today.
+        """
+        try:
+            return self.classify_write_denial(error, privilege="SELECT")
+        except Exception:
+            return None
+
+    def _run_write_probe(self, privilege: str, statement: str) -> Optional[str]:
+        """Run one zero-row probe. Return a confirmed refusal, else None. Never raises."""
+        try:
+            with self.get_cursor() as cursor:
+                try:
+                    logger.debug(f"running {privilege} permission probe: {statement}")
+                    cursor.execute(statement)
+                finally:
+                    connection = getattr(cursor, "connection", None)
+                    if connection is not None:
+                        # Autocommit drivers, and drivers whose rollback fails on an
+                        # already-aborted transaction. Zero rows either way.
+                        with suppress(Exception):
+                            connection.rollback()
+        except Exception as e:
+            try:
+                reason = self.classify_write_denial(e, privilege=privilege)
+            except Exception as classifier_error:
+                # Named, because otherwise a broken classifier is indistinguishable in the
+                # logs from a driver error no classifier recognizes: both take the
+                # inconclusive branch below and both report the driver's exception, not
+                # this one.
+                logger.debug(
+                    f"{privilege} permission classifier raised "
+                    f"{type(classifier_error).__name__}, treating the driver error as "
+                    f"unrecognized"
+                )
+                reason = None
+            if reason is None:
+                logger.info(
+                    f"{privilege} permission check inconclusive: {self._probe_error_detail(e)}"
+                )
+                return None
+            logger.error(
+                f"destination credentials cannot {privilege.lower()}: {self._probe_error_detail(e)}"
+            )
+            return reason
+        return None
+
+    def _probe_error_detail(self, error: Exception) -> str:
+        """Render a probe failure for the log.
+
+        ``safe_error_summary`` reads a name allowlist and never message text, which is
+        what keeps host, user and password out of the log. A driver that carries no
+        machine-readable code therefore renders as a bare exception type name, and the
+        inconclusive line -- the one that matters for debugging a probe that should have
+        refused and did not -- says nothing at all. Overridden where the code has to be
+        parsed out instead of read off an attribute (teradata).
+        """
+        return safe_error_summary(error)
+
+    def _quote_identifier(self, identifier: str) -> str:
+        """Render a table or column name for the probe.
+
+        Unquoted by default because that is how ``upload_dataframe`` renders the same
+        names in the statements this probe stands in for. Overridden where the uploader
+        quotes (teradata).
+        """
+        return identifier
+
+    def _insert_probe_statement(self, columns: list[str]) -> str:
+        table = self._quote_identifier(self.upload_config.table_name)
+        column_list = ",".join(self._quote_identifier(column) for column in columns)
+        return f"INSERT INTO {table} ({column_list}) SELECT {column_list} FROM {table} WHERE 1 = 0"
+
+    def _delete_probe_statement(self) -> str:
+        return f"DELETE FROM {self._quote_identifier(self.upload_config.table_name)} WHERE 1 = 0"
+
+    def classify_write_denial(self, error: Exception, privilege: str) -> Optional[str]:
+        """Return a user-facing reason iff this error is an unambiguous refusal.
+
+        ``privilege`` is the right the refused statement needed, ``INSERT`` or
+        ``DELETE``. It belongs in the message: telling a customer whose credential holds
+        INSERT and not DELETE that they lack INSERT sends them to grant the wrong thing.
+
+        Return ``None`` for everything else, including an error that may or may not be a
+        privilege problem: PostgreSQL and Teradata both report "no such object" and "you
+        may not see this object" with the same code, and guessing turns a wrong table
+        name into a permissions accusation.
+
+        A refusal here is NOT an authentication failure. The credential is valid and the
+        connection is open; what is missing is a grant. Reporting it as an auth problem
+        sends the customer off to rotate a working key, so the message must say which
+        grant on which table, and the raised type is ``UserError`` (422) and never
+        ``UserAuthError`` (401).
+
+        Only the reason string is surfaced. Driver text is not: these messages routinely
+        embed the host, user, and password from the connection string.
+
+        The base returns ``None``, so a dialect without a verified denial code never
+        refuses anything.
+        """
+        return None
+
+    def _write_denied_message(self, privilege: str) -> str:
+        return (
+            f"The destination credentials can connect to the database but do not have "
+            f"{privilege} permission on table '{self.upload_config.table_name}'. Records "
+            f"would fail to write. Grant {privilege} on that table to the user this "
+            f"connector authenticates as."
+        )
 
     @contextmanager
     def get_cursor(self) -> Generator[Any, None, None]:

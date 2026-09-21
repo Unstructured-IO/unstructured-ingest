@@ -101,6 +101,13 @@ _TERADATA_ERROR_CODE_RE = re.compile(r"\[Error (\d+)\]")
 # offending value) and the driver's wrapper text, which carries host/user/password.
 # Keep them short, keep them Teradata's words, do not grow them into remediation
 # advice.
+#
+# A code added here may also belong in _WRITE_DENIAL_TERADATA_CODES further down, which
+# is the subset meaning "no privilege" and nothing else. The two tables answer different
+# questions -- this one "whose fault is this write", that one "is this an unambiguous
+# refusal of a right" -- so membership is not automatic in either direction: 3807 is here
+# and deliberately not there, and every code in the value-rejection group below belongs
+# here only. Decide for both when you add one.
 _USER_FAULT_TERADATA_CODES: Mapping[int, str] = MappingProxyType({
     3807: "object does not exist or user has no privilege on it",
     3523: "user does not have the required privilege",
@@ -504,6 +511,13 @@ class TeradataUploadStager(SQLUploadStager):
         return df
 
 
+# The subset of _USER_FAULT_TERADATA_CODES that means "no privilege" and cannot also
+# mean something else. 3523 "the user does not have <privilege> access to <object>",
+# 5612 no access to the object, 5315 no access to the database. 3807 is excluded: it is
+# also Teradata's "object does not exist".
+_WRITE_DENIAL_TERADATA_CODES = frozenset({3523, 5315, 5612})
+
+
 class TeradataUploaderConfig(SQLUploaderConfig):
     table_name: Optional[str] = Field(
         default=None,
@@ -579,6 +593,52 @@ class TeradataUploader(SQLUploader):
         except Exception as e:
             logger.error(f"failed to validate connection: {safe_error_summary(e)}")
             raise DestinationConnectionError(_summarize_error(self.connection_config.host, e))
+        if self.upload_config.table_name:
+            # Skipped when the table name is unset, because then the table does not
+            # exist yet and create_destination() makes it at upload time.
+            self.check_write_permissions()
+
+    def _quote_identifier(self, identifier: str) -> str:
+        # Matches upload_dataframe, which double-quotes both the table and every
+        # column so a reserved word or a case-sensitive name still resolves.
+        return f'"{identifier}"'
+
+    def _probe_error_detail(self, error: Exception) -> str:
+        """Append the parsed server code, which attribute sniffing cannot find here.
+
+        ``teradatasql.Error`` is a bare ``Exception`` subclass carrying no code attribute,
+        so ``safe_error_summary`` renders every probe failure on this dialect as a bare
+        exception type name. The code lives only in the ``[Error NNNN]`` message tag, and
+        the parser below is the one this module already trusts on the upload path. The
+        code alone crosses, never the message it came from, which interpolates the table,
+        the column and the offending value and is wrapped in Go-driver text carrying
+        host, user and password.
+        """
+        detail = safe_error_summary(error)
+        code = _extract_teradata_error_code(error)
+        return detail if code is None else f"{detail} teradata_error={code}"
+
+    def classify_write_denial(self, error: Exception, privilege: str) -> Optional[str]:
+        """Recognize the Teradata codes that unambiguously mean "you have no rights".
+
+        teradatasql's exceptions carry no code attribute at all -- ``teradatasql.Error``
+        is a bare ``Exception`` subclass -- so the code has to come from the
+        ``[Error NNNN]`` tag in the message, via the parser this module already uses to
+        classify driver errors on the upload path. 3523 names the refused privilege in
+        its own text and covers INSERT and DELETE alike, so ``privilege`` is what names
+        the missing grant in the message.
+
+        Only the three codes that say "no privilege" and nothing else are treated as a
+        refusal. 3807 is in ``_USER_FAULT_TERADATA_CODES`` and is deliberately left out
+        here: Teradata returns it both for an object that does not exist and for one the
+        user has no rights on, because it hides the existence of objects a user cannot
+        see, and a wrong table name must not be reported as a permissions problem.
+        """
+        if not _is_teradata_driver_error(error):
+            return None
+        if _extract_teradata_error_code(error) in _WRITE_DENIAL_TERADATA_CODES:
+            return self._write_denied_message(privilege)
+        return None
 
     def get_table_columns(self) -> list[str]:
         if self._columns is None:
