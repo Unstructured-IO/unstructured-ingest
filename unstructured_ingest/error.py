@@ -18,6 +18,10 @@ _SAFE_ERROR_ATTRS = (
     "errno",
     "sqlstate",
     "pgcode",
+    # sqlite3 puts the extended result code here as an int. Nothing else on a
+    # sqlite3 exception is machine-readable, so without it a refused write logs as
+    # a bare "OperationalError" and the inconclusive-vs-denied line carries nothing.
+    "sqlite_errorcode",
     "request_id",
     "sfqid",
 )

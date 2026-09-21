@@ -669,3 +669,43 @@ def test_precheck_does_not_probe_when_the_connection_check_failed(mocker: Mocker
         uploader.precheck()
 
     probed.assert_not_called()
+
+def test_a_confirmed_denial_of_the_schema_read_is_refused():
+    """A credential with no rights at all is refused instead of logged as a skip.
+
+    The schema read is `SELECT * FROM <table> LIMIT 1`. The write path runs it too, both
+    to conform the frame and to name the columns of its own INSERT, so a credential
+    refused there cannot upload, and before this it passed the check and failed a job
+    later.
+    """
+    uploader = _ProbeUploader(columns=_FakeDriverError("permission denied"), execute=_ok)
+    uploader.classify_write_denial = _deny("SELECT")
+
+    with pytest.raises(UserError) as caught:
+        uploader.check_write_permissions()
+
+    assert str(caught.value) == "no SELECT for you"
+    assert not isinstance(caught.value, UserAuthError)
+    # Refused before either write probe was reached: there is no column list to build one
+    # from, and the credential is already known not to work.
+    assert uploader.statements == []
+
+
+def test_a_schema_read_the_dialect_cannot_confirm_still_passes():
+    """Same one-sided contract as the probes. The table not existing yet arrives here."""
+    uploader = _ProbeUploader(columns=_FakeDriverError("no such table"), execute=_ok)
+    uploader.classify_write_denial = _deny("INSERT", "DELETE")
+
+    uploader.check_write_permissions()
+
+    assert uploader.statements == []
+
+
+def test_a_classifier_that_raises_on_the_schema_read_still_passes():
+    def explode(error, privilege):
+        raise RuntimeError("classifier is broken")
+
+    uploader = _ProbeUploader(columns=_FakeDriverError("permission denied"), execute=_ok)
+    uploader.classify_write_denial = explode
+
+    uploader.check_write_permissions()

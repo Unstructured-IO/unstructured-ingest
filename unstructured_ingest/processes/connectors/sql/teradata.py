@@ -101,6 +101,13 @@ _TERADATA_ERROR_CODE_RE = re.compile(r"\[Error (\d+)\]")
 # offending value) and the driver's wrapper text, which carries host/user/password.
 # Keep them short, keep them Teradata's words, do not grow them into remediation
 # advice.
+#
+# A code added here may also belong in _WRITE_DENIAL_TERADATA_CODES further down, which
+# is the subset meaning "no privilege" and nothing else. The two tables answer different
+# questions -- this one "whose fault is this write", that one "is this an unambiguous
+# refusal of a right" -- so membership is not automatic in either direction: 3807 is here
+# and deliberately not there, and every code in the value-rejection group below belongs
+# here only. Decide for both when you add one.
 _USER_FAULT_TERADATA_CODES: Mapping[int, str] = MappingProxyType({
     3807: "object does not exist or user has no privilege on it",
     3523: "user does not have the required privilege",
@@ -595,6 +602,21 @@ class TeradataUploader(SQLUploader):
         # Matches upload_dataframe, which double-quotes both the table and every
         # column so a reserved word or a case-sensitive name still resolves.
         return f'"{identifier}"'
+
+    def _probe_error_detail(self, error: Exception) -> str:
+        """Append the parsed server code, which attribute sniffing cannot find here.
+
+        ``teradatasql.Error`` is a bare ``Exception`` subclass carrying no code attribute,
+        so ``safe_error_summary`` renders every probe failure on this dialect as a bare
+        exception type name. The code lives only in the ``[Error NNNN]`` message tag, and
+        the parser below is the one this module already trusts on the upload path. The
+        code alone crosses, never the message it came from, which interpolates the table,
+        the column and the offending value and is wrapped in Go-driver text carrying
+        host, user and password.
+        """
+        detail = safe_error_summary(error)
+        code = _extract_teradata_error_code(error)
+        return detail if code is None else f"{detail} teradata_error={code}"
 
     def classify_write_denial(self, error: Exception, privilege: str) -> Optional[str]:
         """Recognize the Teradata codes that unambiguously mean "you have no rights".
