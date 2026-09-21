@@ -556,8 +556,7 @@ class SQLUploader(Uploader):
                 )
                 return None
             logger.error(
-                f"destination credentials cannot {privilege.lower()}: "
-                f"{self._probe_error_detail(e)}"
+                f"destination credentials cannot {privilege.lower()}: {self._probe_error_detail(e)}"
             )
             return reason
         return None
