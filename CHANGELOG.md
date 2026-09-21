@@ -1,3 +1,9 @@
+## [1.11.15]
+
+### Fixes
+
+- **test(teradata): add live integration coverage for the SQL destination, including the rejection path.** The Teradata SQL destination had no integration test: the SQL suite covers Postgres, SingleStore and SQLite on containers, Snowflake on an emulator and Databricks on a real workspace, and Teradata has neither a container image nor an emulator, so nothing has ever exercised the `teradatasql` path against a real server. The new module covers the upload, which lets `create_destination()` build the table from the connector's own DDL asset and pairs it with the `metadata_as_json=True` stager the connector requires, then re-uploads the same record to check that it is replaced rather than appended. It also covers two REJECTIONS: a duplicate value against a `UNIQUE PRIMARY INDEX` and a character with no representation in a `LATIN` column. Asserting only a row count would miss what actually breaks here, since a row the server refuses is classified rather than written, and it is the classification that has been wrong. Each rejection is also provoked through a bare cursor so the redaction assertions run against a message the driver really produced. Not wired into CI: gated on `TERADATA_HOST`/`TERADATA_USER`/`TERADATA_PASSWORD`/`TERADATA_DATABASE` and skipped without them, because the only free endpoint is a 60-day trial whose credential would rot in CI secrets.
+
 ## [1.11.14]
 
 ### Fixes
@@ -485,6 +491,7 @@
 ### Fixes
 
 - **fix(slack): guard private file downloads.** Validate Slack private download URLs before sending bearer credentials, refuse redirects that could forward bearer credentials, stream private file downloads to disk, and use a bounded timeout for private file reads.
+
 ## [1.6.3]
 
 ### Enhancements
