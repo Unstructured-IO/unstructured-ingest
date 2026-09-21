@@ -4,11 +4,14 @@ Covers the upload AND two rejections. The rejections are the point: a row the se
 classified rather than written, and it is the classification that has been wrong, so a row-count
 assertion alone would stay green through the defect this file follows.
 
-DEPENDS ON THE WIDENED CODE MAP. The rejection tests assert `UserError`, which needs 2801 and 6706
-in `_USER_FAULT_TERADATA_CODES`; until the PR that widens that map lands, both provocations fall
-through to `DestinationConnectionError`, whose message is "Failed to connect to server <host>".
-That is the exact misdiagnosis these tests exist to catch, so rather than fail as one they skip on
-the map itself, and the skip clears itself the moment the map is widened.
+THE TWO REJECTIONS ARE CLASSIFIED DIFFERENTLY, ON PURPOSE. 6706 is in
+`_USER_FAULT_TERADATA_CODES` (#812), so an untranslatable character is the user's to fix and the
+test asserts `UserError`. 2801 is deliberately NOT in that map: `upload_dataframe` commits each
+batch separately, so a retry after a partial upload can re-insert rows an earlier batch already
+committed when `can_delete()` is False, which makes a duplicate as likely to be ours as the
+customer's, and platform-plugins pins the same code as a provider-side failure. The duplicate-key
+test therefore asserts the connection path it deliberately keeps, and any change to that decision
+should turn this test red.
 
 RUNNING IT. Not wired into CI. `test_databricks_delta_tables.py` in this directory is the nearest
 precedent but not the same mechanism: the Databricks credentials ARE plumbed into the
@@ -56,7 +59,11 @@ from test.integration.connectors.utils.validation.destination import (
 )
 from test.integration.utils import requires_env
 from unstructured_ingest.data_types.file_data import FileData, SourceIdentifiers
-from unstructured_ingest.error import UserError, safe_error_summary
+from unstructured_ingest.error import (
+    DestinationConnectionError,
+    UserError,
+    safe_error_summary,
+)
 from unstructured_ingest.logger import logger
 from unstructured_ingest.processes.connectors.sql.teradata import (
     _USER_FAULT_TERADATA_CODES,
@@ -73,8 +80,8 @@ from unstructured_ingest.processes.connectors.sql.teradata import (
 
 REQUIRED_ENV = ("TERADATA_HOST", "TERADATA_USER", "TERADATA_PASSWORD", "TERADATA_DATABASE")
 
-# Codes the server raises for the two rejections provoked below. Neither is in
-# `_USER_FAULT_TERADATA_CODES` yet, which is what `needs_widened_code_map` gates on.
+# Codes the server raises for the two rejections provoked below. 6706 is in
+# `_USER_FAULT_TERADATA_CODES`; 2801 is deliberately kept out of it (see the module docstring).
 DUPLICATE_KEY_CODE = 2801
 UNTRANSLATABLE_CHARACTER_CODE = 6706
 # "object does not exist": Teradata has no DROP TABLE IF EXISTS, so teardown swallows this one.
@@ -88,11 +95,18 @@ NON_LATIN_TEXT = "\u4e2d\u6587"
 STRICT_COLUMNS = ("id", "record_id", "element_id", "text", "type")
 
 needs_widened_code_map = pytest.mark.skipif(
-    not {DUPLICATE_KEY_CODE, UNTRANSLATABLE_CHARACTER_CODE} <= set(_USER_FAULT_TERADATA_CODES),
+    UNTRANSLATABLE_CHARACTER_CODE not in _USER_FAULT_TERADATA_CODES,
     reason=(
-        f"needs {DUPLICATE_KEY_CODE}/{UNTRANSLATABLE_CHARACTER_CODE} in "
-        "_USER_FAULT_TERADATA_CODES (unstructured-ingest#812); without them the provocation "
-        "raises DestinationConnectionError and reads as a connect failure"
+        f"needs {UNTRANSLATABLE_CHARACTER_CODE} in _USER_FAULT_TERADATA_CODES; without it the "
+        "provocation raises DestinationConnectionError and reads as a connect failure"
+    ),
+)
+
+duplicate_key_is_classified_as_user_fault = pytest.mark.skipif(
+    DUPLICATE_KEY_CODE in _USER_FAULT_TERADATA_CODES,
+    reason=(
+        f"{DUPLICATE_KEY_CODE} has been added to _USER_FAULT_TERADATA_CODES; this test pins the "
+        "decision that it stays out, so update the test with the decision rather than skipping it"
     ),
 )
 
@@ -358,16 +372,19 @@ def test_teradata_destination_upload(
 
 @pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, SQL_TAG)
 @requires_env(*REQUIRED_ENV)
-@needs_widened_code_map
-def test_teradata_destination_reports_a_duplicate_key_as_the_users_fault(
+@duplicate_key_is_classified_as_user_fault
+def test_teradata_destination_keeps_a_duplicate_key_off_the_user_fault_path(
     strict_table: str,
 ) -> None:
     """Two rows sharing an id, against a UNIQUE PRIMARY INDEX, in one INSERT batch.
 
     Chosen over a bad-value provocation because the connector cannot sanitise it away: the
-    rows are individually valid and only collide at the server. This is the assertion that
-    needs a real Teradata to mean anything, because what is under test is that the server
-    returns 2801 in the format the classifier reads.
+    rows are individually valid and only collide at the server. What is pinned here is the
+    decision NOT to blame the customer for it: because batches commit independently, a retry
+    after a partial upload can re-insert rows this connector already wrote, so the duplicate
+    can be ours. It keeps the `DestinationConnectionError` path, and the raw provocation still
+    proves the server really answered 2801, which is what makes the decision a decision rather
+    than an accident.
     """
     shared_id = str(uuid4())
     df = pd.DataFrame(
@@ -378,8 +395,10 @@ def test_teradata_destination_reports_a_duplicate_key_as_the_users_fault(
     )
     uploader = get_uploader(strict_table)
 
-    with pytest.raises(UserError) as excinfo:
+    with pytest.raises(DestinationConnectionError) as excinfo:
         uploader.upload_dataframe(df=df, file_data=mock_file_data("duplicate.json"))
+
+    assert not isinstance(excinfo.value, UserError), str(excinfo.value)
 
     # No row-count post-condition: the connector documents that batches commit independently, so
     # whether the first of two colliding rows survives a 2801 depends on teradatasql array-insert
@@ -392,7 +411,10 @@ def test_teradata_destination_reports_a_duplicate_key_as_the_users_fault(
             (raw_id, "r2", "e2", "two", "Text"),
         ],
     )
-    assert_classified_as_user_error(excinfo.value, DUPLICATE_KEY_CODE, strict_table, raw)
+    # The server really did answer 2801: without this the test would pass on any connection
+    # failure, including a genuinely unreachable host.
+    assert _is_teradata_driver_error(raw)
+    assert _extract_teradata_error_code(raw) == DUPLICATE_KEY_CODE, safe_error_summary(raw)
 
 
 @pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, SQL_TAG)
