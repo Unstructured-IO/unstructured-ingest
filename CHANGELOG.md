@@ -1,3 +1,10 @@
+## [1.11.14]
+
+### Fixes
+
+- **fix(teradata): classify the value-rejection error codes as the customer's, not a connection failure.** A Teradata destination write whose value the server refuses -- an invalid date, a bad character for the column, an untranslatable string, an invalid datetime operation -- reached the customer as `Failed to connect to server {host}`, sending them to check their network for a value their own table definition rejected. Codes 2621, 2665, 2666, 5407 and 6706 now join `_USER_FAULT_TERADATA_CODES`, so `upload_dataframe` raises `UserError` naming the code and a short fixed descriptor instead of `DestinationConnectionError` with `_summarize_error`'s catch-all summary. The raw driver text still never crosses: it interpolates the table, the column and the offending value, and the Go driver wraps it in text carrying host/user/password. A code that is still unlisted keeps today's behaviour rather than guessing an audience for it -- 2801 (duplicate unique prime key) stays unlisted deliberately, because a retry after a partial batch can re-insert rows this connector already committed, so the duplicate is not reliably the customer's.
+- **Source-side behaviour change.** The map is consulted at every `_raise_classified_teradata_error` call site, including `TeradataIndexer.precheck`, so these five codes now raise `UserError` (422) there too instead of `SourceConnectionError` (400) with the historical `table 'X' not found or not accessible` context. Source-side callers catching `SourceConnectionError` no longer catch those cases. On a `SELECT TOP 1 *` probe only 6706 and 2621 are realistic.
+
 ## [1.11.13]
 
 ### Fixes
