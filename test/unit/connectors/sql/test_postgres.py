@@ -1,6 +1,4 @@
-import psycopg2
 import pytest
-from psycopg2 import errorcodes
 
 from unstructured_ingest.error import UserAuthError, UserError
 from unstructured_ingest.processes.connectors.sql.postgres import (
@@ -9,6 +7,15 @@ from unstructured_ingest.processes.connectors.sql.postgres import (
     PostgresUploader,
     PostgresUploaderConfig,
 )
+
+# psycopg2 is the `postgres` extra, not part of the base `test` dependency group, so it is
+# absent wherever the extra is not installed and a module-scope import would fail the whole
+# file at collection. Skipped rather than forged: `PostgresUploader.classify_write_denial`
+# is `@requires_dependencies(["psycopg2"])` and reads the SQLSTATEs out of
+# `psycopg2.errorcodes`, so unlike the singlestore and snowflake classifiers it cannot run
+# without the driver at all. Same shape as test_gcs.py's skip on gcsfs.
+psycopg2 = pytest.importorskip("psycopg2", reason="psycopg2 is the postgres extra")
+errorcodes = pytest.importorskip("psycopg2.errorcodes")
 
 
 @pytest.fixture
