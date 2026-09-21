@@ -196,6 +196,9 @@ class SnowflakeUploader(SQLUploader):
     connector_type: str = CONNECTOR_TYPE
     values_delimiter: str = "?"
 
+    _embeddings_dimension: Optional[int] = None
+    _variant_columns: Optional[list[str]] = None
+
     def classify_write_denial(self, error: Exception, privilege: str) -> Optional[str]:
         """Recognize Snowflake's access-control error.
 

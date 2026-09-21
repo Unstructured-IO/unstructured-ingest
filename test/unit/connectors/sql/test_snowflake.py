@@ -1,3 +1,4 @@
+import dataclasses
 from unittest.mock import MagicMock
 
 import pytest
@@ -35,13 +36,15 @@ def snowflake_connection_config(snowflake_access_config: SnowflakeAccessConfig):
 
 @pytest.fixture
 def snowflake_uploader(snowflake_connection_config: SnowflakeConnectionConfig):
-    uploader = SnowflakeUploader(
+    # Deliberately does NOT hand-initialize _embeddings_dimension / _variant_columns.
+    # It used to, and that redundant belt-and-braces turned load-bearing the moment the
+    # two dataclass fields were dropped: 300 lines of tests stayed green while every
+    # Snowflake upload raised AttributeError on its first batch. The fields' own defaults
+    # are now what every test here runs against.
+    return SnowflakeUploader(
         connection_config=snowflake_connection_config,
         upload_config=SnowflakeUploaderConfig(table_name="test_table"),
     )
-    uploader._embeddings_dimension = None
-    uploader._variant_columns = None
-    return uploader
 
 
 @pytest.fixture
@@ -308,10 +311,42 @@ def test_prepare_data_non_variant_column_passthrough(snowflake_uploader: Snowfla
     assert result == [("hello", 42)]
 
 
-def _snowflake_error(**kwargs):
-    from snowflake.connector.errors import ProgrammingError
+class _FakeSnowflakeError(Exception):
+    """Stand-in for snowflake.connector.errors.ProgrammingError.
 
-    return ProgrammingError(msg="SQL access control error", **kwargs)
+    `snowflake-connector-python` is the `snowflake` extra, not part of the base `test`
+    dependency group, so constructing a real driver error raises ModuleNotFoundError
+    wherever the extra is not installed. The classifier reads exactly two things, both
+    through `getattr`: `sqlstate` and `errno`. The defaults mirror the driver's own
+    (`Error.__init__` fills errno=-1 and sqlstate="n/a" when the server sends neither),
+    so an unset field means here what it means there. `test_the_driver_error_carries_the
+    _two_fields_the_classifier_reads` pins that against the real driver.
+    """
+
+    def __init__(self, msg="SQL access control error", errno=-1, sqlstate="n/a"):
+        super().__init__(msg)
+        self.errno = errno
+        self.sqlstate = sqlstate
+
+
+def _snowflake_error(**kwargs):
+    return _FakeSnowflakeError(**kwargs)
+
+
+def test_the_driver_error_carries_the_two_fields_the_classifier_reads():
+    """Everything above runs against the fake, so the fake's shape is asserted against the
+    real driver wherever it is installed. If ProgrammingError stopped filling errno and
+    sqlstate, or changed its unset defaults, the classifier would go blind in production
+    while this file stayed green."""
+    errors = pytest.importorskip(
+        "snowflake.connector.errors", reason="snowflake-connector-python is the snowflake extra"
+    )
+
+    filled = errors.ProgrammingError(msg="SQL access control error", errno=3001, sqlstate="42501")
+    unset = errors.ProgrammingError(msg="SQL access control error")
+
+    assert (filled.errno, filled.sqlstate) == (3001, "42501")
+    assert (unset.errno, unset.sqlstate) == (-1, "n/a")
 
 
 @pytest.mark.parametrize("privilege", ["INSERT", "DELETE"])
@@ -360,3 +395,40 @@ def test_a_non_driver_exception_is_not_a_write_denial(snowflake_uploader: Snowfl
         snowflake_uploader.classify_write_denial(TimeoutError("no answer"), privilege="DELETE")
         is None
     )
+
+
+def test_a_fresh_uploader_can_read_its_cached_properties(
+    snowflake_connection_config: SnowflakeConnectionConfig,
+    mock_cursor: MagicMock,
+    mock_get_cursor: MagicMock,
+):
+    """Constructed the way the pipeline constructs it, with nothing assigned by hand.
+
+    `variant_columns` and `embeddings_dimension` both read a cached attribute before they
+    fill it. When the two dataclass fields backing them were dropped, a fresh uploader
+    raised `AttributeError: 'SnowflakeUploader' object has no attribute
+    '_embeddings_dimension'` on its first batch -- and the precheck, which never touches
+    them, passed cleanly first. Nothing in this file caught it, because the fixture set
+    both by hand.
+    """
+    uploader = SnowflakeUploader(
+        connection_config=snowflake_connection_config,
+        upload_config=SnowflakeUploaderConfig(table_name="test_table"),
+    )
+    mock_cursor.execute.return_value.fetchall.return_value = []
+    mock_cursor.execute.return_value.fetchone.return_value = None
+
+    assert uploader.variant_columns == []
+    assert uploader.embeddings_dimension == 0
+
+
+def test_the_cached_fields_are_declared_on_the_dataclass(
+    snowflake_uploader: SnowflakeUploader,
+):
+    """The narrower guard on the same regression: the two fields are declared, so no
+    ordering of property reads can find them undefined."""
+    declared = {field.name for field in dataclasses.fields(snowflake_uploader)}
+
+    assert {"_embeddings_dimension", "_variant_columns"} <= declared
+    assert snowflake_uploader._embeddings_dimension is None
+    assert snowflake_uploader._variant_columns is None
