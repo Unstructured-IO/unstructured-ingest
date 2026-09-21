@@ -1,0 +1,21 @@
+test/unit/connectors/sql/test_postgres.py
+  s_bf1b9b3fe8912d::t_7881286adc779e 11-19
+test/unit/connectors/sql/test_singlestore.py
+  s_bf1b9b3fe8912d::t_fc885532183587 11-39,61,82
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "b598eb0a6d8743bb449c5b5f1980f62d69490507",
+  "prompts": {},
+  "sessions": {
+    "s_bf1b9b3fe8912d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ebb9df82-ef5c-4d91-8577-13e1fde2cc3a",
+        "model": "claude-opus-5"
+      },
+      "human_author": "paulkarayan <pk@unstructured.io>"
+    }
+  }
+}
