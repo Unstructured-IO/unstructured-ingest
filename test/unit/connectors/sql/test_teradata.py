@@ -13,6 +13,7 @@ from unstructured_ingest.error import (
     UserError,
 )
 from unstructured_ingest.processes.connectors.sql.teradata import (
+    _USER_FAULT_TERADATA_CODES,
     DEFAULT_TABLE_NAME,
     TeradataAccessConfig,
     TeradataConnectionConfig,
@@ -1838,3 +1839,188 @@ def test_uploader_insert_batch_failure_does_not_log_secret(
 
     assert "SUPERSECRET123" not in caplog.text
     assert "db.internal" not in caplog.text
+
+
+# --- The value-rejection family ----------------------------------------------
+# The server accepted the statement and refused the value being written against the
+# customer's own column definition. Before these codes were listed in
+# `_USER_FAULT_TERADATA_CODES` they fell through to `_summarize_error`'s catch-all
+# and reached the customer as "Failed to connect to server {host}" — a network story
+# for a data problem.
+#
+# 2801 is absent on purpose: a retry can re-insert rows an earlier batch committed,
+# so a duplicate-key rejection is not reliably the customer's. See the map comment.
+
+# A stand-in for the row content the driver echoes back in a batch-insert failure.
+OFFENDING_VALUE = "1899-02-30T25:61:61Z"
+
+# (code, a representative driver message, the descriptor the map must supply)
+ROW_REJECTION_CASES = [
+    (
+        2621,
+        "[Teradata Database] [Error 2621] Bad character in format or data of "
+        "test_table.last_modified.",
+        "bad character in format or data",
+    ),
+    (
+        2665,
+        "[Teradata Database] [Error 2665] Invalid date.",
+        "invalid date",
+    ),
+    (
+        # The column-qualified sibling of 2665, and the one a batch insert reports.
+        2666,
+        "[Teradata Database] [Error 2666] Invalid date supplied for test_table.last_modified.",
+        "invalid date",
+    ),
+    (
+        5407,
+        "[Teradata Database] [Error 5407] Invalid operation for DateTime or Interval.",
+        "invalid operation for datetime or interval",
+    ),
+    (
+        6706,
+        "[Teradata Database] [Error 6706] The string contains an untranslatable character.",
+        "the string contains an untranslatable character",
+    ),
+]
+
+
+@pytest.mark.parametrize("code,driver_message,descriptor", ROW_REJECTION_CASES)
+def test_upload_dataframe_row_rejection_raises_user_error(
+    mocker: MockerFixture,
+    mock_cursor: MagicMock,
+    teradata_uploader: TeradataUploader,
+    mock_get_cursor: MagicMock,
+    code: int,
+    driver_message: str,
+    descriptor: str,
+):
+    """An INSERT the database refuses on the row's own content is the customer's to
+    fix, exactly like the privilege and syntax errors already in the map.
+
+    Without the mapping this raises `DestinationConnectionError("Failed to connect to
+    server {host}")`, which sends the customer to look at their network for a value
+    their own table definition rejected.
+    """
+    df = pd.DataFrame({"id": [1], "text": ["hi"], "record_id": ["f1"]})
+    teradata_uploader._columns = ["id", "text", "record_id"]
+    mocker.patch.object(teradata_uploader, "_fit_to_schema", return_value=df)
+    mocker.patch.object(teradata_uploader, "can_delete", return_value=False)
+    mock_cursor.executemany.side_effect = _FakeTeradataDriverError(driver_message)
+
+    file_data = FileData(
+        identifier="test_file.txt",
+        connector_type="local",
+        source_identifiers=SourceIdentifiers(
+            filename="test_file.txt", fullpath="/path/to/test_file.txt"
+        ),
+    )
+
+    with pytest.raises(UserError) as excinfo:
+        teradata_uploader.upload_dataframe(df, file_data)
+
+    message = str(excinfo.value)
+    assert f"Teradata error {code}" in message
+    assert descriptor in message
+    assert "test_table" in message
+    # 422, not the connection family's 400, and no connect story.
+    assert excinfo.value.status_code == 422
+    assert "Failed to connect" not in message
+
+
+@pytest.mark.parametrize("code,driver_message,descriptor", ROW_REJECTION_CASES)
+def test_row_rejection_never_surfaces_the_driver_text(
+    code: int, driver_message: str, descriptor: str
+):
+    """The raw driver message names the table, the column and the offending value, and
+    the Go driver wraps it in text that embeds host/user/password. Only the code and
+    the fixed descriptor may cross."""
+    leaky = (
+        f"{driver_message} Parameter values: ('rec-1','{OFFENDING_VALUE}'). "
+        f"CONNECTION=host=db.example.com,user=dbc,password=hunter2"
+    )
+
+    with pytest.raises(UserError) as excinfo:
+        try:
+            raise _FakeTeradataDriverError(leaky)
+        except Exception as driver_error:
+            _raise_classified_teradata_error(
+                driver_error, host="db.example.com", table="test_table"
+            )
+
+    message = str(excinfo.value)
+    assert "hunter2" not in message
+    assert "db.example.com" not in message
+    # The interpolated identifiers are the part that must not cross. The descriptor
+    # legitimately echoes Teradata's own wording, so assert on what the DRIVER added:
+    # the offending value, the table/column it named, and the connection string the
+    # Go driver appended.
+    assert OFFENDING_VALUE not in message
+    assert "Parameter values:" not in message
+    assert "last_modified" not in message
+    assert "CONNECTION=" not in message
+    # `from None` is what keeps the driver text out of default traceback formatting.
+    # `__cause__ is None` would hold with or without it, so it pins nothing; this is
+    # the assertion that fails if the `from None` goes. The driver exception is still
+    # reachable as __context__ — that part is not a guarantee we make.
+    assert excinfo.value.__suppress_context__ is True
+
+
+def test_an_unlisted_code_still_takes_the_connection_path():
+    """Bounds the change. Widening the map is not the same as claiming every server
+    error is the customer's fault: a code we have not classified keeps today's
+    behaviour rather than guessing an audience for it."""
+    with pytest.raises(DestinationConnectionError) as excinfo:
+        try:
+            raise _FakeTeradataDriverError(
+                "[Teradata Database] [Error 9999] something we have not classified"
+            )
+        except Exception as driver_error:
+            _raise_classified_teradata_error(
+                driver_error, host="db.example.com", table="test_table"
+            )
+
+    assert str(excinfo.value) == "Failed to connect to server db.example.com"
+
+
+@pytest.mark.parametrize("code,driver_message,descriptor", ROW_REJECTION_CASES)
+def test_source_table_probe_row_rejection_raises_user_error(
+    mock_cursor: MagicMock,
+    teradata_indexer: TeradataIndexer,
+    mock_get_cursor: MagicMock,
+    code: int,
+    driver_message: str,
+    descriptor: str,
+):
+    """The map is direction-neutral, so these codes change the source path too: the
+    indexer's table probe raises the same 422 instead of `SourceConnectionError` with
+    the historical "table 'X' not found or not accessible" context. 6706 and 2621 are
+    the realistic ones on a `SELECT TOP 1 *`; the rest are pinned so the two
+    directions cannot drift apart."""
+    mock_cursor.execute.side_effect = [
+        None,  # SELECT 1 succeeds
+        _FakeTeradataDriverError(driver_message),
+    ]
+
+    with pytest.raises(UserError) as excinfo:
+        teradata_indexer.precheck()
+
+    message = str(excinfo.value)
+    assert f"Teradata error {code}" in message
+    assert descriptor in message
+    assert excinfo.value.status_code == 422
+    assert "not found or not accessible" not in message
+    assert "Failed to connect" not in message
+
+
+@pytest.mark.parametrize("code,driver_message,descriptor", ROW_REJECTION_CASES)
+def test_the_descriptor_is_a_short_fixed_phrase(code: int, driver_message: str, descriptor: str):
+    """The descriptors are what reaches the customer, so they are pinned here: short,
+    lower-case, no trailing punctuation, no remediation advice, and carrying none of
+    the identifiers the driver message interpolates."""
+    assert _USER_FAULT_TERADATA_CODES[code] == descriptor
+    assert descriptor == descriptor.lower()
+    assert not descriptor.endswith(".")
+    assert len(descriptor) <= 70
+    assert "test_table" not in descriptor

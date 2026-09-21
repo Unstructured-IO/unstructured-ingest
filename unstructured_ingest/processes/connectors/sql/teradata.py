@@ -70,6 +70,37 @@ _TERADATA_ERROR_CODE_RE = re.compile(r"\[Error (\d+)\]")
 # pre-created with the wrong column type for the value being inserted/queried,
 # but can also fire on arbitrary expression-level conversions; the descriptor
 # stays generic.
+#
+# The second group (2621-6706) is the value-rejection family: the server accepted
+# the statement and refused the value being written against the customer's own
+# column definition (or their session's date form). These arrive on the INSERT path
+# from `upload_dataframe`, and before they were listed here they fell through to
+# `_summarize_error`, whose catch-all branch returns the bare
+# "Failed to connect to server {host}" — telling a customer their network was at
+# fault for a value their own table definition rejected. They are as
+# customer-fixable as the privilege and syntax errors above: fix the value, or
+# fix the column it is going into.
+#
+# 2665 and 2666 are two distinct errors and both are listed. 2665 is the bare
+# "Invalid date."; 2666 is the column-qualified "Invalid date supplied for
+# {table}.{column}", which is the one a driver batch insert reports.
+#
+# 2801 (duplicate unique prime key) is deliberately NOT listed. When can_delete()
+# is False a retry re-inserts rows an earlier batch already committed (see
+# upload_dataframe), so the duplicate can be this connector's doing rather than the
+# customer's, and the other Teradata write path in the platform classifies 2801 as
+# provider-side for that reason. An audience we cannot determine from the code
+# stays unlisted.
+#
+# Descriptors MIRROR Teradata's own message wording with the interpolated
+# identifiers removed -- "Invalid date supplied for {table}.{column}" becomes
+# "invalid date". That is deliberate and is the rule for anything added here: the
+# customer can then match what we print against the same error in their DBS log or
+# DBQL, and we are not inventing a second vocabulary for errors Teradata already
+# names. What must NOT cross is the interpolated part (the table, the column, the
+# offending value) and the driver's wrapper text, which carries host/user/password.
+# Keep them short, keep them Teradata's words, do not grow them into remediation
+# advice.
 _USER_FAULT_TERADATA_CODES: Mapping[int, str] = MappingProxyType({
     3807: "object does not exist or user has no privilege on it",
     3523: "user does not have the required privilege",
@@ -79,6 +110,11 @@ _USER_FAULT_TERADATA_CODES: Mapping[int, str] = MappingProxyType({
     3754: "implicit type conversion failed",
     5612: "user does not have any access to the object",
     5315: "user does not have any access to the database",
+    2621: "bad character in format or data",
+    2665: "invalid date",
+    2666: "invalid date",
+    5407: "invalid operation for datetime or interval",
+    6706: "the string contains an untranslatable character",
 })
 
 
@@ -115,8 +151,9 @@ def _raise_classified_teradata_error(
 
     Classification rules:
       * Server-side codes listed in ``_USER_FAULT_TERADATA_CODES`` → ``UserError``
-        (status_code 422) carrying only the numeric code and the fixed
-        descriptor from the map — never the raw driver message, which embeds
+        (status_code 422) carrying the numeric code, the fixed descriptor from
+        the map, and the ``table`` the CALLER passed (connector configuration,
+        never driver text) — never the raw driver message itself, which embeds
         host/user/password. Applies to BOTH source and destination directions
         — this means indexer callers historically catching
         ``SourceConnectionError`` will now see ``UserError`` for codes in the
@@ -128,9 +165,11 @@ def _raise_classified_teradata_error(
         ``"table 'X' not found or not accessible"``).
 
     Always raises; never returns. The source exception is NOT chained
-    (``from None``) so its raw text can't resurface through traceback logging;
-    the full driver text is still emitted (redacted) at the connector's own
-    log sites before this is called.
+    (``from None``), which sets ``__suppress_context__`` so default traceback
+    formatting hides it. That is the whole of the guarantee: the driver exception
+    is still reachable as ``__context__``, so anything walking the chain itself
+    still sees the raw text. The full driver text is also emitted (redacted) at
+    the connector's own log sites before this is called.
 
     :param exc: the original driver exception; used only to extract the numeric
         error code, never surfaced verbatim.
@@ -148,10 +187,11 @@ def _raise_classified_teradata_error(
     if code in _USER_FAULT_TERADATA_CODES:
         descriptor = _USER_FAULT_TERADATA_CODES[code]
         target = f" for '{table}'" if table else ""
-        # code + descriptor are safe (int + fixed map value); the raw driver
-        # message is NOT interpolated and the chain is suppressed so the
-        # Go-driver text (which embeds host/user/password) can't reach the
-        # response surface or resurface via traceback logging.
+        # code + descriptor are safe (int + fixed map value) and target is the
+        # caller's own config; the raw driver message is NOT interpolated, so the
+        # Go-driver text (which embeds host/user/password) can't reach the response
+        # surface. `from None` keeps it out of default traceback formatting too,
+        # though it stays reachable as __context__.
         raise UserError(
             f"Teradata error {code} ({descriptor}){target}."
         ) from None

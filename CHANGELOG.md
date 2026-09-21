@@ -4,6 +4,13 @@
 
 - **test(teradata): add live integration coverage for the SQL destination, including the rejection path.** The Teradata SQL destination had no integration test: the SQL suite covers Postgres, SingleStore and SQLite on containers, Snowflake on an emulator and Databricks on a real workspace, and Teradata has neither a container image nor an emulator, so nothing has ever exercised the `teradatasql` path against a real server. The new module covers the upload, which lets `create_destination()` build the table from the connector's own DDL asset and pairs it with the `metadata_as_json=True` stager the connector requires, then re-uploads the same record to check that it is replaced rather than appended. It also covers two REJECTIONS: a duplicate value against a `UNIQUE PRIMARY INDEX` and a character with no representation in a `LATIN` column. Asserting only a row count would miss what actually breaks here, since a row the server refuses is classified rather than written, and it is the classification that has been wrong. Each rejection is also provoked through a bare cursor so the redaction assertions run against a message the driver really produced. Not wired into CI: gated on `TERADATA_HOST`/`TERADATA_USER`/`TERADATA_PASSWORD`/`TERADATA_DATABASE` and skipped without them, because the only free endpoint is a 60-day trial whose credential would rot in CI secrets.
 
+## [1.11.14]
+
+### Fixes
+
+- **fix(teradata): classify the value-rejection error codes as the customer's, not a connection failure.** A Teradata destination write whose value the server refuses -- an invalid date, a bad character for the column, an untranslatable string, an invalid datetime operation -- reached the customer as `Failed to connect to server {host}`, sending them to check their network for a value their own table definition rejected. Codes 2621, 2665, 2666, 5407 and 6706 now join `_USER_FAULT_TERADATA_CODES`, so `upload_dataframe` raises `UserError` naming the code and a short fixed descriptor instead of `DestinationConnectionError` with `_summarize_error`'s catch-all summary. The raw driver text still never crosses: it interpolates the table, the column and the offending value, and the Go driver wraps it in text carrying host/user/password. A code that is still unlisted keeps today's behaviour rather than guessing an audience for it -- 2801 (duplicate unique prime key) stays unlisted deliberately, because a retry after a partial batch can re-insert rows this connector already committed, so the duplicate is not reliably the customer's.
+- **Source-side behaviour change.** The map is consulted at every `_raise_classified_teradata_error` call site, including `TeradataIndexer.precheck`, so these five codes now raise `UserError` (422) there too instead of `SourceConnectionError` (400) with the historical `table 'X' not found or not accessible` context. Source-side callers catching `SourceConnectionError` no longer catch those cases. On a `SELECT TOP 1 *` probe only 6706 and 2621 are realistic.
+
 ## [1.11.13]
 
 ### Fixes
@@ -484,6 +491,7 @@
 ### Fixes
 
 - **fix(slack): guard private file downloads.** Validate Slack private download URLs before sending bearer credentials, refuse redirects that could forward bearer credentials, stream private file downloads to disk, and use a bounded timeout for private file reads.
+
 ## [1.6.3]
 
 ### Enhancements
