@@ -1,0 +1,37 @@
+unstructured_ingest/processes/connectors/sql/teradata.py
+  s_b9d2f9c9de3e5f::t_1e20543268893c 9,121,520-526,566-567,598,600-601,604-678
+CHANGELOG.md
+  s_b9d2f9c9de3e5f::t_bffa5140351102 1-6
+unstructured_ingest/processes/connectors/sql/sql.py
+  s_5ae5e1a66d53e8::t_80415208c13f71 619-622,625-627
+test/unit/connectors/sql/test_teradata.py
+  s_5ae5e1a66d53e8::t_eb40bf1f8ffe39 663-666,669-671,1139-1142,1145-1147,1329,2053,2123-2124,2139-2140,2161-2308,2312-2313,2315,2318,2320-2321
+  s_5ae5e1a66d53e8::t_2f31d1c7abeae0 2309-2311,2314,2316-2317,2319,2322
+  s_5ae5e1a66d53e8::t_16c5b738d14b64 667-668,675-677
+unstructured_ingest/__version__.py
+  s_b9d2f9c9de3e5f::t_bbe6e8dcbc16cf 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "78aef0ba52ef2683c453658a81877d3069b68019",
+  "prompts": {},
+  "sessions": {
+    "s_5ae5e1a66d53e8": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e3e20ba1-d4e1-41f0-b3f7-3573b9458528",
+        "model": "claude-opus-5"
+      },
+      "human_author": "paulkarayan <pk@unstructured.io>"
+    },
+    "s_b9d2f9c9de3e5f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d52c1a4e-1a0f-43a7-90f6-0035f083b3b2",
+        "model": "claude-opus-5"
+      },
+      "human_author": "paulkarayan <pk@unstructured.io>"
+    }
+  }
+}
