@@ -313,6 +313,44 @@ def test_get_space_by_key_fallback_rescan_finds_match_on_second_page(connection_
     )
 
 
+def test_get_space_by_key_rescan_ignores_max_num_of_spaces_limit(connection_config):
+    # cubic P1: the rescan used to inherit max_num_of_spaces as its search limit, so an
+    # explicitly-selected renamed/aliased space beyond that "how many spaces to index"
+    # cutoff could never be found, even though selected-space indexing itself is not
+    # capped. max_num_of_spaces is set below both the API page size and the number of
+    # spaces needed to reach the match: a max_num_of_spaces-bounded rescan would request
+    # only 2 results per page and stop after page one (2 results already hits its
+    # accumulation cap), never following the cursor to the second page where the match is.
+    indexer = ConfluenceIndexer(
+        connection_config=connection_config,
+        index_config=ConfluenceIndexerConfig(max_num_of_spaces=2, spaces=["TARGET"]),
+    )
+    mock_client = mock.MagicMock()
+    mock_client.get.side_effect = [
+        {"results": []},  # keyed lookup: no match
+        {
+            "results": [{"id": 1, "key": "SPACE-1"}, {"id": 2, "key": "SPACE-2"}],
+            "_links": {"next": "/wiki/api/v2/spaces?cursor=abc"},
+        },
+        {"results": [{"id": 3, "key": "SPACE-3", "currentActiveAlias": "TARGET"}]},
+    ]
+
+    space = indexer._get_space_by_key(mock_client, "TARGET")
+
+    assert space == {"id": 3, "key": "SPACE-3", "currentActiveAlias": "TARGET"}
+    mock_client.get.assert_has_calls(
+        [
+            mock.call("api/v2/spaces", params={"limit": 1, "keys": ["TARGET"]}),
+            # A max_num_of_spaces-bounded rescan would send limit=2 here (and never
+            # reach the cursor call below). The decoupled limit still requests a full
+            # page, independent of the low configured max_num_of_spaces.
+            mock.call("api/v2/spaces", params={"limit": 250}),
+            mock.call("api/v2/spaces?cursor=abc", params=None),
+        ],
+        any_order=False,
+    )
+
+
 def test_get_space_by_key_reports_the_spaces_it_saw(connection_config):
     indexer = ConfluenceIndexer(
         connection_config=connection_config,

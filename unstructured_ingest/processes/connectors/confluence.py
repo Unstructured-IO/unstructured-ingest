@@ -50,6 +50,11 @@ CONNECTOR_TYPE = "confluence"
 CONFLUENCE_SPACE_PAGE_SIZE = 250
 CONFLUENCE_PAGE_PAGE_SIZE = 250
 CONFLUENCE_REPORTED_SPACES_LIMIT = 25
+# The fallback rescan in _get_space_by_key searches for one explicitly-configured space
+# by key/alias; it isn't indexing, so it must not inherit max_num_of_spaces (the "how many
+# spaces to index" cap) as its search bound. This is effectively unbounded for any real
+# Confluence tenant.
+CONFLUENCE_RESCAN_SPACE_LIMIT = 100_000
 
 
 def _iso8601_to_epoch_str(iso_date: Optional[str]) -> Optional[str]:
@@ -525,8 +530,10 @@ class ConfluenceIndexer(Indexer):
             if self._space_matches_key(space, space_key):
                 return space
         # Confluence does not document the v2 keys filter as matching an alias, so any
-        # unmatched key is re-checked client-side against an unfiltered listing.
-        spaces = self._list_spaces(client)
+        # unmatched key is re-checked client-side against an unfiltered listing. This
+        # rescan looks for one explicitly-selected space, so it searches independently of
+        # max_num_of_spaces (the indexing cap) rather than inheriting it as a search bound.
+        spaces = self._list_spaces(client, limit=CONFLUENCE_RESCAN_SPACE_LIMIT)
         for space in spaces:
             if self._space_matches_key(space, space_key):
                 return space
