@@ -1,3 +1,9 @@
+## [1.11.19]
+
+### Fixes
+
+- **fix(confluence): match a space by the alias the v2 API actually returns.** A space configured by its alias could never be found: `_space_matches_key` compared the configured key against a response field named `alias`, and `GET api/v2/spaces` does not return one. The v2 space object carries its alias as `currentActiveAlias`; `alias` belongs to the space-creation request body and never appears in a response, so the check was dead code and only a space's original key ever matched. The connector now matches on `currentActiveAlias`, so the identifier shown in a space's page URL resolves the same way its original key does. The client-side rescan that follows an unmatched keyed lookup is also no longer restricted to `~`-prefixed personal keys and no longer limited to personal spaces: Confluence does not document the server-side `keys=` filter as matching an alias, so any unmatched key is now re-checked against an unfiltered listing. That rescan is on the failure path only, so a key that matches on the first, filtered lookup still costs one request. The resulting error names the spaces the connector actually saw, up to 25 with their aliases, so "no spaces were returned" is distinguishable from "spaces were returned but none matched" without re-deriving it from source.
+
 ## [1.11.18]
 
 ### Fixes

@@ -9,7 +9,7 @@ from unstructured_ingest.data_types.file_data import (
     FileDataSourceMetadata,
     SourceIdentifiers,
 )
-from unstructured_ingest.error import ValueError
+from unstructured_ingest.error import UserError, ValueError
 from unstructured_ingest.processes.connectors.confluence import (
     ConfluenceAccessConfig,
     ConfluenceConnectionConfig,
@@ -192,24 +192,92 @@ def test_get_space_by_key_falls_back_to_personal_space_alias(connection_config):
     mock_client = mock.MagicMock()
     mock_client.get.side_effect = [
         {"results": []},
-        {"results": [{"id": 987, "key": "generated-key", "alias": "~user-personal-space"}]},
+        {
+            "results": [
+                {"id": 987, "key": "generated-key", "currentActiveAlias": "~user-personal-space"}
+            ]
+        },
     ]
 
     assert indexer._get_space_by_key(mock_client, "~user-personal-space") == {
         "id": 987,
         "key": "generated-key",
-        "alias": "~user-personal-space",
+        "currentActiveAlias": "~user-personal-space",
     }
     mock_client.get.assert_has_calls(
         [
             mock.call("api/v2/spaces", params={"limit": 1, "keys": ["~user-personal-space"]}),
-            mock.call(
-                "api/v2/spaces",
-                params={"limit": 250, "type": "personal", "status": "current"},
-            ),
+            mock.call("api/v2/spaces", params={"limit": 250}),
         ],
         any_order=False,
     )
+
+
+def test_get_space_by_key_falls_back_to_alias_of_a_non_personal_space(connection_config):
+    indexer = ConfluenceIndexer(
+        connection_config=connection_config,
+        index_config=ConfluenceIndexerConfig(spaces=["ENGINEERING"]),
+    )
+    mock_client = mock.MagicMock()
+    mock_client.get.side_effect = [
+        {"results": []},
+        {"results": [{"id": 654, "key": "ENG", "currentActiveAlias": "ENGINEERING"}]},
+    ]
+
+    assert indexer._get_space_by_key(mock_client, "ENGINEERING") == {
+        "id": 654,
+        "key": "ENG",
+        "currentActiveAlias": "ENGINEERING",
+    }
+    mock_client.get.assert_has_calls(
+        [
+            mock.call("api/v2/spaces", params={"limit": 1, "keys": ["ENGINEERING"]}),
+            mock.call("api/v2/spaces", params={"limit": 250}),
+        ],
+        any_order=False,
+    )
+
+
+def test_get_space_by_key_reports_the_spaces_it_saw(connection_config):
+    indexer = ConfluenceIndexer(
+        connection_config=connection_config,
+        index_config=ConfluenceIndexerConfig(spaces=["MISSING"]),
+    )
+    mock_client = mock.MagicMock()
+    mock_client.get.side_effect = [
+        {"results": []},
+        {
+            "results": [
+                {"id": 1, "key": "ENG"},
+                {"id": 2, "key": "OPS", "currentActiveAlias": "OPERATIONS"},
+                *({"id": i, "key": f"SPACE-{i}"} for i in range(3, 31)),
+            ]
+        },
+    ]
+
+    with pytest.raises(UserError) as raised:
+        indexer._get_space_by_key(mock_client, "MISSING")
+
+    message = str(raised.value)
+    assert "Failed to find 'MISSING' space" in message
+    assert "ENG" in message
+    assert "OPS (alias OPERATIONS)" in message
+    assert "and 5 more" in message
+    assert "SPACE-30" not in message
+
+
+def test_get_space_by_key_reports_that_no_space_was_returned(connection_config):
+    indexer = ConfluenceIndexer(
+        connection_config=connection_config,
+        index_config=ConfluenceIndexerConfig(spaces=["MISSING"]),
+    )
+    mock_client = mock.MagicMock()
+    mock_client.get.side_effect = [{"results": []}, {"results": []}]
+
+    with pytest.raises(UserError) as raised:
+        indexer._get_space_by_key(mock_client, "MISSING")
+
+    assert "no spaces were returned" in str(raised.value)
 
 
 def test_list_spaces_paginates_until_configured_limit(connection_config):

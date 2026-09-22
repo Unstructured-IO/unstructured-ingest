@@ -49,6 +49,7 @@ if TYPE_CHECKING:
 CONNECTOR_TYPE = "confluence"
 CONFLUENCE_SPACE_PAGE_SIZE = 250
 CONFLUENCE_PAGE_PAGE_SIZE = 250
+CONFLUENCE_REPORTED_SPACES_LIMIT = 25
 
 
 def _iso8601_to_epoch_str(iso_date: Optional[str]) -> Optional[str]:
@@ -497,19 +498,37 @@ class ConfluenceIndexer(Indexer):
 
     @staticmethod
     def _space_matches_key(space: dict, space_key: str) -> bool:
-        return space.get("key") == space_key or space.get("alias") == space_key
+        # A v2 space response carries its alias as currentActiveAlias; the alias field
+        # belongs to the space-creation request body and is never part of a response.
+        return space.get("key") == space_key or space.get("currentActiveAlias") == space_key
+
+    @staticmethod
+    def _describe_observed_spaces(spaces: List[dict]) -> str:
+        if not spaces:
+            return "no spaces were returned"
+        described = []
+        for space in spaces[:CONFLUENCE_REPORTED_SPACES_LIMIT]:
+            alias = space.get("currentActiveAlias")
+            key = space.get("key")
+            described.append(f"{key} (alias {alias})" if alias else str(key))
+        omitted = len(spaces) - len(described)
+        if omitted > 0:
+            described.append(f"and {omitted} more")
+        return f"spaces returned: {', '.join(described)}"
 
     def _get_space_by_key(self, client: "Confluence", space_key: str) -> dict:
         for space in self._list_spaces(client, keys=[space_key], limit=1):
             if self._space_matches_key(space, space_key):
                 return space
-        if space_key.startswith("~"):
-            # Personal space aliases are not reliably returned by the v2 keys
-            # filter, so fall back to scanning current personal spaces.
-            for space in self._list_spaces(client, space_type="personal"):
-                if self._space_matches_key(space, space_key):
-                    return space
-        raise UserError(f"Failed to find '{space_key}' space")
+        # Confluence does not document the v2 keys filter as matching an alias, so any
+        # unmatched key is re-checked client-side against an unfiltered listing.
+        spaces = self._list_spaces(client)
+        for space in spaces:
+            if self._space_matches_key(space, space_key):
+                return space
+        raise UserError(
+            f"Failed to find '{space_key}' space, {self._describe_observed_spaces(spaces)}"
+        )
 
     def precheck(self) -> bool:
         try:
