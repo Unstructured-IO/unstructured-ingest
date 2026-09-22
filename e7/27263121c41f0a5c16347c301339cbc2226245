@@ -1,0 +1,39 @@
+CHANGELOG.md
+  s_5ae5e1a66d53e8::t_222609029cf60f 5-6
+test/unit/connectors/databricks/test_volumes.py
+  s_62b41857882823::t_21f7faa95af95b 7,74-97,334-353
+unstructured_ingest/processes/connectors/databricks/volumes.py
+  s_b9d2f9c9de3e5f::t_94ecd33d97e802 62-67,120-128
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "e727263121c41f0a5c16347c301339cbc2226245",
+  "prompts": {},
+  "sessions": {
+    "s_5ae5e1a66d53e8": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e3e20ba1-d4e1-41f0-b3f7-3573b9458528",
+        "model": "claude-opus-5"
+      },
+      "human_author": "paulkarayan <pk@unstructured.io>"
+    },
+    "s_62b41857882823": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "314df7fd-e87b-4e43-8118-9b693dfc902e",
+        "model": "claude-opus-5"
+      },
+      "human_author": "paulkarayan <pk@unstructured.io>"
+    },
+    "s_b9d2f9c9de3e5f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d52c1a4e-1a0f-43a7-90f6-0035f083b3b2",
+        "model": "claude-opus-5"
+      },
+      "human_author": "paulkarayan <pk@unstructured.io>"
+    }
+  }
+}
