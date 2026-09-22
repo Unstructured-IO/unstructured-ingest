@@ -59,7 +59,12 @@ def _databricks_status_code(e: Exception) -> Optional[int]:
     if not isinstance(e, DatabricksError):
         return None
     reverse_mapping = {v: k for k, v in STATUS_CODE_MAPPING.items()}
-    return reverse_mapping.get(type(e))
+    # Walk the MRO, not type(e): the SDK raises ERROR_CODE_MAPPING subclasses in preference
+    # to the status class (a 404 RESOURCE_DOES_NOT_EXIST is ResourceDoesNotExist(NotFound)).
+    for cls in type(e).__mro__:
+        if (status_code := reverse_mapping.get(cls)) is not None:
+            return status_code
+    return None
 
 
 class DatabricksPathMixin(BaseModel):
@@ -105,9 +110,6 @@ class DatabricksVolumesConnectionConfig(ConnectionConfig, ABC):
     )
 
     def wrap_error(self, e: Exception) -> Exception:
-        from databricks.sdk.errors.base import DatabricksError
-        from databricks.sdk.errors.platform import STATUS_CODE_MAPPING
-
         if isinstance(e, ValueError):
             error_message = e.args[0]
             message_split = error_message.split(":")
@@ -115,17 +117,15 @@ class DatabricksVolumesConnectionConfig(ConnectionConfig, ABC):
                 "Client authentication failed" in error_message
             ):
                 return UserAuthError(safe_error_summary(e))
-        if isinstance(e, DatabricksError):
-            reverse_mapping = {v: k for k, v in STATUS_CODE_MAPPING.items()}
-            if status_code := reverse_mapping.get(type(e)):
-                if status_code in [401, 403]:
-                    return UserAuthError(safe_error_summary(e))
-                if status_code == 429:
-                    return RateLimitError(safe_error_summary(e))
-                if 400 <= status_code < 500:
-                    return UserError(safe_error_summary(e))
-                if 500 <= status_code < 600:
-                    return ProviderError(safe_error_summary(e))
+        if status_code := _databricks_status_code(e):
+            if status_code in [401, 403]:
+                return UserAuthError(safe_error_summary(e))
+            if status_code == 429:
+                return RateLimitError(safe_error_summary(e))
+            if 400 <= status_code < 500:
+                return UserError(safe_error_summary(e))
+            if 500 <= status_code < 600:
+                return ProviderError(safe_error_summary(e))
         logger.error(f"unhandled exception from databricks: {safe_error_summary(e)}")
         return e
 

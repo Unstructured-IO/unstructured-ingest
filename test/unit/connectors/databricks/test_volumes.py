@@ -4,7 +4,7 @@ import traceback
 import pytest
 from pytest_mock import MockerFixture
 
-from unstructured_ingest.error import ProviderError, UserAuthError, UserError
+from unstructured_ingest.error import ProviderError, RateLimitError, UserAuthError, UserError
 from unstructured_ingest.processes.connectors.databricks.volumes_native import (
     DatabricksNativeVolumesAccessConfig,
     DatabricksNativeVolumesConnectionConfig,
@@ -67,6 +67,30 @@ def test_wrap_error_user_error_redacts():
     wrapped = _connection_config().wrap_error(error_cls(SECRET))
 
     assert isinstance(wrapped, UserError)
+    assert SECRET not in str(wrapped)
+    assert "hunter2" not in str(wrapped)
+
+
+@pytest.mark.parametrize(
+    ("error_name", "expected"),
+    [
+        ("ResourceDoesNotExist", UserError),
+        ("InvalidParameterValue", UserError),
+        ("RequestLimitExceeded", RateLimitError),
+        ("DataLoss", ProviderError),
+    ],
+)
+def test_wrap_error_classifies_error_code_subclasses_by_their_status(
+    error_name: str, expected: type
+):
+    # The SDK raises the error_code subclass (ResourceDoesNotExist) in preference to the
+    # status class (NotFound); an exact-type lookup misses it and returns the raw error.
+    pytest.importorskip("databricks.sdk")
+    from databricks.sdk.errors import platform
+
+    wrapped = _connection_config().wrap_error(getattr(platform, error_name)(SECRET))
+
+    assert type(wrapped) is expected
     assert SECRET not in str(wrapped)
     assert "hunter2" not in str(wrapped)
 
@@ -305,6 +329,26 @@ def test_uploader_precheck_raises_when_volume_path_is_missing(mocker: MockerFixt
         _uploader(mocker, client).precheck()
 
     assert "/Volumes/catalog/schema/volume/path" in str(exc_info.value)
+
+
+def test_uploader_precheck_raises_when_a_404_subclass_says_the_volume_is_missing(
+    mocker: MockerFixture,
+):
+    # The SDK prefers the error_code class over the status class, so a missing volume can
+    # arrive as ResourceDoesNotExist (a NotFound subclass) rather than NotFound itself.
+    pytest.importorskip("databricks.sdk")
+    from databricks.sdk.errors.platform import ResourceDoesNotExist
+
+    client = mocker.MagicMock()
+    client.files.upload.side_effect = ResourceDoesNotExist(SECRET)
+
+    with pytest.raises(UserError) as exc_info:
+        _uploader(mocker, client).precheck()
+
+    assert "/Volumes/catalog/schema/volume/path" in str(exc_info.value)
+    formatted = "".join(traceback.format_exception(exc_info.value))
+    assert SECRET not in formatted
+    assert "hunter2" not in formatted
 
 
 @pytest.mark.parametrize("status_code", [429, 500, 503])
