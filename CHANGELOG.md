@@ -1,3 +1,9 @@
+## [1.11.18]
+
+### Fixes
+
+- **fix(teradata): refuse a destination credential that cannot create the table it would auto-create.** When the configured table does not exist yet, or no table is configured, the Teradata uploader creates it at upload time with `create_destination()`, which needs CREATE TABLE in the session's database. The destination precheck never asked for that right, so a user without it passed the connector check and the job then failed creating the table. With the Database field blank, the table lands in whatever database the session defaults to, and nothing reported which one. Precheck now resolves that database with `SELECT DATABASE` (the configured one when set, else the session default, spelled as the server stores it), logs it, and creates and drops a throwaway `unstructured_precheck_<hex>` table in it, unless the configured table already exists there. With no table configured the probe always runs, because the caller names the table only when it calls `create_destination()`. Teradata error 3524 refuses the destination with a `UserError` naming the database; any other failure is logged and passes, and a probe table whose DROP fails is named in a warning rather than failing the check. A configured table that already exists is unchanged: it gets the zero-row INSERT/DELETE probe from 1.11.16. 3524 is also now classified as the user's to fix on the upload path, where it used to surface as "Failed to connect to server".
+
 ## [1.11.16]
 
 ### Fixes
