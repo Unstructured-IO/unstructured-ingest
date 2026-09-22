@@ -1,0 +1,29 @@
+[
+  {
+    "type": "NarrativeText",
+    "element_id": "79941ef8e63a4fa44470c7d47c4f7a84",
+    "text": "This message did not start in the seed folder; the seeding script moved it here.",
+    "metadata": {
+      "languages": [
+        "eng"
+      ],
+      "filename": "597102739ce0a99a.eml",
+      "filetype": "message/rfc822",
+      "email_message_id": "LV3P223MB0913FD45CD536915CC2B924BF9B72@LV3P223MB0913.NAMP223.PROD.OUTLOOK.COM",
+      "subject": "[unstructured-ingest fixture] moved into place",
+      "data_source": {
+        "url": "https://graph.microsoft.com/v1.0/users/devops@unstructuredio.onmicrosoft.com/mailFolders/AAMkAGE2MmEwNzFlLWVjYzAtNDNhZS04ZGM1LTFjYmMzZDhiMmI0MAAuAAAAAADc1MfJYetSQ6QZntYrI9k4AQDZYn-lfnvLSqIcW-YsN8ebAAMD3KUhAAA=/messages/AAkALgAAAAAAHYQDEapmEc2byACqAC-EWg0A2WJ-5X57y0qiHFv2LDfHmwADBWDevwAA",
+        "version": "CQAAABYAAADZYn/lfnvLSqIcW/YsN8ebAAMK3CcK",
+        "record_locator": {
+          "message_id": "AAkALgAAAAAAHYQDEapmEc2byACqAC-EWg0A2WJ-5X57y0qiHFv2LDfHmwADBWDevwAA",
+          "user_email": "devops@unstructuredio.onmicrosoft.com"
+        },
+        "date_created": "1788345408.0",
+        "date_modified": "1788945140.0",
+        "permissions_data": null,
+        "permissions_version": null,
+        "filesize_bytes": 566
+      }
+    }
+  }
+]

@@ -1,0 +1,29 @@
+[
+  {
+    "type": "NarrativeText",
+    "element_id": "de5acb9c09093834393815d4c8195511",
+    "text": "This is a placeholder message used only by unstructured-ingest's automated tests. It intentionally carries no real content.",
+    "metadata": {
+      "languages": [
+        "eng"
+      ],
+      "filename": "dbf8e5cd50d4dac1.eml",
+      "filetype": "message/rfc822",
+      "email_message_id": "LV3P223MB0913F55924341ED1BEA79076F9B72@LV3P223MB0913.NAMP223.PROD.OUTLOOK.COM",
+      "subject": "[unstructured-ingest fixture] weekly status placeholder",
+      "data_source": {
+        "url": "https://graph.microsoft.com/v1.0/users/devops@unstructuredio.onmicrosoft.com/mailFolders/AAMkAGE2MmEwNzFlLWVjYzAtNDNhZS04ZGM1LTFjYmMzZDhiMmI0MAAuAAAAAADc1MfJYetSQ6QZntYrI9k4AQDZYn-lfnvLSqIcW-YsN8ebAAMD3KUhAAA=/messages/AAkALgAAAAAAHYQDEapmEc2byACqAC-EWg0A2WJ-5X57y0qiHFv2LDfHmwADBWDU9gAA",
+        "version": "CQAAABYAAADZYn/lfnvLSqIcW/YsN8ebAAMFGvKe",
+        "record_locator": {
+          "message_id": "AAkALgAAAAAAHYQDEapmEc2byACqAC-EWg0A2WJ-5X57y0qiHFv2LDfHmwADBWDU9gAA",
+          "user_email": "devops@unstructuredio.onmicrosoft.com"
+        },
+        "date_created": "1788344020.0",
+        "date_modified": "1788344020.0",
+        "permissions_data": null,
+        "permissions_version": null,
+        "filesize_bytes": 627
+      }
+    }
+  }
+]

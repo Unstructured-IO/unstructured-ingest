@@ -1,0 +1,55 @@
+[
+  {
+    "type": "NarrativeText",
+    "element_id": "e8cb070256952b80b3f03ed662e2e195",
+    "text": "See attached.",
+    "metadata": {
+      "languages": [
+        "eng"
+      ],
+      "filename": "bca2bd63c1d3da1a.eml",
+      "filetype": "message/rfc822",
+      "email_message_id": "LV3P223MB09138228C5A2DAE5F9D16EF4F9B72@LV3P223MB0913.NAMP223.PROD.OUTLOOK.COM",
+      "subject": "[unstructured-ingest fixture] note with attachment",
+      "data_source": {
+        "url": "https://graph.microsoft.com/v1.0/users/devops@unstructuredio.onmicrosoft.com/mailFolders/AAMkAGE2MmEwNzFlLWVjYzAtNDNhZS04ZGM1LTFjYmMzZDhiMmI0MAAuAAAAAADc1MfJYetSQ6QZntYrI9k4AQDZYn-lfnvLSqIcW-YsN8ebAAMD3KUhAAA=/messages/AAkALgAAAAAAHYQDEapmEc2byACqAC-EWg0A2WJ-5X57y0qiHFv2LDfHmwADBWDa1QAA",
+        "version": "CQAAABYAAADZYn/lfnvLSqIcW/YsN8ebAAMFGvh8",
+        "record_locator": {
+          "message_id": "AAkALgAAAAAAHYQDEapmEc2byACqAC-EWg0A2WJ-5X57y0qiHFv2LDfHmwADBWDa1QAA",
+          "user_email": "devops@unstructuredio.onmicrosoft.com"
+        },
+        "date_created": "1788345406.0",
+        "date_modified": "1788345406.0",
+        "permissions_data": null,
+        "permissions_version": null,
+        "filesize_bytes": 1276
+      }
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "4a3988d3e8d666d14d82e14ce1c3a7c1",
+    "text": "This attachment is deliberately tiny and boring. It exists only so the partitioner has a real attachment to open.",
+    "metadata": {
+      "languages": [
+        "eng"
+      ],
+      "filename": "fixture-note.txt",
+      "filetype": "text/plain",
+      "attached_to_filename": "bca2bd63c1d3da1a.eml",
+      "data_source": {
+        "url": "https://graph.microsoft.com/v1.0/users/devops@unstructuredio.onmicrosoft.com/mailFolders/AAMkAGE2MmEwNzFlLWVjYzAtNDNhZS04ZGM1LTFjYmMzZDhiMmI0MAAuAAAAAADc1MfJYetSQ6QZntYrI9k4AQDZYn-lfnvLSqIcW-YsN8ebAAMD3KUhAAA=/messages/AAkALgAAAAAAHYQDEapmEc2byACqAC-EWg0A2WJ-5X57y0qiHFv2LDfHmwADBWDa1QAA",
+        "version": "CQAAABYAAADZYn/lfnvLSqIcW/YsN8ebAAMFGvh8",
+        "record_locator": {
+          "message_id": "AAkALgAAAAAAHYQDEapmEc2byACqAC-EWg0A2WJ-5X57y0qiHFv2LDfHmwADBWDa1QAA",
+          "user_email": "devops@unstructuredio.onmicrosoft.com"
+        },
+        "date_created": "1788345406.0",
+        "date_modified": "1788345406.0",
+        "permissions_data": null,
+        "permissions_version": null,
+        "filesize_bytes": 1276
+      }
+    }
+  }
+]

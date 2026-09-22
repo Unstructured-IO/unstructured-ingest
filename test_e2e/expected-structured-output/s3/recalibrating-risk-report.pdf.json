@@ -1,8 +1,8 @@
 [
   {
     "type": "Image",
-    "element_id": "a0979f276cfbff6517139d9c26927b22",
-    "text": "ASCIATION",
+    "element_id": "614b7a52d42e8e3b66edf4943093c85c",
+    "text": "WORLD ASSOCIATION",
     "metadata": {
       "filetype": "application/pdf",
       "languages": [
@@ -19,14 +19,15 @@
         "date_created": "1676196572.0",
         "date_modified": "1676196572.0",
         "permissions_data": null,
+        "permissions_version": null,
         "filesize_bytes": 806335
       }
     }
   },
   {
     "type": "Image",
-    "element_id": "bb775ebc03e0da103bc454ec281e36df",
-    "text": "\\ I\\l N\\ N N",
+    "element_id": "2c46275371b10cbb30ac2fcedf6dd233",
+    "text": "I\\l N",
     "metadata": {
       "filetype": "application/pdf",
       "languages": [
@@ -43,6 +44,7 @@
         "date_created": "1676196572.0",
         "date_modified": "1676196572.0",
         "permissions_data": null,
+        "permissions_version": null,
         "filesize_bytes": 806335
       }
     }
@@ -68,6 +70,7 @@
         "date_created": "1676196572.0",
         "date_modified": "1676196572.0",
         "permissions_data": null,
+        "permissions_version": null,
         "filesize_bytes": 806335
       }
     }
@@ -93,6 +96,7 @@
         "date_created": "1676196572.0",
         "date_modified": "1676196572.0",
         "permissions_data": null,
+        "permissions_version": null,
         "filesize_bytes": 806335
       }
     }
@@ -118,6 +122,7 @@
         "date_created": "1676196572.0",
         "date_modified": "1676196572.0",
         "permissions_data": null,
+        "permissions_version": null,
         "filesize_bytes": 806335
       }
     }
@@ -143,6 +148,7 @@
         "date_created": "1676196572.0",
         "date_modified": "1676196572.0",
         "permissions_data": null,
+        "permissions_version": null,
         "filesize_bytes": 806335
       }
     }
@@ -168,6 +174,7 @@
         "date_created": "1676196572.0",
         "date_modified": "1676196572.0",
         "permissions_data": null,
+        "permissions_version": null,
         "filesize_bytes": 806335
       }
     }
@@ -193,6 +200,7 @@
         "date_created": "1676196572.0",
         "date_modified": "1676196572.0",
         "permissions_data": null,
+        "permissions_version": null,
         "filesize_bytes": 806335
       }
     }
@@ -218,6 +226,7 @@
         "date_created": "1676196572.0",
         "date_modified": "1676196572.0",
         "permissions_data": null,
+        "permissions_version": null,
         "filesize_bytes": 806335
       }
     }
@@ -243,6 +252,7 @@
         "date_created": "1676196572.0",
         "date_modified": "1676196572.0",
         "permissions_data": null,
+        "permissions_version": null,
         "filesize_bytes": 806335
       }
     }
@@ -268,6 +278,7 @@
         "date_created": "1676196572.0",
         "date_modified": "1676196572.0",
         "permissions_data": null,
+        "permissions_version": null,
         "filesize_bytes": 806335
       }
     }
@@ -293,14 +304,15 @@
         "date_created": "1676196572.0",
         "date_modified": "1676196572.0",
         "permissions_data": null,
+        "permissions_version": null,
         "filesize_bytes": 806335
       }
     }
   },
   {
     "type": "Image",
-    "element_id": "6eb7ff3c00115a10f9109811d522991a",
-    "text": "p Y",
+    "element_id": "7a05ce9ae323d6e9830d00907471fa3f",
+    "text": "p { Y",
     "metadata": {
       "filetype": "application/pdf",
       "languages": [
@@ -317,6 +329,7 @@
         "date_created": "1676196572.0",
         "date_modified": "1676196572.0",
         "permissions_data": null,
+        "permissions_version": null,
         "filesize_bytes": 806335
       }
     }
@@ -342,38 +355,14 @@
         "date_created": "1676196572.0",
         "date_modified": "1676196572.0",
         "permissions_data": null,
-        "filesize_bytes": 806335
-      }
-    }
-  },
-  {
-    "type": "Footer",
-    "element_id": "d7d7ca3be3dd09816ae5d0294281e8d9",
-    "text": "2",
-    "metadata": {
-      "is_extracted": "true",
-      "filetype": "application/pdf",
-      "languages": [
-        "eng"
-      ],
-      "page_number": 4,
-      "data_source": {
-        "url": "s3://utic-dev-tech-fixtures/small-pdf-set/recalibrating-risk-report.pdf",
-        "version": "e690f37ef36368a509d150f373a0bbe0",
-        "record_locator": {
-          "protocol": "s3",
-          "remote_file_path": "s3://utic-dev-tech-fixtures/small-pdf-set/"
-        },
-        "date_created": "1676196572.0",
-        "date_modified": "1676196572.0",
-        "permissions_data": null,
+        "permissions_version": null,
         "filesize_bytes": 806335
       }
     }
   },
   {
     "type": "Title",
-    "element_id": "ca878cdd15c9e34463e380dfcb994c2d",
+    "element_id": "c48c986070dfdd3b79fb5b991bddfa4e",
     "text": "Perceived versus actual risk",
     "metadata": {
       "is_extracted": "true",
@@ -392,13 +381,14 @@
         "date_created": "1676196572.0",
         "date_modified": "1676196572.0",
         "permissions_data": null,
+        "permissions_version": null,
         "filesize_bytes": 806335
       }
     }
   },
   {
     "type": "NarrativeText",
-    "element_id": "7a6ffe00fc921772e62d72d8b36ae72d",
+    "element_id": "50e4f073d0345dfb7577928b3f9038ec",
     "text": "It is widely accepted that humans have skewed perceptions of risks, and the way we respond to them is shaped by these perceptions, rather than the actual threats posed. Approximately 1.35 millioni people die every year because of traffic accidents, in comparison with 257 aviation fatalities in 2019ii, yet more people are nervous about flying, fearing a rare deadly crash, than being in a fatal traffic accident. These numbers tell a powerful and well-established story: evaluations of risk are largely the result of emotions, rather than logic or facts. Although it is hard to recognize and accept that our perceptions may mislead us and curtail effective decision making, this is a well-established characteristic of humanity.",
     "metadata": {
       "is_extracted": "true",
@@ -417,13 +407,14 @@
         "date_created": "1676196572.0",
         "date_modified": "1676196572.0",
         "permissions_data": null,
+        "permissions_version": null,
         "filesize_bytes": 806335
       }
     }
   },
   {
     "type": "NarrativeText",
-    "element_id": "75f32a291a5cbb11d3183eac5fb426c3",
+    "element_id": "0f61fac8ee32607e8d2df78549304a46",
     "text": "Nuclear energy and the risk of radiation is one of the most extreme cases in which perceived and actual risks have diverged. The fear of radiation, whilst pre- dating the Second World War, was firmly established by the debate on the potential impacts of low-dose radiation from the fallout from nuclear weapons testing in the early years of the Cold War. Radiation in many ways became linked with the mental imagery of nuclear war, playing an important role in increasing public concern about radiation and its health effects. There is a well-established discrepancy between fact-based risk assessments and public perception of different risks. This is very much the case with nuclear power, and this is clearly highlighted in Figure 1, with laypersons ranking nuclear power as the highest risk out of 30 activities and technologies, with experts ranking nuclear as 20th. In many ways, popular culture’s depiction of radiation has played a role in ensuring that this discrepancy has remained,",
     "metadata": {
       "is_extracted": "true",
@@ -442,13 +433,14 @@
         "date_created": "1676196572.0",
         "date_modified": "1676196572.0",
         "permissions_data": null,
+        "permissions_version": null,
         "filesize_bytes": 806335
       }
     }
   },
   {
     "type": "UncategorizedText",
-    "element_id": "bf248ce5194cc4686f97a2769cd9744a",
+    "element_id": "652f1615fced7da06bb1af8480a06795",
     "text": "Rank Order",
     "metadata": {
       "is_extracted": "true",
@@ -467,17 +459,19 @@
         "date_created": "1676196572.0",
         "date_modified": "1676196572.0",
         "permissions_data": null,
+        "permissions_version": null,
         "filesize_bytes": 806335
       }
     }
   },
   {
     "type": "Table",
-    "element_id": "fe081bc8fc80f0df977f46493f0e9430",
+    "element_id": "3559ae2fe38a7a2a72cf8168b8973a2b",
     "text": "Laypersons Experts 1 Nuclear power 20 2 Motor vehicles 1 3 Handguns 4 4 Smoking 2 17 Electric power (non-nuclear) 9 22 X-rays 7 30 Vaccinations 25",
     "metadata": {
       "is_extracted": "partial",
-      "text_as_html": "<table><thead><tr><th colspan=\"2\">Laypersons</th><th>Experts</th></tr></thead><tbody><tr><td>1</td><td>Nuclear power</td><td>20</td></tr><tr><td></td><td>Motor vehicles</td><td>-</td></tr><tr><td></td><td>Handguns</td><td>s</td></tr><tr><td></td><td>Smoking</td><td>|</td></tr><tr><td></td><td></td><td>|«</td></tr><tr><td>- ~</td><td>Electric power (non-nuclear)</td><td>©</td></tr><tr><td></td><td></td><td>«</td></tr><tr><td>22</td><td>X-rays</td><td>|~</td></tr><tr><td></td><td></td><td>«</td></tr><tr><td>30</td><td>Vaccinations</td><td>25</td></tr></tbody></table>",
+      "text_as_html": "<table><thead><tr><th colspan=\"2\">Laypersons</th><th>Experts</th></tr></thead><tbody><tr><td>1</td><td>Nuclear power</td><td>20</td></tr><tr><td></td><td>Motor vehicles</td><td></td></tr><tr><td></td><td>Handguns</td><td>s</td></tr><tr><td>|</td><td>Smoking</td><td>|</td></tr><tr><td>«</td><td></td><td>|«</td></tr><tr><td>17</td><td>Electric power (non-nuclear)</td><td>©</td></tr><tr><td></td><td></td><td>«</td></tr><tr><td>22</td><td>X-rays</td><td>|~</td></tr><tr><td></td><td></td><td>«</td></tr><tr><td>30</td><td>Vaccinations</td><td>25</td></tr></tbody></table>",
+      "table_extraction_method": "tatr",
       "filetype": "application/pdf",
       "languages": [
         "eng"
@@ -493,13 +487,14 @@
         "date_created": "1676196572.0",
         "date_modified": "1676196572.0",
         "permissions_data": null,
+        "permissions_version": null,
         "filesize_bytes": 806335
       }
     }
   },
   {
     "type": "FigureCaption",
-    "element_id": "a6b2ef41c3420b21165799903ccece40",
+    "element_id": "8b3c66ea4ce2f6d96514aeb5ec1e2f95",
     "text": "Figure 1. Ordering of perceived risks for 30 activities and technologies1,iii",
     "metadata": {
       "is_extracted": "true",
@@ -518,13 +513,14 @@
         "date_created": "1676196572.0",
         "date_modified": "1676196572.0",
         "permissions_data": null,
+        "permissions_version": null,
         "filesize_bytes": 806335
       }
     }
   },
   {
     "type": "NarrativeText",
-    "element_id": "6a806ec2935a7f5da409a3f892006982",
+    "element_id": "023c5a2f96f6832844f589ffdecc7e39",
     "text": "be it Godzilla, The Incredible Hulk, or The Simpsons, which regularly plays on the notion of radiation from nuclear power plants causing three-eyed fish, something that has been firmly rejected as unscientific.",
     "metadata": {
       "is_extracted": "true",
@@ -543,13 +539,14 @@
         "date_created": "1676196572.0",
         "date_modified": "1676196572.0",
         "permissions_data": null,
+        "permissions_version": null,
         "filesize_bytes": 806335
       }
     }
   },
   {
     "type": "NarrativeText",
-    "element_id": "b794118cfefdf05953a1eab3ecb49928",
+    "element_id": "ae54f42e731c3b95095493f6699d7cf7",
     "text": "In reality, radiation is a natural part of life; indeed, we are all exposed to radiation every day, on average receiving 2-3 millisieverts (mSv) per year. Most of this radiation is naturally occurring, with radon gas from the ground being the main source of exposure. The nuclear industry is responsible for a very small part of radiation exposure to the public, as seen in Figure 2. To put this into perspective, eating 10 bananas or two Brazil nuts results in the same radiation dose as living nearby a nuclear power plant for a year. Humans are also naturally radioactive, and the radiation dose from sleeping next to someone else each night for a year is ten times higher than the exposure from living nearby a nuclear power plant for the same time span.",
     "metadata": {
       "is_extracted": "true",
@@ -568,13 +565,14 @@
         "date_created": "1676196572.0",
         "date_modified": "1676196572.0",
         "permissions_data": null,
+        "permissions_version": null,
         "filesize_bytes": 806335
       }
     }
   },
   {
     "type": "NarrativeText",
-    "element_id": "60d4e572d6bfa2687304ba3b28f12fcf",
+    "element_id": "5f5cf47be963e1c593106265c49af8b8",
     "text": "In fact, scientific consensus is that when it comes to preventing exposure to radiation, nuclear power is much better than other electricity generators. A 2016 reportiii from the United Nations Scientific Committee on the Effects of Atomic Radiation (UNSCEAR) found that coal-generated electricity is responsible for more than half of the total global radiation exposure arising from electricity generation, while nuclear power contributed less than a fifth. Coal miners received high occupational exposure and workers in solar and wind farms received the highest occupational exposure associated with plant construction for the same amount of installed capacity.",
     "metadata": {
       "is_extracted": "true",
@@ -593,13 +591,14 @@
         "date_created": "1676196572.0",
         "date_modified": "1676196572.0",
         "permissions_data": null,
+        "permissions_version": null,
         "filesize_bytes": 806335
       }
     }
   },
   {
     "type": "Footer",
-    "element_id": "9600ead8e685b080a9ae84455b6be4f9",
+    "element_id": "16ba94273482d922bcb09cc13869cb08",
     "text": "1 The original study was published in 1978, but its findings have been confirmed by numerous studies since.",
     "metadata": {
       "is_extracted": "true",
@@ -618,6 +617,33 @@
         "date_created": "1676196572.0",
         "date_modified": "1676196572.0",
         "permissions_data": null,
+        "permissions_version": null,
+        "filesize_bytes": 806335
+      }
+    }
+  },
+  {
+    "type": "Footer",
+    "element_id": "776cff84f184a6c903e4ff974bce026d",
+    "text": "2",
+    "metadata": {
+      "is_extracted": "true",
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 4,
+      "data_source": {
+        "url": "s3://utic-dev-tech-fixtures/small-pdf-set/recalibrating-risk-report.pdf",
+        "version": "e690f37ef36368a509d150f373a0bbe0",
+        "record_locator": {
+          "protocol": "s3",
+          "remote_file_path": "s3://utic-dev-tech-fixtures/small-pdf-set/"
+        },
+        "date_created": "1676196572.0",
+        "date_modified": "1676196572.0",
+        "permissions_data": null,
+        "permissions_version": null,
         "filesize_bytes": 806335
       }
     }
@@ -642,6 +668,7 @@
         "date_created": "1676196572.0",
         "date_modified": "1676196572.0",
         "permissions_data": null,
+        "permissions_version": null,
         "filesize_bytes": 806335
       }
     }
@@ -667,6 +694,7 @@
         "date_created": "1676196572.0",
         "date_modified": "1676196572.0",
         "permissions_data": null,
+        "permissions_version": null,
         "filesize_bytes": 806335
       }
     }
@@ -692,6 +720,7 @@
         "date_created": "1676196572.0",
         "date_modified": "1676196572.0",
         "permissions_data": null,
+        "permissions_version": null,
         "filesize_bytes": 806335
       }
     }
@@ -717,6 +746,7 @@
         "date_created": "1676196572.0",
         "date_modified": "1676196572.0",
         "permissions_data": null,
+        "permissions_version": null,
         "filesize_bytes": 806335
       }
     }
@@ -741,6 +771,7 @@
         "date_created": "1676196572.0",
         "date_modified": "1676196572.0",
         "permissions_data": null,
+        "permissions_version": null,
         "filesize_bytes": 806335
       }
     }
@@ -766,6 +797,7 @@
         "date_created": "1676196572.0",
         "date_modified": "1676196572.0",
         "permissions_data": null,
+        "permissions_version": null,
         "filesize_bytes": 806335
       }
     }
@@ -791,6 +823,7 @@
         "date_created": "1676196572.0",
         "date_modified": "1676196572.0",
         "permissions_data": null,
+        "permissions_version": null,
         "filesize_bytes": 806335
       }
     }
@@ -816,6 +849,7 @@
         "date_created": "1676196572.0",
         "date_modified": "1676196572.0",
         "permissions_data": null,
+        "permissions_version": null,
         "filesize_bytes": 806335
       }
     }
@@ -841,6 +875,7 @@
         "date_created": "1676196572.0",
         "date_modified": "1676196572.0",
         "permissions_data": null,
+        "permissions_version": null,
         "filesize_bytes": 806335
       }
     }
@@ -866,38 +901,14 @@
         "date_created": "1676196572.0",
         "date_modified": "1676196572.0",
         "permissions_data": null,
-        "filesize_bytes": 806335
-      }
-    }
-  },
-  {
-    "type": "Footer",
-    "element_id": "e754a2849dac122e7d2e05447f0da512",
-    "text": "4",
-    "metadata": {
-      "is_extracted": "true",
-      "filetype": "application/pdf",
-      "languages": [
-        "eng"
-      ],
-      "page_number": 6,
-      "data_source": {
-        "url": "s3://utic-dev-tech-fixtures/small-pdf-set/recalibrating-risk-report.pdf",
-        "version": "e690f37ef36368a509d150f373a0bbe0",
-        "record_locator": {
-          "protocol": "s3",
-          "remote_file_path": "s3://utic-dev-tech-fixtures/small-pdf-set/"
-        },
-        "date_created": "1676196572.0",
-        "date_modified": "1676196572.0",
-        "permissions_data": null,
+        "permissions_version": null,
         "filesize_bytes": 806335
       }
     }
   },
   {
     "type": "Title",
-    "element_id": "21b4c32e6d360d1d70e59dad888e306d",
+    "element_id": "8fd54b8df6f34c7669517fe8f446d39c",
     "text": "The low-dose question",
     "metadata": {
       "is_extracted": "true",
@@ -916,13 +927,14 @@
         "date_created": "1676196572.0",
         "date_modified": "1676196572.0",
         "permissions_data": null,
+        "permissions_version": null,
         "filesize_bytes": 806335
       }
     }
   },
   {
     "type": "NarrativeText",
-    "element_id": "26e60e901d12cbb5efb851fe945a3f96",
+    "element_id": "649d45c4e2dd97d01b6f7f4a0f2652b8",
     "text": "Since the 1950s, the Linear No-Threshold (LNT) theory has been used to inform regulatory decisions, positing that any dose of radiation, regardless of the amount or the duration over which it is received, poses a risk. Assuming that LNT is correct, we should expect to see that people living in areas of the world where background doses are higher (e.g. India, Iran and northern Europe) have a higher incidence of cancer. However, despite people living in areas of the world where radiation doses are naturally higher than those that would be received in parts of the evacuation zones around Chernobyl and Fukushima Daiichi, there is no evidence that these populations exhibit any negative health effects. Living nearby a nuclear power plant on average exposes the local population to 0.00009mSv/year, which according to LNT would increase the risk of developing cancer by 0.00000045%. After Chernobyl, the average dose to those evacuated was 30mSv, which would theoretically increase the risk of cancer at some point in their lifetime by 0.15% (on top of the average baseline lifetime risk of cancer, which is 39.5% in the USviii, 50% in the UKix).",
     "metadata": {
       "is_extracted": "true",
@@ -941,13 +953,14 @@
         "date_created": "1676196572.0",
         "date_modified": "1676196572.0",
         "permissions_data": null,
+        "permissions_version": null,
         "filesize_bytes": 806335
       }
     }
   },
   {
     "type": "NarrativeText",
-    "element_id": "31d07d8c2dce96dc1c6daa38f8597ab5",
+    "element_id": "3d9de2a61836e41e3c1ae8893d5a1722",
     "text": "Since the 1980s, there has been considerable scientific debate as to whether the LNT theory is valid, following scientific breakthroughs within, for example, radiobiology and medicine. Indeed, the Chernobyl accident helped illuminate some of the issues associated with LNT. Multiplication of the low doses after the accident (many far too low to be of any health concern) with large populations – using the assumptions made by LNT – led to a large number of predicted cancer deaths, which have not, and likely will not materialize. This practice has been heavily criticized for being inappropriate in making risk assessments by UNSCEAR, the International Commission on Radiation Protection and a large number of independent scientists.",
     "metadata": {
       "is_extracted": "true",
@@ -966,13 +979,14 @@
         "date_created": "1676196572.0",
         "date_modified": "1676196572.0",
         "permissions_data": null,
+        "permissions_version": null,
         "filesize_bytes": 806335
       }
     }
   },
   {
     "type": "NarrativeText",
-    "element_id": "4fb06aef292d07a36339c830eb23c8b5",
+    "element_id": "d68745fb9259f0ee01b54db35a99ed8d",
     "text": "Determining the precise risk (or lack thereof) of the extremely small radiation doses associated with the routine operations of nuclear power plants, the disposal of nuclear waste or even extremely rare nuclear accidents is a purely academic exercise, that tries to determine whether the risk is extremely low, too small to detect, or non- existent. The risks of low-level radiation pale in comparison to other societal risks such as obesity, smoking, and air pollution.",
     "metadata": {
       "is_extracted": "true",
@@ -991,13 +1005,14 @@
         "date_created": "1676196572.0",
         "date_modified": "1676196572.0",
         "permissions_data": null,
+        "permissions_version": null,
         "filesize_bytes": 806335
       }
     }
   },
   {
     "type": "NarrativeText",
-    "element_id": "1d9fdadf74d73e63be2e683b0a73d86d",
+    "element_id": "629dfc4049633d8d9662948622e8d7b8",
     "text": "By looking at radiation risks in isolation, we prolong the over-regulation of radiation in nuclear plants, driving up costs, whilst not delivering any additional health benefits, in turn incentivising the use of more harmful energy sources. A recalibration is required, and this can only done by ensuring a holistic approach to risk is taken.",
     "metadata": {
       "is_extracted": "true",
@@ -1016,14 +1031,15 @@
         "date_created": "1676196572.0",
         "date_modified": "1676196572.0",
         "permissions_data": null,
+        "permissions_version": null,
         "filesize_bytes": 806335
       }
     }
   },
   {
     "type": "Image",
-    "element_id": "1f7c752d35ba75477f1d015b54aa8e60",
-    "text": "\\ LE [ 4",
+    "element_id": "f18be080cfa980452fe06f864e6362b4",
+    "text": "U",
     "metadata": {
       "filetype": "application/pdf",
       "languages": [
@@ -1040,6 +1056,33 @@
         "date_created": "1676196572.0",
         "date_modified": "1676196572.0",
         "permissions_data": null,
+        "permissions_version": null,
+        "filesize_bytes": 806335
+      }
+    }
+  },
+  {
+    "type": "Footer",
+    "element_id": "16e86e6997c0e8c7fd21c0fc1804a152",
+    "text": "4",
+    "metadata": {
+      "is_extracted": "true",
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 6,
+      "data_source": {
+        "url": "s3://utic-dev-tech-fixtures/small-pdf-set/recalibrating-risk-report.pdf",
+        "version": "e690f37ef36368a509d150f373a0bbe0",
+        "record_locator": {
+          "protocol": "s3",
+          "remote_file_path": "s3://utic-dev-tech-fixtures/small-pdf-set/"
+        },
+        "date_created": "1676196572.0",
+        "date_modified": "1676196572.0",
+        "permissions_data": null,
+        "permissions_version": null,
         "filesize_bytes": 806335
       }
     }
@@ -1065,6 +1108,7 @@
         "date_created": "1676196572.0",
         "date_modified": "1676196572.0",
         "permissions_data": null,
+        "permissions_version": null,
         "filesize_bytes": 806335
       }
     }
@@ -1090,6 +1134,7 @@
         "date_created": "1676196572.0",
         "date_modified": "1676196572.0",
         "permissions_data": null,
+        "permissions_version": null,
         "filesize_bytes": 806335
       }
     }
@@ -1115,6 +1160,7 @@
         "date_created": "1676196572.0",
         "date_modified": "1676196572.0",
         "permissions_data": null,
+        "permissions_version": null,
         "filesize_bytes": 806335
       }
     }
@@ -1140,6 +1186,7 @@
         "date_created": "1676196572.0",
         "date_modified": "1676196572.0",
         "permissions_data": null,
+        "permissions_version": null,
         "filesize_bytes": 806335
       }
     }
@@ -1165,6 +1212,7 @@
         "date_created": "1676196572.0",
         "date_modified": "1676196572.0",
         "permissions_data": null,
+        "permissions_version": null,
         "filesize_bytes": 806335
       }
     }
@@ -1189,6 +1237,7 @@
         "date_created": "1676196572.0",
         "date_modified": "1676196572.0",
         "permissions_data": null,
+        "permissions_version": null,
         "filesize_bytes": 806335
       }
     }
@@ -1214,6 +1263,7 @@
         "date_created": "1676196572.0",
         "date_modified": "1676196572.0",
         "permissions_data": null,
+        "permissions_version": null,
         "filesize_bytes": 806335
       }
     }
@@ -1239,6 +1289,7 @@
         "date_created": "1676196572.0",
         "date_modified": "1676196572.0",
         "permissions_data": null,
+        "permissions_version": null,
         "filesize_bytes": 806335
       }
     }
@@ -1264,6 +1315,7 @@
         "date_created": "1676196572.0",
         "date_modified": "1676196572.0",
         "permissions_data": null,
+        "permissions_version": null,
         "filesize_bytes": 806335
       }
     }
@@ -1289,38 +1341,14 @@
         "date_created": "1676196572.0",
         "date_modified": "1676196572.0",
         "permissions_data": null,
-        "filesize_bytes": 806335
-      }
-    }
-  },
-  {
-    "type": "Footer",
-    "element_id": "eeae015ec524f1b1bb0f7ac376a2090b",
-    "text": "6",
-    "metadata": {
-      "is_extracted": "true",
-      "filetype": "application/pdf",
-      "languages": [
-        "eng"
-      ],
-      "page_number": 8,
-      "data_source": {
-        "url": "s3://utic-dev-tech-fixtures/small-pdf-set/recalibrating-risk-report.pdf",
-        "version": "e690f37ef36368a509d150f373a0bbe0",
-        "record_locator": {
-          "protocol": "s3",
-          "remote_file_path": "s3://utic-dev-tech-fixtures/small-pdf-set/"
-        },
-        "date_created": "1676196572.0",
-        "date_modified": "1676196572.0",
-        "permissions_data": null,
+        "permissions_version": null,
         "filesize_bytes": 806335
       }
     }
   },
   {
     "type": "Title",
-    "element_id": "b9eaa26361e53e6e430494de5febf1b1",
+    "element_id": "62dfd490eedde1f336f8080207a4dec7",
     "text": "Recalibrating the risk conversation",
     "metadata": {
       "is_extracted": "true",
@@ -1339,13 +1367,14 @@
         "date_created": "1676196572.0",
         "date_modified": "1676196572.0",
         "permissions_data": null,
+        "permissions_version": null,
         "filesize_bytes": 806335
       }
     }
   },
   {
     "type": "NarrativeText",
-    "element_id": "d4b3fedebdff5b1fbae81fce93b964b2",
+    "element_id": "d3c9a8ce9a705627ec6dba4c619425db",
     "text": "By looking at radiation risks in isolation, we have created something akin to a “radiation phobia”, that both directly and indirectly harms people around the world. For instance, it is well established that the vast majority of health impacts from Chernobyl and Fukushima Daiichi were not radiological, but rather psychosocial. There has been an observable and dramatic increase in depression, PTSD, substance abuse, and suicides following these events, which can be significantly attributed to the dissonance between the actual and perceived risks of radiation, and the stigmatization they caused.",
     "metadata": {
       "is_extracted": "true",
@@ -1364,13 +1393,14 @@
         "date_created": "1676196572.0",
         "date_modified": "1676196572.0",
         "permissions_data": null,
+        "permissions_version": null,
         "filesize_bytes": 806335
       }
     }
   },
   {
     "type": "NarrativeText",
-    "element_id": "f71d9a617fd81ca5b4e4fd8070b56548",
+    "element_id": "d12b4b0bd8e5467651205de898ff6f14",
     "text": "Similarly, many of the tremendous challenges the global community faces are significantly driven by this “radiation phobia”. Indeed, several of these issues have been considerably exacerbated by the fact that certain risks are given a disproportionate amount of focus, whereas others are de facto ignored. The global conversation around climate change is a prime example of this. The historical use of fossil fuels has contributed significantly to climate change through greenhouse gas emissions, causing unprecedented changes in the liveability of the Earth. By 2025, half of the world’s population will be living in water-stressed areas, as extreme heat and droughts are exacerbating water resources. Between 2030 and 2050, climate change is expected to be the cause of an additional 250,000 deaths per year, arising from malnutrition, malaria, diarrhoea and heat stressx. Yet, despite the huge risks associated with climate change, our addiction to coal, oil, and fossil gas remains, with fossil fuels providing 84% of global primary energy in 2019xii. The continued prioritization of fossil fuels at the expense of nuclear energy results in a considerable increase in the risks posed by climate change.",
     "metadata": {
       "is_extracted": "true",
@@ -1389,14 +1419,15 @@
         "date_created": "1676196572.0",
         "date_modified": "1676196572.0",
         "permissions_data": null,
+        "permissions_version": null,
         "filesize_bytes": 806335
       }
     }
   },
   {
     "type": "Image",
-    "element_id": "f9088a3af315e73401890dadc6906fd1",
-    "text": "- (2 — . - - - < A s W 2 » > N g e — - < e iy * \\ A ~t. v/",
+    "element_id": "3ba61591b3ad22e49b900df452181c75",
+    "text": "- (2 — o - - - < ! W 2 » > e y - 3 2 < Vo - R - < e iy * \\ A v/",
     "metadata": {
       "filetype": "application/pdf",
       "languages": [
@@ -1413,14 +1444,15 @@
         "date_created": "1676196572.0",
         "date_modified": "1676196572.0",
         "permissions_data": null,
+        "permissions_version": null,
         "filesize_bytes": 806335
       }
     }
   },
   {
     "type": "Image",
-    "element_id": "21ccf549fc1e5dd37432edb95f9c04f5",
-    "text": "- & - 3 | P",
+    "element_id": "dfc540ccacd8c248c28361a32a48240a",
+    "text": "® 3 . [",
     "metadata": {
       "filetype": "application/pdf",
       "languages": [
@@ -1437,13 +1469,14 @@
         "date_created": "1676196572.0",
         "date_modified": "1676196572.0",
         "permissions_data": null,
+        "permissions_version": null,
         "filesize_bytes": 806335
       }
     }
   },
   {
     "type": "NarrativeText",
-    "element_id": "83578f6774acfda63a6aeaba61c1338b",
+    "element_id": "7803862f2804d04dfe8c38c4a353001d",
     "text": "Equally, it is well established that living without access to electricity results in illness and death around the world, caused by everything from not having access to modern healthcare to household air pollution. As of today, 770 million people around the world do not have access to electricity, with over 75% of that population living in Sub-Saharan Africa. The world's poorest 4 billion people consume a mere 5% of the energy used in developed economies, and we need to find ways of delivering reliable electricity to the entire human population in a fashion that is sustainable. Household and ambient air pollution causes 8.7 million deaths each year, largely because of the continued use of fossil fuels. Widespread electrification is a key tool for delivering a just energy transition. Investment in nuclear, has become an urgent necessity. Discarding it, based on risk perceptions divorced from science, would be to abandon the moral obligation to ensure affordable, reliable, and sustainable energy for every community around the world.",
     "metadata": {
       "is_extracted": "true",
@@ -1462,14 +1495,41 @@
         "date_created": "1676196572.0",
         "date_modified": "1676196572.0",
         "permissions_data": null,
+        "permissions_version": null,
+        "filesize_bytes": 806335
+      }
+    }
+  },
+  {
+    "type": "Footer",
+    "element_id": "8ebb5fbd59eefed0f1c1cfa1c0e510d2",
+    "text": "6",
+    "metadata": {
+      "is_extracted": "true",
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 8,
+      "data_source": {
+        "url": "s3://utic-dev-tech-fixtures/small-pdf-set/recalibrating-risk-report.pdf",
+        "version": "e690f37ef36368a509d150f373a0bbe0",
+        "record_locator": {
+          "protocol": "s3",
+          "remote_file_path": "s3://utic-dev-tech-fixtures/small-pdf-set/"
+        },
+        "date_created": "1676196572.0",
+        "date_modified": "1676196572.0",
+        "permissions_data": null,
+        "permissions_version": null,
         "filesize_bytes": 806335
       }
     }
   },
   {
     "type": "Image",
-    "element_id": "ae9c2513486b8ca5288f3edd38715d74",
-    "text": "R e Sy ok & A ™ o A 3 L A -",
+    "element_id": "8db474125c553a2edfca0e2944a28067",
+    "text": "A e Sy A < ™ Y& S o A 3 A AR",
     "metadata": {
       "filetype": "application/pdf",
       "languages": [
@@ -1486,6 +1546,7 @@
         "date_created": "1676196572.0",
         "date_modified": "1676196572.0",
         "permissions_data": null,
+        "permissions_version": null,
         "filesize_bytes": 806335
       }
     }
@@ -1511,6 +1572,7 @@
         "date_created": "1676196572.0",
         "date_modified": "1676196572.0",
         "permissions_data": null,
+        "permissions_version": null,
         "filesize_bytes": 806335
       }
     }
@@ -1536,6 +1598,7 @@
         "date_created": "1676196572.0",
         "date_modified": "1676196572.0",
         "permissions_data": null,
+        "permissions_version": null,
         "filesize_bytes": 806335
       }
     }
@@ -1561,14 +1624,15 @@
         "date_created": "1676196572.0",
         "date_modified": "1676196572.0",
         "permissions_data": null,
+        "permissions_version": null,
         "filesize_bytes": 806335
       }
     }
   },
   {
     "type": "Image",
-    "element_id": "ee7eae99377ac19705760d2e856e322e",
-    "text": "- —— —_— 5 ~ — = — k =1",
+    "element_id": "6c75a65befb061591b870f5c13abf0c4",
+    "text": "- —— —_— 5 — — = — =1 |",
     "metadata": {
       "filetype": "application/pdf",
       "languages": [
@@ -1585,6 +1649,7 @@
         "date_created": "1676196572.0",
         "date_modified": "1676196572.0",
         "permissions_data": null,
+        "permissions_version": null,
         "filesize_bytes": 806335
       }
     }
@@ -1610,6 +1675,7 @@
         "date_created": "1676196572.0",
         "date_modified": "1676196572.0",
         "permissions_data": null,
+        "permissions_version": null,
         "filesize_bytes": 806335
       }
     }
@@ -1635,6 +1701,7 @@
         "date_created": "1676196572.0",
         "date_modified": "1676196572.0",
         "permissions_data": null,
+        "permissions_version": null,
         "filesize_bytes": 806335
       }
     }
@@ -1660,6 +1727,7 @@
         "date_created": "1676196572.0",
         "date_modified": "1676196572.0",
         "permissions_data": null,
+        "permissions_version": null,
         "filesize_bytes": 806335
       }
     }
@@ -1685,6 +1753,7 @@
         "date_created": "1676196572.0",
         "date_modified": "1676196572.0",
         "permissions_data": null,
+        "permissions_version": null,
         "filesize_bytes": 806335
       }
     }
@@ -1710,6 +1779,7 @@
         "date_created": "1676196572.0",
         "date_modified": "1676196572.0",
         "permissions_data": null,
+        "permissions_version": null,
         "filesize_bytes": 806335
       }
     }
@@ -1735,6 +1805,7 @@
         "date_created": "1676196572.0",
         "date_modified": "1676196572.0",
         "permissions_data": null,
+        "permissions_version": null,
         "filesize_bytes": 806335
       }
     }
@@ -1760,6 +1831,7 @@
         "date_created": "1676196572.0",
         "date_modified": "1676196572.0",
         "permissions_data": null,
+        "permissions_version": null,
         "filesize_bytes": 806335
       }
     }
@@ -1785,6 +1857,7 @@
         "date_created": "1676196572.0",
         "date_modified": "1676196572.0",
         "permissions_data": null,
+        "permissions_version": null,
         "filesize_bytes": 806335
       }
     }
@@ -1810,6 +1883,7 @@
         "date_created": "1676196572.0",
         "date_modified": "1676196572.0",
         "permissions_data": null,
+        "permissions_version": null,
         "filesize_bytes": 806335
       }
     }
@@ -1835,6 +1909,7 @@
         "date_created": "1676196572.0",
         "date_modified": "1676196572.0",
         "permissions_data": null,
+        "permissions_version": null,
         "filesize_bytes": 806335
       }
     }
@@ -1860,6 +1935,7 @@
         "date_created": "1676196572.0",
         "date_modified": "1676196572.0",
         "permissions_data": null,
+        "permissions_version": null,
         "filesize_bytes": 806335
       }
     }
@@ -1885,6 +1961,7 @@
         "date_created": "1676196572.0",
         "date_modified": "1676196572.0",
         "permissions_data": null,
+        "permissions_version": null,
         "filesize_bytes": 806335
       }
     }
@@ -1910,6 +1987,7 @@
         "date_created": "1676196572.0",
         "date_modified": "1676196572.0",
         "permissions_data": null,
+        "permissions_version": null,
         "filesize_bytes": 806335
       }
     }
@@ -1935,6 +2013,7 @@
         "date_created": "1676196572.0",
         "date_modified": "1676196572.0",
         "permissions_data": null,
+        "permissions_version": null,
         "filesize_bytes": 806335
       }
     }
@@ -1960,6 +2039,7 @@
         "date_created": "1676196572.0",
         "date_modified": "1676196572.0",
         "permissions_data": null,
+        "permissions_version": null,
         "filesize_bytes": 806335
       }
     }
@@ -1985,6 +2065,7 @@
         "date_created": "1676196572.0",
         "date_modified": "1676196572.0",
         "permissions_data": null,
+        "permissions_version": null,
         "filesize_bytes": 806335
       }
     }
@@ -2010,6 +2091,7 @@
         "date_created": "1676196572.0",
         "date_modified": "1676196572.0",
         "permissions_data": null,
+        "permissions_version": null,
         "filesize_bytes": 806335
       }
     }
@@ -2035,6 +2117,7 @@
         "date_created": "1676196572.0",
         "date_modified": "1676196572.0",
         "permissions_data": null,
+        "permissions_version": null,
         "filesize_bytes": 806335
       }
     }
@@ -2060,6 +2143,7 @@
         "date_created": "1676196572.0",
         "date_modified": "1676196572.0",
         "permissions_data": null,
+        "permissions_version": null,
         "filesize_bytes": 806335
       }
     }
@@ -2085,6 +2169,7 @@
         "date_created": "1676196572.0",
         "date_modified": "1676196572.0",
         "permissions_data": null,
+        "permissions_version": null,
         "filesize_bytes": 806335
       }
     }
