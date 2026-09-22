@@ -1,3 +1,9 @@
+## [1.11.17]
+
+### Enhancements
+
+- **feat(weaviate): identify the connector to Weaviate with the `X-Weaviate-Client-Integration` header.** Weaviate 1.38.0 and later record which integration a request came from, so traffic can be attributed to the tool that produced it. The Weaviate destination sent nothing, so its uploads could not be told apart from any other Python client. `WeaviateConnectionConfig.get_headers()` now returns `X-Weaviate-Client-Integration: unstructured-ingest/<version>`, and the local, cloud and embedded connection configs pass it to the client. The client sends it on both transports, HTTP and gRPC, and batch inserts use gRPC. This is the same kind of identification the MongoDB connector already sends with `DriverInfo`. Servers older than 1.38.0 ignore the header. No configuration change is needed.
+
 ## [1.11.16]
 
 ### Fixes
