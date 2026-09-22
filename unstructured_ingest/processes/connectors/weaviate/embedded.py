@@ -50,6 +50,7 @@ class EmbeddedWeaviateConnectionConfig(WeaviateConnectionConfig):
             port=self.port,
             grpc_port=self.grpc_port,
             persistence_data_path=self.data_path,
+            headers=self.get_headers(),
             additional_config=AdditionalConfig(timeout=self.get_timeout()),
         ) as weaviate_client:
             yield weaviate_client
