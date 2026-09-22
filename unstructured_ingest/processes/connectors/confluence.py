@@ -510,7 +510,11 @@ class ConfluenceIndexer(Indexer):
         for space in spaces[:CONFLUENCE_REPORTED_SPACES_LIMIT]:
             alias = space.get("currentActiveAlias")
             key = space.get("key")
-            described.append(f"{key} (alias {alias})" if alias else str(key))
+            # A missing/null key must not render as the literal string "None": that
+            # could be misread as a real space named "None" rather than a malformed
+            # entry, so use an unambiguous placeholder instead.
+            key_display = key if key is not None else "<unknown key>"
+            described.append(f"{key_display} (alias {alias})" if alias else str(key_display))
         omitted = len(spaces) - len(described)
         if omitted > 0:
             described.append(f"and {omitted} more")
@@ -527,7 +531,7 @@ class ConfluenceIndexer(Indexer):
             if self._space_matches_key(space, space_key):
                 return space
         raise UserError(
-            f"Failed to find '{space_key}' space, {self._describe_observed_spaces(spaces)}"
+            f"Failed to find '{space_key}' space: {self._describe_observed_spaces(spaces)}"
         )
 
     def precheck(self) -> bool:

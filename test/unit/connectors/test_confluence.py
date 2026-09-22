@@ -238,6 +238,81 @@ def test_get_space_by_key_falls_back_to_alias_of_a_non_personal_space(connection
     )
 
 
+def test_get_space_by_key_direct_hit_does_not_rescan(connection_config):
+    # A key that matches on the first, filtered lookup must not trigger the fallback
+    # rescan (a second, unfiltered `client.get()` call). Asserted directly on call
+    # count/args rather than left incidental to a `side_effect` list that would raise
+    # `StopIteration` if over-called.
+    indexer = ConfluenceIndexer(
+        connection_config=connection_config,
+        index_config=ConfluenceIndexerConfig(spaces=["ENG"]),
+    )
+    mock_client = mock.MagicMock()
+    mock_client.get.return_value = {"results": [{"id": 987, "key": "ENG"}]}
+
+    space = indexer._get_space_by_key(mock_client, "ENG")
+
+    assert space == {"id": 987, "key": "ENG"}
+    mock_client.get.assert_called_once_with("api/v2/spaces", params={"limit": 1, "keys": ["ENG"]})
+    assert mock_client.get.call_count == 1
+
+
+def test_get_space_by_key_is_case_sensitive_for_key_and_alias(connection_config):
+    # `_space_matches_key` compares with a case-sensitive `==`. A configured key
+    # differing only in case from what Confluence returns does not match today, for
+    # either the `key` field or `currentActiveAlias`. This documents current behavior;
+    # making the match case-insensitive is a separate, out-of-scope decision.
+    indexer = ConfluenceIndexer(
+        connection_config=connection_config,
+        index_config=ConfluenceIndexerConfig(spaces=["eng"]),
+    )
+
+    mock_client = mock.MagicMock()
+    mock_client.get.side_effect = [{"results": []}, {"results": [{"id": 1, "key": "ENG"}]}]
+    with pytest.raises(UserError):
+        indexer._get_space_by_key(mock_client, "eng")
+
+    mock_client = mock.MagicMock()
+    mock_client.get.side_effect = [
+        {"results": []},
+        {"results": [{"id": 2, "key": "OPS", "currentActiveAlias": "ENG"}]},
+    ]
+    with pytest.raises(UserError):
+        indexer._get_space_by_key(mock_client, "eng")
+
+
+def test_get_space_by_key_fallback_rescan_finds_match_on_second_page(connection_config):
+    # All other fallback tests mock a single, unpaginated results page. This proves the
+    # fallback rescan actually pages through results (like `_list_spaces` does on its
+    # own, see test_list_spaces_paginates_until_configured_limit) rather than only
+    # checking page one.
+    indexer = ConfluenceIndexer(
+        connection_config=connection_config,
+        index_config=ConfluenceIndexerConfig(spaces=["TARGET"]),
+    )
+    mock_client = mock.MagicMock()
+    mock_client.get.side_effect = [
+        {"results": []},
+        {
+            "results": [{"id": 1, "key": "SPACE-1"}],
+            "_links": {"next": "/wiki/api/v2/spaces?cursor=abc"},
+        },
+        {"results": [{"id": 2, "key": "SPACE-2", "currentActiveAlias": "TARGET"}]},
+    ]
+
+    space = indexer._get_space_by_key(mock_client, "TARGET")
+
+    assert space == {"id": 2, "key": "SPACE-2", "currentActiveAlias": "TARGET"}
+    mock_client.get.assert_has_calls(
+        [
+            mock.call("api/v2/spaces", params={"limit": 1, "keys": ["TARGET"]}),
+            mock.call("api/v2/spaces", params={"limit": 250}),
+            mock.call("api/v2/spaces?cursor=abc", params=None),
+        ],
+        any_order=False,
+    )
+
+
 def test_get_space_by_key_reports_the_spaces_it_saw(connection_config):
     indexer = ConfluenceIndexer(
         connection_config=connection_config,
@@ -278,6 +353,25 @@ def test_get_space_by_key_reports_that_no_space_was_returned(connection_config):
         indexer._get_space_by_key(mock_client, "MISSING")
 
     assert "no spaces were returned" in str(raised.value)
+
+
+def test_describe_observed_spaces_missing_key_renders_placeholder():
+    # A space dict with no `key` field must not render as the literal string "None":
+    # that could read as a real space named "None" instead of a malformed entry.
+    described = ConfluenceIndexer._describe_observed_spaces([{"id": 1}])
+
+    assert described == "spaces returned: <unknown key>"
+    assert "None" not in described
+
+
+def test_describe_observed_spaces_empty_alias_treated_as_no_alias():
+    # An empty-string `currentActiveAlias` is falsy and must be treated the same as no
+    # alias at all, not rendered as "ENG (alias )".
+    described = ConfluenceIndexer._describe_observed_spaces(
+        [{"id": 1, "key": "ENG", "currentActiveAlias": ""}]
+    )
+
+    assert described == "spaces returned: ENG"
 
 
 def test_list_spaces_paginates_until_configured_limit(connection_config):
