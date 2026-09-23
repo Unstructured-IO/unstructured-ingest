@@ -1,0 +1,38 @@
+CHANGELOG.md
+  s_15b9f0dd837d7b::t_3ceb2db79f0ce7 8
+  s_15b9f0dd837d7b::t_99b50916a93c08 5-7
+  s_15b9f0dd837d7b::t_f666e419c0ac80 9-11
+  s_311bad84b4b490::t_5651d813e48eff 1-4,12,17
+unstructured_ingest/processes/connectors/sql/teradata.py
+  s_15b9f0dd837d7b::t_5b5be24750b386 776,779-798
+  s_15b9f0dd837d7b::t_22ba67eeb9a085 763
+  s_15b9f0dd837d7b::t_e71b7a038d27e2 799
+test/unit/connectors/sql/test_teradata.py
+  s_15b9f0dd837d7b::t_da42dbc3510195 2541-2585
+unstructured_ingest/__version__.py
+  s_15b9f0dd837d7b::t_41a7f9f2eac15e 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "10a095552e81873f549eba1f5b9fca432cad23ba",
+  "prompts": {},
+  "sessions": {
+    "s_15b9f0dd837d7b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b72728d5-5b53-4946-9e9b-aa0c9d12c9ea",
+        "model": "claude-opus-5"
+      },
+      "human_author": "paulkarayan <pk@unstructured.io>"
+    },
+    "s_311bad84b4b490": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "agent-a27b4f705874c3118",
+        "model": "unknown"
+      },
+      "human_author": "paulkarayan <pk@unstructured.io>"
+    }
+  }
+}
