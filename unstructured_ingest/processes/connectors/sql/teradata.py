@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from types import MappingProxyType
 from typing import TYPE_CHECKING, Any, Generator, Literal, Mapping, NoReturn, Optional
+from uuid import uuid4
 
 from pydantic import Field, Secret
 
@@ -117,6 +118,7 @@ _USER_FAULT_TERADATA_CODES: Mapping[int, str] = MappingProxyType({
     3754: "implicit type conversion failed",
     5612: "user does not have any access to the object",
     5315: "user does not have any access to the database",
+    3524: "user does not have the required access to the database",
     2621: "bad character in format or data",
     2665: "invalid date",
     2666: "invalid date",
@@ -515,7 +517,13 @@ class TeradataUploadStager(SQLUploadStager):
 # mean something else. 3523 "the user does not have <privilege> access to <object>",
 # 5612 no access to the object, 5315 no access to the database. 3807 is excluded: it is
 # also Teradata's "object does not exist".
-_WRITE_DENIAL_TERADATA_CODES = frozenset({3523, 5315, 5612})
+# 3524 "no <privilege> access to database" is a privilege refusal and nothing else: in both.
+_WRITE_DENIAL_TERADATA_CODES = frozenset({3523, 3524, 5315, 5612})
+
+# The only answer to the CREATE TABLE probe that refuses the destination.
+_CREATE_TABLE_DENIAL_CODE = 3524
+# Recognisable on sight if a DROP fails and a probe table is left behind.
+_PRECHECK_PROBE_TABLE_PREFIX = "unstructured_precheck_"
 
 
 class TeradataUploaderConfig(SQLUploaderConfig):
@@ -555,14 +563,8 @@ class TeradataUploader(SQLUploader):
         self.upload_config.table_name = table_name
 
         with self.get_cursor() as cursor:
-            cursor.execute("SELECT DATABASE")
-            current_db = cursor.fetchone()[0].strip()
-            cursor.execute(
-                "SELECT 1 FROM DBC.TablesV "
-                "WHERE TableName = ? AND DatabaseName = ? AND TableKind = 'T'",
-                [table_name, current_db],
-            )
-            if cursor.fetchone():
+            current_db = self._session_database(cursor)
+            if self._table_exists(cursor, database=current_db, table_name=table_name):
                 return False
 
         connectors_dir = Path(__file__).parents[1]
@@ -593,10 +595,86 @@ class TeradataUploader(SQLUploader):
         except Exception as e:
             logger.error(f"failed to validate connection: {safe_error_summary(e)}")
             raise DestinationConnectionError(_summarize_error(self.connection_config.host, e))
+        self.check_create_table_permission()
         if self.upload_config.table_name:
-            # Skipped when the table name is unset, because then the table does not
-            # exist yet and create_destination() makes it at upload time.
+            # Skipped when the table name is unset: create_destination() names the
+            # table at upload time, and the check above covers creating it.
             self.check_write_permissions()
+
+    def check_create_table_permission(self) -> None:
+        """Refuse a credential that cannot create the table create_destination() will create.
+
+        Resolve the database the write lands in, then CREATE and DROP a throwaway table
+        there, unless the configured table already exists in it. With no table configured
+        the probe always runs: the caller names the table at create_destination() time
+        (the platform passes a per-workflow name), so precheck cannot look it up. Refuses
+        on 3524 alone; any other failure is logged and passes, the same one-sided contract
+        as check_write_permissions().
+        """
+        table_name = self.upload_config.table_name
+        try:
+            with self.get_cursor() as cursor:
+                database = self._session_database(cursor)
+                logger.info(f"destination writes resolve to Teradata database '{database}'")
+                if table_name and self._table_exists(
+                    cursor, database=database, table_name=table_name
+                ):
+                    return
+                denied = self._probe_table_creation(cursor, database=database)
+        except Exception as e:
+            logger.warning(
+                f"CREATE TABLE permission check inconclusive: {self._probe_error_detail(e)}"
+            )
+            return
+        if denied:
+            raise UserError(
+                self._write_denied_message(
+                    "CREATE TABLE", object_kind="database", object_name=database
+                )
+            )
+
+    def _session_database(self, cursor: "TeradataCursor") -> str:
+        # The configured database when set (get_connection() makes it the session
+        # default), as the server spells it; the probe quotes it, so the spelling matters.
+        cursor.execute("SELECT DATABASE")
+        return cursor.fetchone()[0].strip()
+
+    def _table_exists(self, cursor: "TeradataCursor", *, database: str, table_name: str) -> bool:
+        # Shared with create_destination(), so "absent" here means it will CREATE.
+        cursor.execute(
+            "SELECT 1 FROM DBC.TablesV "
+            "WHERE TableName = ? AND DatabaseName = ? AND TableKind = 'T'",
+            [table_name, database],
+        )
+        return cursor.fetchone() is not None
+
+    def _probe_table_creation(self, cursor: "TeradataCursor", *, database: str) -> bool:
+        """CREATE then DROP a throwaway table in ``database``. True iff CREATE got 3524."""
+        qualified = f'"{database}"."{_PRECHECK_PROBE_TABLE_PREFIX}{uuid4().hex[:16]}"'
+        try:
+            cursor.execute(f"CREATE TABLE {qualified} (probe_col INTEGER)")
+        except Exception as e:
+            if (
+                _is_teradata_driver_error(e)
+                and _extract_teradata_error_code(e) == _CREATE_TABLE_DENIAL_CODE
+            ):
+                logger.error(
+                    f"destination credentials cannot create a table in database "
+                    f"'{database}': {self._probe_error_detail(e)}"
+                )
+                return True
+            logger.warning(
+                f"CREATE TABLE permission check inconclusive: {self._probe_error_detail(e)}"
+            )
+            return False
+        try:
+            cursor.execute(f"DROP TABLE {qualified}")
+        except Exception as e:
+            logger.warning(
+                f"precheck could not drop its probe table {qualified}, drop it by hand: "
+                f"{self._probe_error_detail(e)}"
+            )
+        return False
 
     def _quote_identifier(self, identifier: str) -> str:
         # Matches upload_dataframe, which double-quotes both the table and every
