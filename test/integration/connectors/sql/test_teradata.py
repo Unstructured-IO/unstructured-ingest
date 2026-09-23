@@ -229,6 +229,22 @@ def strict_table() -> Generator[str, None, None]:
         drop_table(table_name)
 
 
+def leftover_probe_tables() -> list[str]:
+    """Probe tables a precheck created in the configured database and did not drop.
+
+    `_` is a LIKE wildcard, so the prefix is escaped; without that this also matches any
+    table whose name merely resembles the prefix. Assumes nothing else is prechecking this
+    database under the same credential while the test runs.
+    """
+    with get_cursor() as cursor:
+        cursor.execute(
+            "SELECT TableName FROM DBC.TablesV WHERE DatabaseName = ? "
+            "AND TableName LIKE 'unstructured#_precheck#_%' ESCAPE '#'",
+            [get_env_data().database],
+        )
+        return [row[0].strip() for row in cursor.fetchall()]
+
+
 def get_uploader(table_name: str) -> TeradataUploader:
     return TeradataUploader(
         connection_config=get_connection_config(),
@@ -357,6 +373,10 @@ def test_teradata_destination_upload(
 
     uploader = get_uploader(destination_table)
     uploader.precheck()
+    # The table does not exist yet, so the precheck really runs its CREATE TABLE probe
+    # here, against a server. A leftover means its DROP failed and the check left a table
+    # in the customer's database.
+    assert leftover_probe_tables() == []
     uploader.run(path=staged_path, file_data=file_data)
 
     assert count_rows(destination_table) == expected
