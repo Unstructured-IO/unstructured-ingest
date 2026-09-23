@@ -483,17 +483,15 @@ class ConfluenceIndexer(Indexer):
         *,
         keys: Optional[List[str]] = None,
         limit: Optional[int] = None,
-        space_type: Optional[str] = None,
     ) -> List[dict]:
         target_limit = limit or self.index_config.max_num_of_spaces
         params: dict = {
             "limit": min(target_limit, CONFLUENCE_SPACE_PAGE_SIZE),
         }
         if keys:
-            params["keys"] = keys
-        if space_type:
-            params["type"] = space_type
-            params["status"] = "current"
+            # The client urlencodes params without doseq, which would send a list as its
+            # repr (keys=['ENG']); the v2 API takes a comma-separated string.
+            params["keys"] = ",".join(keys)
         return self._paginate_v2_results(
             client,
             path="api/v2/spaces",
@@ -511,8 +509,15 @@ class ConfluenceIndexer(Indexer):
     def _describe_observed_spaces(spaces: List[dict]) -> str:
         if not spaces:
             return "no spaces were returned"
+        # Personal space keys carry account ids and their aliases often carry user names,
+        # so personal spaces are counted, never listed.
+        listed = [
+            space
+            for space in spaces
+            if space.get("type") != "personal" and not str(space.get("key") or "").startswith("~")
+        ]
         described = []
-        for space in spaces[:CONFLUENCE_REPORTED_SPACES_LIMIT]:
+        for space in listed[:CONFLUENCE_REPORTED_SPACES_LIMIT]:
             alias = space.get("currentActiveAlias")
             key = space.get("key")
             # A missing/null key must not render as the literal string "None": that
@@ -520,9 +525,13 @@ class ConfluenceIndexer(Indexer):
             # entry, so use an unambiguous placeholder instead.
             key_display = key if key is not None else "<unknown key>"
             described.append(f"{key_display} (alias {alias})" if alias else str(key_display))
-        omitted = len(spaces) - len(described)
+        omitted = len(listed) - len(described)
         if omitted > 0:
             described.append(f"and {omitted} more")
+        personal_count = len(spaces) - len(listed)
+        if personal_count:
+            personal = f"{personal_count} personal space{'' if personal_count == 1 else 's'}"
+            described.append(f"and {personal}" if described else personal)
         return f"spaces returned: {', '.join(described)}"
 
     def _get_space_by_key(self, client: "Confluence", space_key: str) -> dict:
@@ -540,6 +549,14 @@ class ConfluenceIndexer(Indexer):
         raise UserError(
             f"Failed to find '{space_key}' space: {self._describe_observed_spaces(spaces)}"
         )
+
+    def _configured_space_keys(self) -> List[str]:
+        # A trailing delimiter ("ENG,") leaves a blank entry. Looking it up could match any
+        # space whose alias is empty, so blank entries are skipped.
+        space_keys = [key for key in self.index_config.spaces or [] if key.strip()]
+        if self.index_config.spaces and not space_keys:
+            raise UserError("Every configured space key is blank")
+        return space_keys
 
     def precheck(self) -> bool:
         try:
@@ -576,7 +593,7 @@ class ConfluenceIndexer(Indexer):
             errors = []
 
             if self.index_config.spaces:
-                for space_key in self.index_config.spaces:
+                for space_key in self._configured_space_keys():
                     try:
                         self._get_space_by_key(client, space_key)
                     except UnstructuredIngestError as e:
@@ -606,9 +623,11 @@ class ConfluenceIndexer(Indexer):
         if spaces:
             with self.connection_config.get_client() as client:
                 space_ids_and_keys = []
-                for space_key in spaces:
+                for space_key in self._configured_space_keys():
                     space = self._get_space_by_key(client, space_key)
-                    space_ids_and_keys.append((space_key, space["id"]))
+                    # Emit the space's key, not the configured string: a configured alias
+                    # changes when the space is renamed again, and the key never does.
+                    space_ids_and_keys.append((space["key"], space["id"]))
                 return space_ids_and_keys
         else:
             with self.connection_config.get_client() as client:
