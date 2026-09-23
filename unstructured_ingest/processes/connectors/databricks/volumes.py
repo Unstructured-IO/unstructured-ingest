@@ -67,6 +67,12 @@ def _databricks_status_code(e: Exception) -> Optional[int]:
     return None
 
 
+def _is_databricks_aborted(e: Exception) -> bool:
+    """Whether the SDK raised its ABORTED error code (a 409 subclass)."""
+    from databricks.sdk.errors.platform import Aborted
+
+    return isinstance(e, Aborted)
+
 
 class DatabricksPathMixin(BaseModel):
     volume: str = Field(
@@ -123,6 +129,13 @@ class DatabricksVolumesConnectionConfig(ConnectionConfig, ABC):
                 return UserAuthError(safe_error_summary(e))
             if status_code == 429:
                 return RateLimitError(safe_error_summary(e))
+            # ABORTED is a 409, but it is Databricks losing a race with itself -- two
+            # writers on one path, a sequencer check that did not hold -- not a customer
+            # mistake. Classified with the rest of the 4xx it becomes a UserError, which
+            # the platform treats as terminal, and the write is dropped on a conflict
+            # that retrying is what clears.
+            if _is_databricks_aborted(e):
+                return ProviderError(safe_error_summary(e))
             if 400 <= status_code < 500:
                 return UserError(safe_error_summary(e))
             if 500 <= status_code < 600:

@@ -95,6 +95,21 @@ def test_wrap_error_classifies_error_code_subclasses_by_their_status(
     assert "hunter2" not in str(wrapped)
 
 
+def test_wrap_error_classifies_aborted_as_a_provider_error():
+    # ABORTED is a 409 and would otherwise land with the rest of the 4xx as a UserError,
+    # which the platform treats as terminal. It is a Databricks-side concurrency
+    # conflict -- not the customer's doing, and usually cleared by retrying -- so it is
+    # classified as a provider failure, which stays retryable.
+    pytest.importorskip("databricks.sdk")
+    from databricks.sdk.errors.platform import Aborted
+
+    wrapped = _connection_config().wrap_error(Aborted(SECRET))
+
+    assert type(wrapped) is ProviderError
+    assert SECRET not in str(wrapped)
+    assert "hunter2" not in str(wrapped)
+
+
 def test_wrap_error_unhandled_log_redacts(caplog: pytest.LogCaptureFixture):
     # A non-Databricks, non-auth ValueError falls through to the unhandled
     # log path and is returned raw; the log line must still be redacted.
