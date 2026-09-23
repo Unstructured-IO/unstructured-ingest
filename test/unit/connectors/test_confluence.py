@@ -215,6 +215,35 @@ def test_indexer_identifies_an_alias_configured_space_by_its_key(connection_conf
     assert file_data.source_identifiers.fullpath == "ENG/456.html"
 
 
+def test_indexer_indexes_a_space_once_when_configured_by_key_and_alias(connection_config):
+    # Both entries resolve to the same space. Indexing it once per entry would download,
+    # partition and upload every page twice.
+    indexer = ConfluenceIndexer(
+        connection_config=connection_config,
+        index_config=ConfluenceIndexerConfig(spaces=["ENG", "engineering"]),
+    )
+    space = {"id": 987, "key": "ENG", "currentActiveAlias": "engineering"}
+
+    def get(path, params):
+        if path == "api/v2/pages":
+            return {"results": [{"id": "456"}]}
+        if params.get("keys") == "engineering":
+            return {"results": []}
+        return {"results": [space]}
+
+    mock_client = mock.MagicMock()
+    mock_client.get.side_effect = get
+    with (
+        mock.patch.object(type(connection_config), "get_client", mock.MagicMock()),
+        mock.patch(f"{CONFLUENCE_MODULE}.get_permissions_data", return_value=None),
+    ):
+        type(connection_config).get_client.return_value.__enter__.return_value = mock_client
+
+        paths = [file_data.source_identifiers.fullpath for file_data in indexer.run()]
+
+    assert paths == ["ENG/456.html"]
+
+
 def test_get_space_by_key_falls_back_to_personal_space_alias(connection_config):
     indexer = ConfluenceIndexer(
         connection_config=connection_config,
@@ -722,6 +751,31 @@ def test_precheck_with_spaces_uses_v2_spaces(monkeypatch, connection_config):
         ]
         mock_client.get.assert_has_calls(calls, any_order=False)
         assert result is True
+
+
+def test_precheck_resolves_a_space_configured_by_its_alias(connection_config):
+    # The connection check finds an alias-configured space through the rescan, the same
+    # way run() does, rather than failing on the keyed lookup alone.
+    indexer = ConfluenceIndexer(
+        connection_config=connection_config,
+        index_config=ConfluenceIndexerConfig(spaces=["engineering"]),
+    )
+    mock_client = mock.MagicMock()
+    mock_client.get.side_effect = [
+        {"results": [{"id": 1, "key": "ANY"}]},
+        {"results": []},  # keyed lookup: "engineering" is not a key
+        {"results": [{"id": 987, "key": "ENG", "currentActiveAlias": "engineering"}]},
+    ]
+    with mock.patch.object(type(connection_config), "get_client", mock.MagicMock()):
+        type(connection_config).get_client.return_value.__enter__.return_value = mock_client
+
+        assert indexer.precheck() is True
+
+    assert mock_client.get.call_args_list == [
+        mock.call("api/v2/spaces", params={"limit": 1}),
+        mock.call("api/v2/spaces", params={"limit": 1, "keys": "engineering"}),
+        mock.call("api/v2/spaces", params={"limit": 250}),
+    ]
 
 
 def test_precheck_without_spaces_uses_v2_spaces(monkeypatch, connection_config):

@@ -623,8 +623,14 @@ class ConfluenceIndexer(Indexer):
         if spaces:
             with self.connection_config.get_client() as client:
                 space_ids_and_keys = []
+                seen_space_ids = set()
                 for space_key in self._configured_space_keys():
                     space = self._get_space_by_key(client, space_key)
+                    # A space listed by both its key and its alias resolves twice; index
+                    # it once.
+                    if space["id"] in seen_space_ids:
+                        continue
+                    seen_space_ids.add(space["id"])
                     # Emit the space's key, not the configured string: a configured alias
                     # changes when the space is renamed again, and the key never does.
                     space_ids_and_keys.append((space["key"], space["id"]))
