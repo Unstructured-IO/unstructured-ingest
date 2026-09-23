@@ -335,6 +335,10 @@ def test_uploader_precheck_passes_when_the_identity_call_is_not_an_access_answer
 
     _uploader(mocker, client).precheck()
 
+    # It passed, and it stopped: without a principal there is nothing left to ask.
+    client.volumes.read.assert_not_called()
+    client.grants.get_effective.assert_not_called()
+
 
 def test_uploader_precheck_passes_on_an_unrecognised_identity_failure(
     mocker: MockerFixture, caplog: pytest.LogCaptureFixture
@@ -472,6 +476,9 @@ def test_uploader_precheck_passes_when_the_volume_read_is_not_an_access_answer(
     client.volumes.read.side_effect = STATUS_CODE_MAPPING[status_code]("try again later")
 
     _uploader(mocker, client).precheck()
+
+    # It passed, and the read it could not get an answer from was really attempted.
+    client.volumes.read.assert_called_once_with("catalog.schema.volume")
 
 
 def test_uploader_precheck_passes_on_an_unrecognised_volume_read_failure(
