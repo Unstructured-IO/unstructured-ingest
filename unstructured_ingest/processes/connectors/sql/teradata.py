@@ -760,6 +760,7 @@ class TeradataUploader(SQLUploader):
                     "CREATE TABLE", object_kind="database", object_name=database
                 )
                 + self._blank_database_hint()
+                + self._unset_table_hint()
             )
         if code == _CREATE_PRIVILEGE_DENIAL_CODE:
             return (
@@ -772,8 +773,29 @@ class TeradataUploader(SQLUploader):
                 f"column, and a table with a UDT column needs UDTUSAGE on SYSUDTLIB too. "
                 f"Teradata names the right it refused in the same error in the database's "
                 f"own log."
-            ) + self._blank_database_hint()
+            ) + self._blank_database_hint() + self._unset_table_hint()
         return None
+
+    def _unset_table_hint(self) -> str:
+        """Refused a right the job may never use, so name the field that settles it.
+
+        With no table configured the probe always runs: the caller names the table only
+        when it calls ``create_destination()``, so precheck has nothing to look up. A user
+        whose table already exists and who has since lost CREATE TABLE is therefore refused
+        here even though the upload would have found that table and never created one --
+        ``create_destination()`` returns early when it exists. That is the one case this
+        check can refuse a credential the job would not have needed. Naming the field turns
+        it into something the customer can act on rather than a dead end: set Table Name
+        and the lookup in ``check_create_table_permission`` skips this probe entirely.
+        """
+        if self.upload_config.table_name:
+            return ""
+        return (
+            " No Table Name is configured on this connector, so the check creates a table "
+            "to test the right rather than looking one up; if the table this destination "
+            "writes to already exists, set the Table Name field and the check will use it "
+            "instead of creating one."
+        )
 
     def _blank_database_hint(self) -> str:
         """Told to grant rights on a database nobody chose, say the Database field exists.

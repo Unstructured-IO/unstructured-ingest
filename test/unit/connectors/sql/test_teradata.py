@@ -2538,3 +2538,48 @@ def test_teradata_precheck_refuses_even_when_the_session_teardown_fails(
         teradata_uploader.precheck()
 
     assert "CREATE TABLE permission on database 'test_db'" in str(excinfo.value)
+
+
+def test_teradata_precheck_refusal_points_at_the_table_name_field_when_it_is_unset(
+    teradata_uploader_auto_create: TeradataUploader, mock_get_cursor, mock_cursor
+):
+    """With no table configured the probe always runs, so the refusal can refuse a right
+    the job would never have used: the upload finds an existing table and never creates
+    one. The message names the field that makes the check look the table up instead."""
+    _scripted_cursor(
+        mock_cursor,
+        exists=False,
+        fail={
+            _PROBE_CREATE_PREFIX: _FakeTeradataDriverError(
+                "[Teradata Database] [Error 3524] no CREATE TABLE access to database test_db"
+            )
+        },
+    )
+
+    with pytest.raises(UserError) as excinfo:
+        teradata_uploader_auto_create.precheck()
+
+    message = str(excinfo.value)
+    assert "No Table Name is configured" in message
+    assert "set the Table Name field" in message
+
+
+def test_teradata_precheck_refusal_omits_the_table_name_hint_when_one_is_configured(
+    teradata_uploader: TeradataUploader, mock_get_cursor, mock_cursor
+):
+    """The table is configured and absent, so the probe ran for a CREATE the upload will
+    really do. Telling that customer to set the field they already set is noise."""
+    _scripted_cursor(
+        mock_cursor,
+        exists=False,
+        fail={
+            _PROBE_CREATE_PREFIX: _FakeTeradataDriverError(
+                "[Teradata Database] [Error 3524] no CREATE TABLE access to database test_db"
+            )
+        },
+    )
+
+    with pytest.raises(UserError) as excinfo:
+        teradata_uploader.precheck()
+
+    assert "Table Name" not in str(excinfo.value)
