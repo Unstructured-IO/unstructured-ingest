@@ -166,6 +166,7 @@ test = [
     "htmlBuilder",
     "office365-rest-python-client",
     "pymilvus",
+    "atlassian-python-api",
 ]
 
 [project.scripts]

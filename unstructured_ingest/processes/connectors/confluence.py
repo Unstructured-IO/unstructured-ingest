@@ -49,6 +49,12 @@ if TYPE_CHECKING:
 CONNECTOR_TYPE = "confluence"
 CONFLUENCE_SPACE_PAGE_SIZE = 250
 CONFLUENCE_PAGE_PAGE_SIZE = 250
+CONFLUENCE_REPORTED_SPACES_LIMIT = 25
+# The fallback rescan in _get_space_by_key searches for one explicitly-configured space
+# by key/alias; it isn't indexing, so it must not inherit max_num_of_spaces (the "how many
+# spaces to index" cap) as its search bound. This is effectively unbounded for any real
+# Confluence tenant.
+CONFLUENCE_RESCAN_SPACE_LIMIT = 100_000
 
 
 def _iso8601_to_epoch_str(iso_date: Optional[str]) -> Optional[str]:
@@ -477,17 +483,15 @@ class ConfluenceIndexer(Indexer):
         *,
         keys: Optional[List[str]] = None,
         limit: Optional[int] = None,
-        space_type: Optional[str] = None,
     ) -> List[dict]:
         target_limit = limit or self.index_config.max_num_of_spaces
         params: dict = {
             "limit": min(target_limit, CONFLUENCE_SPACE_PAGE_SIZE),
         }
         if keys:
-            params["keys"] = keys
-        if space_type:
-            params["type"] = space_type
-            params["status"] = "current"
+            # The client urlencodes params without doseq, which would send a list as its
+            # repr (keys=['ENG']); the v2 API takes a comma-separated string.
+            params["keys"] = ",".join(keys)
         return self._paginate_v2_results(
             client,
             path="api/v2/spaces",
@@ -497,19 +501,62 @@ class ConfluenceIndexer(Indexer):
 
     @staticmethod
     def _space_matches_key(space: dict, space_key: str) -> bool:
-        return space.get("key") == space_key or space.get("alias") == space_key
+        # A v2 space response carries its alias as currentActiveAlias; the alias field
+        # belongs to the space-creation request body and is never part of a response.
+        return space.get("key") == space_key or space.get("currentActiveAlias") == space_key
+
+    @staticmethod
+    def _describe_observed_spaces(spaces: List[dict]) -> str:
+        if not spaces:
+            return "no spaces were returned"
+        # Personal space keys carry account ids and their aliases often carry user names,
+        # so personal spaces are counted, never listed.
+        listed = [
+            space
+            for space in spaces
+            if space.get("type") != "personal" and not str(space.get("key") or "").startswith("~")
+        ]
+        described = []
+        for space in listed[:CONFLUENCE_REPORTED_SPACES_LIMIT]:
+            alias = space.get("currentActiveAlias")
+            key = space.get("key")
+            # A missing/null key must not render as the literal string "None": that
+            # could be misread as a real space named "None" rather than a malformed
+            # entry, so use an unambiguous placeholder instead.
+            key_display = key if key is not None else "<unknown key>"
+            described.append(f"{key_display} (alias {alias})" if alias else str(key_display))
+        omitted = len(listed) - len(described)
+        if omitted > 0:
+            described.append(f"and {omitted} more")
+        personal_count = len(spaces) - len(listed)
+        if personal_count:
+            personal = f"{personal_count} personal space{'' if personal_count == 1 else 's'}"
+            described.append(f"and {personal}" if described else personal)
+        return f"spaces returned: {', '.join(described)}"
 
     def _get_space_by_key(self, client: "Confluence", space_key: str) -> dict:
         for space in self._list_spaces(client, keys=[space_key], limit=1):
             if self._space_matches_key(space, space_key):
                 return space
-        if space_key.startswith("~"):
-            # Personal space aliases are not reliably returned by the v2 keys
-            # filter, so fall back to scanning current personal spaces.
-            for space in self._list_spaces(client, space_type="personal"):
-                if self._space_matches_key(space, space_key):
-                    return space
-        raise UserError(f"Failed to find '{space_key}' space")
+        # Confluence does not document the v2 keys filter as matching an alias, so any
+        # unmatched key is re-checked client-side against an unfiltered listing. This
+        # rescan looks for one explicitly-selected space, so it searches independently of
+        # max_num_of_spaces (the indexing cap) rather than inheriting it as a search bound.
+        spaces = self._list_spaces(client, limit=CONFLUENCE_RESCAN_SPACE_LIMIT)
+        for space in spaces:
+            if self._space_matches_key(space, space_key):
+                return space
+        raise UserError(
+            f"Failed to find '{space_key}' space: {self._describe_observed_spaces(spaces)}"
+        )
+
+    def _configured_space_keys(self) -> List[str]:
+        # A trailing delimiter ("ENG,") leaves a blank entry. Looking it up could match any
+        # space whose alias is empty, so blank entries are skipped.
+        space_keys = [key for key in self.index_config.spaces or [] if key.strip()]
+        if self.index_config.spaces and not space_keys:
+            raise UserError("Every configured space key is blank")
+        return space_keys
 
     def precheck(self) -> bool:
         try:
@@ -546,7 +593,7 @@ class ConfluenceIndexer(Indexer):
             errors = []
 
             if self.index_config.spaces:
-                for space_key in self.index_config.spaces:
+                for space_key in self._configured_space_keys():
                     try:
                         self._get_space_by_key(client, space_key)
                     except UnstructuredIngestError as e:
@@ -576,9 +623,17 @@ class ConfluenceIndexer(Indexer):
         if spaces:
             with self.connection_config.get_client() as client:
                 space_ids_and_keys = []
-                for space_key in spaces:
+                seen_space_ids = set()
+                for space_key in self._configured_space_keys():
                     space = self._get_space_by_key(client, space_key)
-                    space_ids_and_keys.append((space_key, space["id"]))
+                    # A space listed by both its key and its alias resolves twice; index
+                    # it once.
+                    if space["id"] in seen_space_ids:
+                        continue
+                    seen_space_ids.add(space["id"])
+                    # Emit the space's key, not the configured string: a configured alias
+                    # changes when the space is renamed again, and the key never does.
+                    space_ids_and_keys.append((space["key"], space["id"]))
                 return space_ids_and_keys
         else:
             with self.connection_config.get_client() as client:

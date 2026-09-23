@@ -1,3 +1,9 @@
+## [1.11.19]
+
+### Fixes
+
+- **fix(confluence): find a configured space by its key or its current alias.** The keyed lookup sent `keys=['ENG']`, a Python list literal, instead of `keys=ENG`, so a space configured by its key could fail with "Failed to find ... space" even though it existed. A space configured by its current alias now resolves too. The connector used to match an `alias` field the v2 API never returns. It now matches `currentActiveAlias`, and rescans up to 100,000 spaces when the keyed lookup misses. Documents from an alias-configured space use the space key as their identity, the same as a key-configured space, and a space listed by both its key and its alias is indexed once. The not-found error lists up to 25 of the spaces it checked and counts personal spaces instead of naming them. Blank entries in `spaces` are skipped, and a list of only blank entries is rejected.
+
 ## [1.11.18]
 
 ### Fixes
