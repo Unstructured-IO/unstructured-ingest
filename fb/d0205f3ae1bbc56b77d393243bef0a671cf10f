@@ -1,0 +1,30 @@
+test/unit/connectors/test_confluence.py
+  s_b19cade79f5d9d::t_9bce13dfd1fc4c 392
+  s_b19cade79f5d9d::t_55e03bbfd7d097 413-416
+  s_b19cade79f5d9d::t_99cb32697eaafa 348-391,393-412
+CHANGELOG.md
+  s_b19cade79f5d9d::t_e8a4cd9861e6d6 1-6
+unstructured_ingest/__version__.py
+  s_b19cade79f5d9d::t_aeebd361e010e0 1
+unstructured_ingest/processes/connectors/confluence.py
+  s_b19cade79f5d9d::t_57d3ed78ee3fcc 462-478,481-482
+  s_b19cade79f5d9d::t_b06a00f41ac9f5 479-480
+  s_b19cade79f5d9d::t_345e9d9bc499a1 39
+  s_b19cade79f5d9d::t_1c889b96142180 496-497
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "fbd0205f3ae1bbc56b77d393243bef0a671cf10f",
+  "prompts": {},
+  "sessions": {
+    "s_b19cade79f5d9d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "54c50100-acc6-4f42-afaf-8907284b8d20",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": null
+    }
+  }
+}
