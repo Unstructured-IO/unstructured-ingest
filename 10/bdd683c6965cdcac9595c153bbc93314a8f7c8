@@ -1,0 +1,33 @@
+test/unit/connectors/sql/test_sql.py
+  s_c0af3e7e9491b2::t_7d3b82f0ce0c03 672-711
+unstructured_ingest/error.py
+  s_bf1b9b3fe8912d::t_5a023969e71cdf 21-24
+unstructured_ingest/processes/connectors/sql/sql.py
+  s_bf1b9b3fe8912d::t_7c3fe0c989c6ae 393-400,435-460,465-467,471-472,495-524,542-551,554-556,559-560,565-576
+unstructured_ingest/processes/connectors/sql/teradata.py
+  s_bf1b9b3fe8912d::t_a2065a8ec684c9 104-110,606-620
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "10bdd683c6965cdcac9595c153bbc93314a8f7c8",
+  "prompts": {},
+  "sessions": {
+    "s_bf1b9b3fe8912d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ebb9df82-ef5c-4d91-8577-13e1fde2cc3a",
+        "model": "claude-opus-5"
+      },
+      "human_author": "paulkarayan <pk@unstructured.io>"
+    },
+    "s_c0af3e7e9491b2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a3ad6ec4-6533-4355-b980-813ac7ba701f",
+        "model": "claude-opus-5"
+      },
+      "human_author": "paulkarayan <pk@unstructured.io>"
+    }
+  }
+}

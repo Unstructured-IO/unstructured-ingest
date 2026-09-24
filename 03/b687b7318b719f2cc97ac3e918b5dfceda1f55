@@ -1,0 +1,21 @@
+test/unit/connectors/sql/test_snowflake.py
+  s_bf1b9b3fe8912d::t_eb2e76655b7821 1,39-44,314-331,333-334,336-349,398-434
+unstructured_ingest/processes/connectors/sql/snowflake.py
+  s_bf1b9b3fe8912d::t_5ce15117374de7 199-201
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "03b687b7318b719f2cc97ac3e918b5dfceda1f55",
+  "prompts": {},
+  "sessions": {
+    "s_bf1b9b3fe8912d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ebb9df82-ef5c-4d91-8577-13e1fde2cc3a",
+        "model": "claude-opus-5"
+      },
+      "human_author": "paulkarayan <pk@unstructured.io>"
+    }
+  }
+}

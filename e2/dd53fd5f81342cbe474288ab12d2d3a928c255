@@ -1,0 +1,29 @@
+test/integration/connectors/sql/test_teradata.py
+  s_f52b5c80431a12::t_195d06331abc6d 99,199,202,211,214-215,267-268,280,284-285,311-313,328,332-333,341-342,352,355,361,375-376,394-395,400,413-414,417,424,428-430
+  s_bf1b9b3fe8912d::t_1afd45c6efba84 8-20,26-34,41,59,62,69-71,76-77,80-81,106,142-150,154-157,159-163,166-167,169-171,177-187,192-198,201,207-210,212,239-266,269-279,281,283,292-310,320-327,329,331,340,349-351,353-354,356,384-393,409-412,425-427
+  s_bf1b9b3fe8912d::t_0a4dba6f0f9a37 85-98,100-105,107-110
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "e2dd53fd5f81342cbe474288ab12d2d3a928c255",
+  "prompts": {},
+  "sessions": {
+    "s_bf1b9b3fe8912d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ebb9df82-ef5c-4d91-8577-13e1fde2cc3a",
+        "model": "claude-opus-5"
+      },
+      "human_author": "paulkarayan <pk@unstructured.io>"
+    },
+    "s_f52b5c80431a12": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "42a941d7-b952-4f9e-bdd7-bc4729265fe8",
+        "model": "claude-opus-5"
+      },
+      "human_author": "paulkarayan <pk@unstructured.io>"
+    }
+  }
+}
