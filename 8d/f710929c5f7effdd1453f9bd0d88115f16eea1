@@ -1,0 +1,119 @@
+test/unit/connectors/test_registry_markers.py
+  s_d472f9b531af3b::t_a1aae685c6aa29 1-226
+unstructured_ingest/processes/connector_registry.py
+  s_d472f9b531af3b::t_e9d648d592ef10 2-3,29-37,40-45,57-60,81-86
+unstructured_ingest/processes/connectors/airtable.py
+  s_d472f9b531af3b::t_43c62a51839baa 20,99,240-242
+unstructured_ingest/processes/connectors/astradb.py
+  s_d472f9b531af3b::t_6d83c5db3432d2 45,154-160,181-182,394-399,454-455,470,472-473,584-585,588-589,592,600,604,628-630,639-641
+unstructured_ingest/processes/connectors/chroma.py
+  s_d472f9b531af3b::t_8873d0f2701e65 10,20-23,128-131,145-146,199-201
+unstructured_ingest/processes/connectors/confluence.py
+  s_d472f9b531af3b::t_ba33cb33a6a60c 34,85-88,171-175,263-264,271-272,284-285,693-695
+unstructured_ingest/processes/connectors/couchbase.py
+  s_d472f9b531af3b::t_63b4fd84eeb964 40,68-71,76-78,81-83,172-173,206-207,364-370,379-385
+unstructured_ingest/processes/connectors/databricks/volumes.py
+  s_d472f9b531af3b::t_fa955a4d3c084e 41-48,56
+unstructured_ingest/processes/connectors/databricks/volumes_native.py
+  s_d472f9b531af3b::t_25b6d50faa0376 8,85-91,100-106
+unstructured_ingest/processes/connectors/databricks/volumes_table.py
+  s_d472f9b531af3b::t_f002b72bd85140 21,34,43-52,218,230,251,261-269
+unstructured_ingest/processes/connectors/delta_table.py
+  s_d472f9b531af3b::t_8b34404475d158 12,22-25,63,153-154,314-315
+unstructured_ingest/processes/connectors/duckdb/motherduck.py
+  s_d472f9b531af3b::t_23de37038ac9f0 19-22,42,47,135-137
+unstructured_ingest/processes/connectors/elasticsearch/elasticsearch.py
+  s_d472f9b531af3b::t_9187e8d10fa1bc 41,154,175-176,365-366,400-401,449,451,453-454,457,459,461-463,472-475,484-486
+unstructured_ingest/processes/connectors/elasticsearch/opensearch.py
+  s_d472f9b531af3b::t_c6b4b7856aa9ee 29,302-303,490-491,575-577,587-589
+unstructured_ingest/processes/connectors/fsspec/azure.py
+  s_d472f9b531af3b::t_d72ca89ec2e976 11,15,123,134,207-209,218-219
+unstructured_ingest/processes/connectors/fsspec/box.py
+  s_d472f9b531af3b::t_d23e4e317dfcbc 15,20,275,284,440-442,451-452
+unstructured_ingest/processes/connectors/fsspec/dropbox.py
+  s_d472f9b531af3b::t_e183d763908b3e 22,135,155,231-233,242-243
+unstructured_ingest/processes/connectors/fsspec/fsspec.py
+  s_d472f9b531af3b::t_34830e1241d8bc 42-45,71
+unstructured_ingest/processes/connectors/fsspec/gcs.py
+  s_d472f9b531af3b::t_85d5dd7494725c 13,17,101,135,202-204,213-214
+unstructured_ingest/processes/connectors/fsspec/s3.py
+  s_d472f9b531af3b::t_11ebc91779e36b 17,246-248,257-258
+unstructured_ingest/processes/connectors/fsspec/sftp.py
+  s_d472f9b531af3b::t_9fdbdab79f8cdb 13,18,112-117,270,277-278,287-288
+unstructured_ingest/processes/connectors/gitlab.py
+  s_d472f9b531af3b::t_a3d2a66327d0a6 16,27-30,52-55,164-165,276-278
+unstructured_ingest/processes/connectors/google_drive.py
+  s_d472f9b531af3b::t_5ef9c51fad4173 16,27-30,183-186,227,403-404,406,1011-1014
+unstructured_ingest/processes/connectors/ibm_watsonx/ibm_watsonx_s3.py
+  s_d472f9b531af3b::t_3713d84fa656d9 26,92,108,113,116,189-190,208-211,376-378
+unstructured_ingest/processes/connectors/jira.py
+  s_d472f9b531af3b::t_dd68e8fe220d70 16,29,138-141,205-219,242-243,596-603
+unstructured_ingest/processes/connectors/kafka/cloud.py
+  s_d472f9b531af3b::t_53a72210adab0f 10,116-118,125-127
+unstructured_ingest/processes/connectors/kafka/kafka.py
+  s_d472f9b531af3b::t_38d80066ab84d2 48,85-88,186-187,223-226,253-254
+unstructured_ingest/processes/connectors/kdbai.py
+  s_d472f9b531af3b::t_297a7cca71ddfe 9,21,95-101,116-117,162-164
+unstructured_ingest/processes/connectors/local.py
+  s_d472f9b531af3b::t_66a93aae8c2f4f 31,54-55,61,166-168,225-227,235-237
+unstructured_ingest/processes/connectors/milvus.py
+  s_d472f9b531af3b::t_e0193ec8045b49 27,169-172,215-216,321-323
+unstructured_ingest/processes/connectors/mongodb.py
+  s_d472f9b531af3b::t_22a8208d31fe47 38,120-129,165-166,306-315,350-351,398-400,409-411
+unstructured_ingest/processes/connectors/neo4j.py
+  s_d472f9b531af3b::t_4b51de117da4c0 32,56-60,539-541
+unstructured_ingest/processes/connectors/onedrive.py
+  s_d472f9b531af3b::t_da94995397c6ea 39,236-237,255-256,640-641,693-694,791-794,803-805
+unstructured_ingest/processes/connectors/outlook.py
+  s_d472f9b531af3b::t_dacb72ee667db2 26-29,144-145,151-155,310-312
+unstructured_ingest/processes/connectors/pinecone.py
+  s_d472f9b531af3b::t_484341c2b38206 28-31,62-66,226-227,239-240,432-434
+unstructured_ingest/processes/connectors/qdrant/cloud.py
+  s_d472f9b531af3b::t_a701c89f0ce6f9 5-8,62-64
+unstructured_ingest/processes/connectors/qdrant/qdrant.py
+  s_d472f9b531af3b::t_9b3358e81318fc 99-102
+unstructured_ingest/processes/connectors/redisdb.py
+  s_d472f9b531af3b::t_6f3b39f6e32fb0 9,17-20,52-57,165-166,222-224
+unstructured_ingest/processes/connectors/salesforce.py
+  s_d472f9b531af3b::t_51e8b5c235b852 45,134,151-152,308-310
+unstructured_ingest/processes/connectors/sharepoint.py
+  s_d472f9b531af3b::t_afd636557d4003 6,23,61-62,95,104-121,130,147,178-180,203-205,213-215,223-225,251,274,285-292,305-308
+unstructured_ingest/processes/connectors/slack.py
+  s_d472f9b531af3b::t_7a76dbf5b0ff09 23,34-37,204-205,255-259,464,466-469,614-617
+unstructured_ingest/processes/connectors/sql/postgres.py
+  s_d472f9b531af3b::t_5305a27e689065 12,48,87,167-169,178-180
+unstructured_ingest/processes/connectors/sql/singlestore.py
+  s_d472f9b531af3b::t_b7406da6e99d38 13,49-53,179-181,190-192
+unstructured_ingest/processes/connectors/sql/snowflake.py
+  s_d472f9b531af3b::t_bc1e6c853ea9b2 13,73-79,122,339-345,354-360
+unstructured_ingest/processes/connectors/sql/sql.py
+  s_d472f9b531af3b::t_de9606641beb16 21,123-124,324-328,347-348
+unstructured_ingest/processes/connectors/sql/teradata.py
+  s_d472f9b531af3b::t_6644c8e196e828 21,250,298,465,667-669,678-680
+unstructured_ingest/processes/connectors/sql/vastdb.py
+  s_d472f9b531af3b::t_7256b725abe8c4 15,54-55,256-258,267-273
+unstructured_ingest/processes/connectors/vectara.py
+  s_d472f9b531af3b::t_a37df5c60f0d41 12,22-25,42-44,129-130,353-355
+unstructured_ingest/processes/connectors/weaviate/cloud.py
+  s_d472f9b531af3b::t_f9ae6c7988aa1f 8-11,169-171
+unstructured_ingest/processes/connectors/weaviate/weaviate.py
+  s_d472f9b531af3b::t_af71d908e5d1d5 14,216,355-356
+unstructured_ingest/processes/connectors/zendesk/zendesk.py
+  s_d472f9b531af3b::t_24858e99a0510d 27-30,55-58,74,248-250
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "8df710929c5f7effdd1453f9bd0d88115f16eea1",
+  "prompts": {},
+  "sessions": {
+    "s_d472f9b531af3b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f5682a0f-7b3f-4a34-8b9f-141fe1c40335",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Trevor Bossert <alanboss@gmail.com>"
+    }
+  }
+}
