@@ -230,17 +230,24 @@ def strict_table() -> Generator[str, None, None]:
 
 
 def leftover_probe_tables() -> list[str]:
-    """Probe tables a precheck created in the configured database and did not drop.
+    """Probe tables a precheck created in the database it writes to and did not drop.
+
+    The database comes from `SELECT DATABASE`, the way the connector resolves it, not from
+    TERADATA_DATABASE: with that blank the probe lands in the session default and a filter
+    on the configured value would match nothing, so the caller's assertion would pass
+    without having looked anywhere.
 
     `_` is a LIKE wildcard, so the prefix is escaped; without that this also matches any
     table whose name merely resembles the prefix. Assumes nothing else is prechecking this
     database under the same credential while the test runs.
     """
     with get_cursor() as cursor:
+        cursor.execute("SELECT DATABASE")
+        database = cursor.fetchone()[0].strip()
         cursor.execute(
             "SELECT TableName FROM DBC.TablesV WHERE DatabaseName = ? "
             "AND TableName LIKE 'unstructured#_precheck#_%' ESCAPE '#'",
-            [get_env_data().database],
+            [database],
         )
         return [row[0].strip() for row in cursor.fetchall()]
 
