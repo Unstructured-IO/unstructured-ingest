@@ -596,7 +596,7 @@ def test_teradata_indexer_precheck_table_not_found_raises_user_error(
         _FakeTeradataDriverError("[Error 3807] Object 'year' does not exist"),
     ]
 
-    with pytest.raises(UserError, match=r"3807.*does not exist or user has no privilege.*'year'"):
+    with pytest.raises(UserError, match=r"3807.*object does not exist.*'year'"):
         teradata_indexer.precheck()
 
     assert mock_cursor.execute.call_count == 2
@@ -1320,7 +1320,7 @@ def test_extract_teradata_error_code(message: str, expected_code: int | None):
 @pytest.mark.parametrize(
     ("code", "fragment"),
     [
-        (3807, "does not exist or user has no privilege"),
+        (3807, "object does not exist"),
         (3523, "user does not have the required privilege"),
         (3706, "SQL syntax error"),
         (3707, "SQL syntax error"),
@@ -2070,8 +2070,8 @@ def test_teradata_no_privilege_codes_are_write_denials(
 @pytest.mark.parametrize(
     "code",
     [
-        # Teradata hides objects a user cannot see, so 3807 means "no such table" or
-        # "no rights on it" and cannot be reported as either one.
+        # 3807 is the server saying the object was not found. Refusing a read of an
+        # object that IS there is 3523, which names it, so this is not a denial code.
         3807,
         3706,
         3754,
@@ -2124,6 +2124,7 @@ def test_teradata_precheck_refuses_a_credential_that_cannot_insert(
         None,  # SELECT 1
         None,  # SELECT DATABASE
         None,  # DBC.TablesV lookup: the table exists
+        None,  # SELECT TOP 1 read probe: this credential may read it
         _FakeTeradataDriverError("[Teradata Database] [Error 3523] no INSERT access"),
     ]
 
@@ -2140,6 +2141,7 @@ def test_teradata_precheck_refuses_a_credential_that_cannot_delete(
         None,  # SELECT 1
         None,  # SELECT DATABASE
         None,  # DBC.TablesV lookup: the table exists
+        None,  # SELECT TOP 1 read probe: this credential may read it
         None,  # INSERT probe: this credential may insert
         _FakeTeradataDriverError("[Teradata Database] [Error 3523] no DELETE access"),
     ]
@@ -2602,3 +2604,330 @@ def test_teradata_precheck_refusal_omits_the_table_name_hint_when_one_is_configu
         teradata_uploader.precheck()
 
     assert "Table Name" not in str(excinfo.value)
+
+
+# --- the table that is there and this credential cannot read ------------------
+# An admin creates the destination table; the connector's user holds nothing on it.
+# Measured on Vantage 20.0.0.68, that read answers 3523 and names the table, so the
+# refusal needs no disambiguation -- what was missing is that nothing read the table at
+# all. 3807 deliberately does NOT refuse, even with a dictionary row: see
+# test_teradata_precheck_passes_when_an_existing_table_reads_as_missing.
+
+_READ_PROBE = 'SELECT TOP 1 * FROM "test_table"'
+
+
+def test_teradata_precheck_refuses_a_table_the_credential_cannot_see(
+    teradata_uploader: TeradataUploader, mock_get_cursor, mock_cursor
+):
+    """An admin created the destination table; the connector user holds nothing on it.
+
+    The dictionary lists the table, so create_destination() will not build one and the
+    job goes straight at a table this credential cannot read. Before this was refused the
+    connector check reported Successful and every record then failed.
+    """
+    statements = _scripted_cursor(
+        mock_cursor,
+        exists=True,
+        fail={
+            _READ_PROBE: _FakeTeradataDriverError(
+                "[Version 20.0.0.15] [Session 42] [Teradata Database] [Error 3523] "
+                "The user does not have SELECT access to test_db.test_table. "
+                "logon user=admin password=hunter2"
+            )
+        },
+    )
+
+    with pytest.raises(UserError) as excinfo:
+        teradata_uploader.precheck()
+
+    message = str(excinfo.value)
+    assert excinfo.value.status_code == 422
+    assert "SELECT permission on table 'test_table'" in message
+    assert "hunter2" not in message
+    # The message says what the server did, not why. A customer-facing string must not
+    # assert a mechanism no Teradata manual documents.
+    for unsourced in ("cannot see", "hides", "hidden", "no privilege on it"):
+        assert unsourced not in message
+    # Nothing was created to find that out, and the write probes never ran: the read the
+    # upload does first is already refused.
+    assert not any(s.startswith(("CREATE", "DROP", "INSERT", "DELETE")) for s in statements)
+
+
+def test_teradata_precheck_refuses_a_read_the_server_denied_outright(
+    teradata_uploader: TeradataUploader, mock_get_cursor, mock_cursor
+):
+    """3523 on the read needs no disambiguating -- it means "no privilege" and nothing
+    else -- but it reached nobody before, because the schema read's denial is swallowed
+    on this dialect (see _classify_schema_read_denial in sql.py)."""
+    _scripted_cursor(
+        mock_cursor,
+        exists=True,
+        fail={
+            _READ_PROBE: _FakeTeradataDriverError(
+                "[Teradata Database] [Error 3523] The user does not have SELECT access to "
+                "test_db.test_table. password=hunter2"
+            )
+        },
+    )
+
+    with pytest.raises(UserError) as excinfo:
+        teradata_uploader.precheck()
+
+    assert "SELECT permission on table 'test_table'" in str(excinfo.value)
+    assert "hunter2" not in str(excinfo.value)
+
+
+# Captured verbatim from Vantage 20.0.0.68 on 2026-09-24, reading a table listed in
+# DBC.TablesV that the connecting user held no rights on. Every other driver error in this
+# file is written by hand, and none of them carries the [SQLState NNNNN] segment the real
+# server puts between the error code and the text.
+_MEASURED_3523 = (
+    "[Version 20.0.0.68] [Session 168281] [Teradata Database] [Error 3523] "
+    "[SQLState 42000] The user does not have SELECT access to "
+    "PDCRDATA.PDCR_Table_Retention."
+)
+
+
+def test_teradata_precheck_refuses_the_response_the_server_actually_sends(
+    teradata_uploader: TeradataUploader, mock_get_cursor, mock_cursor
+):
+    """The customer's case, answered in the server's own words.
+
+    This is the one case in this file whose driver error was measured rather than
+    composed, so it is what pins the parser against the real wire format: an
+    [SQLState 42000] sits between the code and the message, and _extract_teradata_error_code
+    has to reach past it. A regex tightened to expect the text right after [Error NNNN]
+    would pass every other test here and drop this refusal on the real server.
+    """
+    _scripted_cursor(
+        mock_cursor,
+        exists=True,
+        fail={_READ_PROBE: _FakeTeradataDriverError(_MEASURED_3523)},
+    )
+
+    with pytest.raises(UserError) as excinfo:
+        teradata_uploader.precheck()
+
+    assert excinfo.value.status_code == 422
+    assert "SELECT permission on table 'test_table'" in str(excinfo.value)
+
+
+def test_teradata_error_code_survives_the_sqlstate_segment(
+    teradata_uploader: TeradataUploader,
+):
+    """_extract_teradata_error_code on the measured format, without the precheck around it."""
+    assert _extract_teradata_error_code(_FakeTeradataDriverError(_MEASURED_3523)) == 3523
+
+
+def test_teradata_precheck_passes_when_the_configured_table_is_simply_absent(
+    teradata_uploader: TeradataUploader, mock_get_cursor, mock_cursor
+):
+    """The false-failure rule. With no row in DBC.TablesV the 3807 means what it usually
+    means -- create_destination() has not built the table yet -- and that destination works
+    today. Nothing may refuse it."""
+    statements = _scripted_cursor(
+        mock_cursor,
+        exists=False,
+        fail={
+            _READ_PROBE: _FakeTeradataDriverError(
+                "[Teradata Database] [Error 3807] Object 'test_table' does not exist."
+            )
+        },
+    )
+
+    teradata_uploader.precheck()  # must not raise
+
+    # The read probe is not even issued: it is the dictionary row that makes 3807 readable,
+    # and there is none. The one read here is get_table_columns()'s, on the write-probe path.
+    assert statements.count(_READ_PROBE) == 1
+    assert any(s.startswith(_PROBE_CREATE_PREFIX) for s in statements)
+
+
+@pytest.mark.parametrize(
+    "code",
+    [
+        2644,  # no more room in the database
+        3706,  # syntax error
+        9999,
+    ],
+)
+def test_teradata_precheck_passes_when_the_read_probe_fails_for_another_reason(
+    teradata_uploader: TeradataUploader, mock_get_cursor, mock_cursor, caplog, code: int
+):
+    _scripted_cursor(
+        mock_cursor,
+        exists=True,
+        fail={_READ_PROBE: _FakeTeradataDriverError(f"[Teradata Database] [Error {code}] x")},
+    )
+
+    with caplog.at_level(logging.INFO, logger="unstructured_ingest"):
+        teradata_uploader.precheck()  # must not raise
+
+    assert "read check on existing table 'test_table' inconclusive" in caplog.text
+
+
+def test_teradata_precheck_passes_when_the_read_probe_is_not_a_driver_error(
+    teradata_uploader: TeradataUploader, mock_get_cursor, mock_cursor
+):
+    """No code to read, so nothing is established. RuntimeError carries a denial code in
+    its text on purpose: the module check, not the text, is what qualifies an error."""
+    _scripted_cursor(
+        mock_cursor,
+        exists=True,
+        fail={_READ_PROBE: RuntimeError("[Teradata Database] [Error 3523] not from the driver")},
+    )
+
+    teradata_uploader.precheck()  # must not raise
+
+
+def test_teradata_precheck_read_probe_hands_its_columns_to_the_write_probes(
+    teradata_uploader: TeradataUploader, mock_get_cursor, mock_cursor
+):
+    """The probe runs get_table_columns()'s own statement, so the server is asked once."""
+    statements = _scripted_cursor(mock_cursor, exists=True)
+    mock_cursor.description = [("id",), ("record_id",)]
+
+    teradata_uploader.precheck()
+
+    assert statements.count(_READ_PROBE) == 1
+    assert teradata_uploader._columns == ["id", "record_id"]
+    assert (
+        'INSERT INTO "test_table" ("id","record_id") SELECT "id","record_id" '
+        'FROM "test_table" WHERE 1 = 0'
+    ) in statements
+
+
+def test_teradata_invisible_table_refusal_points_at_the_database_field_when_it_is_blank(
+    teradata_access_config: TeradataAccessConfig, mock_get_cursor, mock_cursor
+):
+    """Blank Database field: the database named in the refusal is only the session default,
+    which is the ambiguity this whole check came out of."""
+    uploader = TeradataUploader(
+        connection_config=TeradataConnectionConfig(
+            host="test-host.teradata.com",
+            user="test_user",
+            database=None,
+            access_config=Secret(teradata_access_config),
+        ),
+        upload_config=TeradataUploaderConfig(table_name="test_table", record_id_key="record_id"),
+    )
+    _scripted_cursor(
+        mock_cursor,
+        exists=True,
+        fail={
+            _READ_PROBE: _FakeTeradataDriverError(
+                "[Teradata Database] [Error 3523] The user does not have SELECT access "
+                "to admin_db.test_table."
+            )
+        },
+    )
+    mock_cursor.fetchone.side_effect = [("admin_db",), (1,)]
+
+    with pytest.raises(UserError) as excinfo:
+        uploader.precheck()
+
+    message = str(excinfo.value)
+    assert "SELECT permission on table 'test_table'" in message
+    assert "The Database field on this connector is blank" in message
+
+
+@pytest.mark.parametrize("code", [3523, 5612, 5315, 3524])
+def test_teradata_read_denial_classifier_names_the_grant_on_an_unambiguous_refusal(
+    teradata_uploader: TeradataUploader, code: int
+):
+    """These codes mean "no privilege" and cannot mean anything else, so the message may
+    say which grant is missing."""
+    error = _FakeTeradataDriverError(f"[Teradata Database] [Error {code}] denied")
+
+    reason = teradata_uploader._classify_existing_table_read_denial(
+        error, database="test_db", table_name="test_table"
+    )
+
+    assert reason is not None
+    assert "SELECT permission on table 'test_table'" in reason
+
+
+def test_teradata_read_denial_classifier_does_not_refuse_on_3807(
+    teradata_uploader: TeradataUploader,
+):
+    """3807 means the object was not found, and a dictionary row does not outrank that.
+
+    The table can be dropped between the lookup and this read, and a destination whose
+    table is absent WORKS -- create_destination() builds it. Refusing here would convert
+    that race into the one outcome this check must never produce.
+    """
+    error = _FakeTeradataDriverError("[Teradata Database] [Error 3807] Object does not exist.")
+
+    assert (
+        teradata_uploader._classify_existing_table_read_denial(
+            error, database="test_db", table_name="test_table"
+        )
+        is None
+    )
+
+
+@pytest.mark.parametrize("code", [2644, 3706, 3753, 9999])
+def test_teradata_read_denial_classifier_passes_everything_else(
+    teradata_uploader: TeradataUploader, code: int
+):
+    error = _FakeTeradataDriverError(f"[Teradata Database] [Error {code}] something")
+
+    assert (
+        teradata_uploader._classify_existing_table_read_denial(
+            error, database="test_db", table_name="test_table"
+        )
+        is None
+    )
+
+
+def test_teradata_existence_lookup_covers_a_table_with_no_primary_index(
+    teradata_uploader: TeradataUploader, mock_get_cursor, mock_cursor
+):
+    """A NoPI table is TableKind 'O', not 'T' (Data Dictionary B035-1092).
+
+    An admin who pre-creates the destination without a primary index files it under 'O',
+    and a lookup pinned to 'T' reads that table as absent: the refusal below never runs,
+    the CREATE probe takes over, and the credential passes the check exactly as before.
+    The predicate is asserted alongside the refusal because the mock answers the lookup
+    by script, not by matching it.
+    """
+    statements = _scripted_cursor(
+        mock_cursor,
+        exists=True,
+        fail={
+            _READ_PROBE: _FakeTeradataDriverError(
+                "[Teradata Database] [Error 3523] The user does not have SELECT access "
+                "to test_db.test_table."
+            )
+        },
+    )
+
+    with pytest.raises(UserError):
+        teradata_uploader.precheck()
+
+    lookup = next(s for s in statements if "DBC.TablesV" in s)
+    assert "TableKind IN ('T','O')" in lookup
+
+
+def test_teradata_precheck_passes_when_an_existing_table_reads_as_missing(
+    teradata_uploader: TeradataUploader, mock_get_cursor, mock_cursor
+):
+    """The dictionary says the table is there and the read says it is not: do NOT refuse.
+
+    An admin can drop the table between the two statements, and the upload that follows
+    would find it absent and have create_destination() build it, then write successfully.
+    Refusing on 3807 here would turn that race into a working destination reported as
+    broken, which is the one failure this check is not allowed to produce. No measured
+    server answers 3807 for the no-privilege case, so nothing is given up by passing.
+    """
+    _scripted_cursor(
+        mock_cursor,
+        exists=True,
+        fail={
+            _READ_PROBE: _FakeTeradataDriverError(
+                "[Teradata Database] [Error 3807] Object 'test_table' does not exist."
+            )
+        },
+    )
+
+    teradata_uploader.precheck()  # must not raise

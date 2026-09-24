@@ -83,9 +83,13 @@ _TERADATA_ERROR_CODE_RE = re.compile(r"\[Error (\d+)\]")
 # mismatch); these never benefit from retry. Codes not listed here fall through
 # unchanged so the existing retry / wrapping behaviour is preserved.
 #
-# 3807 is overloaded: Teradata returns it for both "object does not exist" and
-# "user has no privilege on the object" (existence is hidden from unprivileged
-# users). The descriptor reflects both possibilities.
+# 3807 is "Object '%VSTR' does not exist." and, as far as anything has ever shown
+# us, nothing else. This comment used to say the code was overloaded because
+# Teradata hides objects an unprivileged user may not see; that is wrong, and it
+# was asserted here without a source. Measured on Vantage 20.0.0.68: of 795 tables
+# DBC.TablesV lists, 360 are reachable, and reading any of the other 435 answers
+# 3523 "The user does not have SELECT access to <database>.<table>" -- named, every
+# time, qualified or not. The denial for an object that IS there is 3523.
 #
 # 3753/3754 are implicit-conversion failures — most often hit when a table is
 # pre-created with the wrong column type for the value being inserted/queried,
@@ -130,7 +134,7 @@ _TERADATA_ERROR_CODE_RE = re.compile(r"\[Error (\d+)\]")
 # and deliberately not there, and every code in the value-rejection group below belongs
 # here only. Decide for both when you add one.
 _USER_FAULT_TERADATA_CODES: Mapping[int, str] = MappingProxyType({
-    3807: "object does not exist or user has no privilege on it",
+    3807: "object does not exist",
     3523: "user does not have the required privilege",
     3706: "SQL syntax error",
     3707: "SQL syntax error",
@@ -555,6 +559,11 @@ _WRITE_DENIAL_TERADATA_CODES = frozenset({3523, 3524, 5315, 5612})
 # So the 3523 message must NOT tell the customer CREATE TABLE is what they are missing.
 _CREATE_TABLE_DENIAL_CODE = 3524
 _CREATE_PRIVILEGE_DENIAL_CODE = 3523
+# Teradata 3807, "Object '%VSTR' does not exist." NOTHING in this module refuses on it, at
+# any site, and a dictionary row saying the table exists does not change that: the table
+# can be dropped between the lookup and the read, and a destination whose table is absent
+# works, because create_destination() builds it. Refusing on 3807 anywhere would turn that
+# race into a working destination that gets refused.
 # Recognisable on sight if a DROP fails and a probe table is left behind.
 _PRECHECK_PROBE_TABLE_PREFIX = "unstructured_precheck_"
 
@@ -633,15 +642,22 @@ class TeradataUploader(SQLUploader):
             self.check_write_permissions()
 
     def check_create_table_permission(self) -> None:
-        """Refuse a credential that cannot create the table create_destination() will create.
+        """Refuse a credential that cannot create -- or cannot even see -- the destination.
 
-        Resolve the database the write lands in, then CREATE and DROP the real destination
-        table under a throwaway name, unless the configured table already exists in that
-        database. With no table configured the probe always runs: the caller names the
-        table at create_destination() time (the platform passes a per-workflow name), so
-        precheck cannot look it up. Refuses on 3524 and 3523, the two codes that mean a
-        right was refused and nothing else; any other failure is logged and passes, the
-        same one-sided contract as check_write_permissions().
+        Resolve the database the write lands in, then take one of two branches on what
+        DBC.TablesV says about the configured table:
+
+        * absent: create_destination() will build it, so CREATE and DROP the real
+          destination table under a throwaway name.
+        * present: create_destination() will not build anything, so the job's first act on
+          that table is to read it. :meth:`_probe_existing_table_read` asks whether this
+          credential can.
+
+        With no table configured the CREATE probe always runs: the caller names the table
+        at create_destination() time (the platform passes a per-workflow name), so precheck
+        cannot look it up. Refuses only on codes that mean a right was refused and nothing
+        else; any other failure, 3807 included, is logged and passes, the same one-sided
+        contract as check_write_permissions().
         """
         table_name = self.upload_config.table_name
         denial: Optional[str] = None
@@ -659,8 +675,11 @@ class TeradataUploader(SQLUploader):
                         f"nothing for create_destination() to create, skipping the "
                         f"CREATE TABLE probe"
                     )
-                    return
-                denial, created = self._probe_table_creation(cursor, database=database)
+                    denial = self._probe_existing_table_read(
+                        cursor, database=database, table_name=table_name
+                    )
+                else:
+                    denial, created = self._probe_table_creation(cursor, database=database)
         except Exception as e:
             # A refusal the server has already given is not undone by a failure on the way
             # out: the cursor close and get_connection()'s own commit/close both run after
@@ -696,9 +715,22 @@ class TeradataUploader(SQLUploader):
 
     def _table_exists(self, cursor: "TeradataCursor", *, database: str, table_name: str) -> bool:
         # Shared with create_destination(), so "absent" here means it will CREATE.
+        #
+        # Both base-table kinds, not just 'T'. Teradata files a table with no primary index
+        # and no partitioning under TableKind 'O' (Data Dictionary, B035-1092, TableKind
+        # values), and an admin who pre-creates the destination as NoPI is the case this
+        # lookup exists to catch: pinned to 'T' their table reads as absent, this connector
+        # tries to CREATE its own on top of it, and the precheck goes back to passing a
+        # credential that cannot touch it.
+        #
+        # The other kinds that would also block a CREATE of this name -- a view, a queue
+        # table, a macro -- stay out on purpose. They are not things upload_dataframe can
+        # read and INSERT into, so calling one of them "the destination already exists"
+        # would make create_destination() hand the upload an object it cannot use instead
+        # of the 3803 it raises today. That is a different defect with a different answer.
         cursor.execute(
             "SELECT 1 FROM DBC.TablesV "
-            "WHERE TableName = ? AND DatabaseName = ? AND TableKind = 'T'",
+            "WHERE TableName = ? AND DatabaseName = ? AND TableKind IN ('T','O')",
             [table_name, database],
         )
         return cursor.fetchone() is not None
@@ -748,6 +780,81 @@ class TeradataUploader(SQLUploader):
                 f"'{database}', drop it by hand: {self._probe_error_detail(e)}"
             )
         return None, True
+
+    def _probe_existing_table_read(
+        self, cursor: "TeradataCursor", *, database: str, table_name: str
+    ) -> Optional[str]:
+        """Refuse a credential that cannot read the table it is about to be told it writes.
+
+        Runs only after DBC.TablesV has said the configured table IS in this session's
+        database, and that ordering is the whole reason the answer is readable: TablesV is
+        the NON-restricted form of the view, returning every object an entry exists for,
+        where TablesVX returns only what the caller owns, created, was granted, or reaches
+        through a role. So the row just read is an existence fact that does not depend on
+        this credential's rights, and a refused read of that table describes a destination
+        the upload cannot use whichever code the refusal carries. Do not move this probe
+        ahead of the dictionary lookup.
+
+        The statement is get_table_columns()'s own, unqualified and quoted the same way,
+        so the right asked for is the right the upload needs first and nothing wider:
+        upload_dataframe cannot name the columns of its INSERT without it.
+
+        One-sided like every other probe here: an unrecognised failure is logged and
+        passes. The one thing it can be wrong about is a table dropped between the
+        dictionary read and this one, where "not found" is the truth -- a destination
+        nothing else could have written to either.
+        """
+        statement = f"SELECT TOP 1 * FROM {self._quote_identifier(table_name)}"
+        try:
+            logger.debug(f"running existing-table read probe: {statement}")
+            cursor.execute(statement)
+        except Exception as e:
+            denial = self._classify_existing_table_read_denial(
+                e, database=database, table_name=table_name
+            )
+            if denial is None:
+                logger.info(
+                    f"read check on existing table '{table_name}' inconclusive: "
+                    f"{self._probe_error_detail(e)}"
+                )
+                return None
+            logger.error(
+                f"destination credentials cannot read existing table '{table_name}' in "
+                f"database '{database}': {self._probe_error_detail(e)}"
+            )
+            return denial
+        # Same statement, same cursor description get_table_columns() would have read a
+        # moment later, so hand it over rather than making check_write_permissions() ask
+        # the server the identical question again.
+        columns = [desc[0] for desc in cursor.description or []]
+        if columns and self._columns is None:
+            self._columns = columns
+        return None
+
+    def _classify_existing_table_read_denial(
+        self, error: Exception, *, database: str, table_name: str
+    ) -> Optional[str]:
+        """The message for a read of an existing table the server refused, else None.
+
+        One family qualifies. The codes in _WRITE_DENIAL_TERADATA_CODES say "no privilege"
+        and cannot mean anything else, so they refuse here exactly as they do on the write
+        probes, and the message can name the missing grant. That is the branch the
+        customer case lands on: a read refused on an existing table answers 3523 on the
+        server we measured.
+
+        3807 does NOT refuse here, even though the dictionary said the table exists a
+        moment earlier, because the two facts together do not rule out a destination that
+        works. If the table is dropped between the lookup and this read, the server answers
+        3807 truthfully, and the upload would then find it absent and have
+        create_destination() build it. Refusing on 3807 would turn that race into the one
+        outcome this check must never produce: a destination that works, refused. No
+        measured server answers 3807 for the no-privilege case, so nothing is lost.
+        """
+        if not _is_teradata_driver_error(error):
+            return None
+        if _extract_teradata_error_code(error) in _WRITE_DENIAL_TERADATA_CODES:
+            return self._write_denied_message("SELECT") + self._blank_database_hint()
+        return None
 
     def _classify_create_denial(self, error: Exception, *, database: str) -> Optional[str]:
         """The message for a CREATE the server refused on rights, else None.
@@ -851,9 +958,12 @@ class TeradataUploader(SQLUploader):
 
         Only the four codes that say "no privilege" and nothing else are treated as a
         refusal. 3807 is in ``_USER_FAULT_TERADATA_CODES`` and is deliberately left out
-        here: Teradata returns it both for an object that does not exist and for one the
-        user has no rights on, because it hides the existence of objects a user cannot
-        see, and a wrong table name must not be reported as a permissions problem.
+        here: it is the server saying the object was not found, and a wrong table name
+        must not be reported as a permissions problem. Teradata does not hide an existing
+        object behind it -- refusing a read of one that is there is 3523, which names the
+        database and the table -- so this is not the ambiguity it was once commented as.
+        :meth:`_probe_existing_table_read` may still refuse on 3807, for a server that
+        answers it where the one we measured answers 3523.
         """
         if not _is_teradata_driver_error(error):
             return None

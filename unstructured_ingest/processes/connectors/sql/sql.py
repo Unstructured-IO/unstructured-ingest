@@ -513,9 +513,11 @@ class SQLUploader(Uploader):
         is already wrapped and the dialect classifier, which tests the exception's module,
         does not recognize it. Re-raising that ``UserError`` unconditionally is the obvious
         move and is wrong: ``_USER_FAULT_TERADATA_CODES`` maps 3807 to "object does not
-        exist or user has no privilege on it", and a configured table that does not exist
-        yet is a working teradata destination, because ``create_destination()`` builds it
-        at upload time. That would refuse a destination that works today.
+        exist", and a configured table that does not exist yet is a working teradata
+        destination, because ``create_destination()`` builds it at upload time. That would
+        refuse a destination that works today. The teradata uploader closes the half that
+        matters in its own precheck instead (``_probe_existing_table_read``), where the
+        data dictionary has already said the table is there.
         """
         try:
             return self.classify_write_denial(error, privilege="SELECT")
