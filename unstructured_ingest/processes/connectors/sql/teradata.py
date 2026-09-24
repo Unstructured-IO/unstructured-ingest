@@ -48,6 +48,26 @@ CONNECTOR_TYPE = "teradata"
 DEFAULT_TABLE_NAME = "unstructuredautocreated"
 
 
+def _elements_schema_sql(table_name: str) -> str:
+    """The destination table's real DDL, with ``table_name`` in place of the asset's name.
+
+    ``create_destination()`` and the CREATE TABLE precheck probe both run this, so the
+    probe asks the server for exactly the statement the upload will run. A narrower probe
+    (a single-INTEGER-column table) passes a credential the real CREATE refuses: the
+    asset's CLOB, VECTOR32, JSON and PRIMARY INDEX are the parts that can need a right
+    CREATE TABLE alone does not carry.
+
+    The statement is UNQUALIFIED, so it lands in the session's database. That is where
+    ``create_destination()`` puts the table, and it keeps the database name out of
+    interpolated SQL entirely.
+    """
+    schema_file = Path(__file__).parents[1] / "assets" / "teradata_elements_schema.sql"
+    with schema_file.open() as f:
+        schema_lines = f.readlines()
+    schema_lines[0] = schema_lines[0].replace("elements", table_name)
+    return "".join(line.strip() for line in schema_lines)
+
+
 def _sanitize_table_name(name: str) -> str:
     """Replace characters not in [A-Za-z0-9_] with underscores and ensure no leading digit."""
     sanitized = re.sub(r"[^A-Za-z0-9_]", "_", name)
@@ -520,8 +540,21 @@ class TeradataUploadStager(SQLUploadStager):
 # 3524 "no <privilege> access to database" is a privilege refusal and nothing else: in both.
 _WRITE_DENIAL_TERADATA_CODES = frozenset({3523, 3524, 5315, 5612})
 
-# The only answer to the CREATE TABLE probe that refuses the destination.
+# The two answers to the CREATE TABLE probe that refuse the destination. The probe runs
+# create_destination()'s own DDL under a throwaway name, so a right the server refuses it
+# is a right the real CREATE needs; both codes are in _WRITE_DENIAL_TERADATA_CODES above
+# for the same reason -- each says "no privilege" and cannot mean anything else.
+#
+# Neither names the right in its code: Teradata's templates are "%FSTR does not have %VSTR
+# access to database %DBID" (3524) and "%FSTR does not have %VSTR access to %DBID.%TVMID"
+# (3523), so what differs is the GRANULARITY of the object refused -- a database, or an
+# object inside one -- and %VSTR is whatever right the statement needed. On a CREATE TABLE
+# the database-level one is the CREATE TABLE right itself. The object-level one is not, and
+# the destination table has a VECTOR32 column, which is a UDT: a table with a UDT column
+# needs UDTUSAGE on SYSUDTLIB as well, and refusing that is 3523 against SYSUDTLIB.<type>.
+# So the 3523 message must NOT tell the customer CREATE TABLE is what they are missing.
 _CREATE_TABLE_DENIAL_CODE = 3524
+_CREATE_PRIVILEGE_DENIAL_CODE = 3523
 # Recognisable on sight if a DROP fails and a probe table is left behind.
 _PRECHECK_PROBE_TABLE_PREFIX = "unstructured_precheck_"
 
@@ -567,13 +600,11 @@ class TeradataUploader(SQLUploader):
             if self._table_exists(cursor, database=current_db, table_name=table_name):
                 return False
 
-        connectors_dir = Path(__file__).parents[1]
-        schema_file = connectors_dir / "assets" / "teradata_elements_schema.sql"
-        with schema_file.open() as f:
-            schema_lines = f.readlines()
-        schema_lines[0] = schema_lines[0].replace("elements", table_name)
-        schema_sql = "".join(line.strip() for line in schema_lines)
-        logger.info(f"creating table {table_name} for user")
+        schema_sql = _elements_schema_sql(table_name)
+        # The database is on this line because the statement below does not name one:
+        # it lands in the session's database, which is the configured one when the
+        # connector sets it and the user's default when the Database field is blank.
+        logger.info(f"creating table {table_name} in database '{current_db}' for user")
         try:
             with self.get_cursor() as cursor:
                 cursor.execute(schema_sql)
@@ -604,14 +635,18 @@ class TeradataUploader(SQLUploader):
     def check_create_table_permission(self) -> None:
         """Refuse a credential that cannot create the table create_destination() will create.
 
-        Resolve the database the write lands in, then CREATE and DROP a throwaway table
-        there, unless the configured table already exists in it. With no table configured
-        the probe always runs: the caller names the table at create_destination() time
-        (the platform passes a per-workflow name), so precheck cannot look it up. Refuses
-        on 3524 alone; any other failure is logged and passes, the same one-sided contract
-        as check_write_permissions().
+        Resolve the database the write lands in, then CREATE and DROP the real destination
+        table under a throwaway name, unless the configured table already exists in that
+        database. With no table configured the probe always runs: the caller names the
+        table at create_destination() time (the platform passes a per-workflow name), so
+        precheck cannot look it up. Refuses on 3524 and 3523, the two codes that mean a
+        right was refused and nothing else; any other failure is logged and passes, the
+        same one-sided contract as check_write_permissions().
         """
         table_name = self.upload_config.table_name
+        denial: Optional[str] = None
+        created = False
+        database: Optional[str] = None
         try:
             with self.get_cursor() as cursor:
                 database = self._session_database(cursor)
@@ -619,23 +654,43 @@ class TeradataUploader(SQLUploader):
                 if table_name and self._table_exists(
                     cursor, database=database, table_name=table_name
                 ):
+                    logger.info(
+                        f"table '{table_name}' already exists in database '{database}': "
+                        f"nothing for create_destination() to create, skipping the "
+                        f"CREATE TABLE probe"
+                    )
                     return
-                denied = self._probe_table_creation(cursor, database=database)
+                denial, created = self._probe_table_creation(cursor, database=database)
         except Exception as e:
-            logger.warning(
-                f"CREATE TABLE permission check inconclusive: {self._probe_error_detail(e)}"
-            )
-            return
-        if denied:
-            raise UserError(
-                self._write_denied_message(
-                    "CREATE TABLE", object_kind="database", object_name=database
+            # A refusal the server has already given is not undone by a failure on the way
+            # out: the cursor close and get_connection()'s own commit/close both run after
+            # the CREATE came back refused, and dropping the refusal there would pass a
+            # credential the server just told us cannot write. Only an inconclusive probe
+            # passes here.
+            if denial is None:
+                logger.info(
+                    f"CREATE TABLE permission check inconclusive: {self._probe_error_detail(e)}"
                 )
+                return
+            logger.warning(
+                f"CREATE TABLE permission check hit {safe_error_summary(e)} after the server "
+                f"refused the create; the refusal stands"
+            )
+        if denial:
+            raise UserError(denial)
+        if created:
+            # Only a CREATE the server actually accepted certifies the right. A probe that
+            # failed for a reason this check cannot read is inconclusive, and saying the
+            # credentials can create the table there would be reporting a result nobody got.
+            logger.info(
+                f"destination credentials can create the destination table in database '{database}'"
             )
 
     def _session_database(self, cursor: "TeradataCursor") -> str:
         # The configured database when set (get_connection() makes it the session
-        # default), as the server spells it; the probe quotes it, so the spelling matters.
+        # default), as the server spells it. Nothing interpolates it into SQL -- the
+        # probe runs unqualified in this same session -- but it is what the log lines
+        # and the refusal message name, so a customer can match it against their grants.
         cursor.execute("SELECT DATABASE")
         return cursor.fetchone()[0].strip()
 
@@ -648,33 +703,121 @@ class TeradataUploader(SQLUploader):
         )
         return cursor.fetchone() is not None
 
-    def _probe_table_creation(self, cursor: "TeradataCursor", *, database: str) -> bool:
-        """CREATE then DROP a throwaway table in ``database``. True iff CREATE got 3524."""
-        qualified = f'"{database}"."{_PRECHECK_PROBE_TABLE_PREFIX}{uuid4().hex[:16]}"'
+    def _probe_table_creation(
+        self, cursor: "TeradataCursor", *, database: str
+    ) -> tuple[Optional[str], bool]:
+        """CREATE then DROP the real destination table under a throwaway name.
+
+        Returns the message for a refusal the server gave unambiguously, else None --
+        the same contract as ``_run_write_probe``, which is what owns the existing-table
+        case -- paired with whether the CREATE was actually accepted. The two are not
+        complements: a failure this check cannot read is neither a refusal nor a create,
+        and the caller must not report it as either. The statement is
+        ``create_destination()``'s own DDL from
+        :func:`_elements_schema_sql`, so the rights asked for are the rights the upload
+        will need: no wider, no narrower. It is unqualified, which is how
+        ``create_destination()`` runs it, so it lands in this session's database --
+        ``database`` above -- and no identifier the server supplied is interpolated
+        into SQL.
+        """
+        probe_table = f"{_PRECHECK_PROBE_TABLE_PREFIX}{uuid4().hex[:16]}"
+        # Logged BEFORE the statement runs: a process killed between the CREATE and the
+        # DROP leaves the table behind, and this is then the only record of its name.
+        logger.info(
+            f"CREATE TABLE permission probe creating {probe_table} in database '{database}'"
+        )
         try:
-            cursor.execute(f"CREATE TABLE {qualified} (probe_col INTEGER)")
+            cursor.execute(_elements_schema_sql(probe_table))
         except Exception as e:
-            if (
-                _is_teradata_driver_error(e)
-                and _extract_teradata_error_code(e) == _CREATE_TABLE_DENIAL_CODE
-            ):
+            denial = self._classify_create_denial(e, database=database)
+            if denial is not None:
                 logger.error(
-                    f"destination credentials cannot create a table in database "
-                    f"'{database}': {self._probe_error_detail(e)}"
+                    f"destination credentials cannot create the destination table in "
+                    f"database '{database}': {self._probe_error_detail(e)}"
                 )
-                return True
-            logger.warning(
+                return denial, False
+            logger.info(
                 f"CREATE TABLE permission check inconclusive: {self._probe_error_detail(e)}"
             )
-            return False
+            return None, False
         try:
-            cursor.execute(f"DROP TABLE {qualified}")
+            cursor.execute(f"DROP TABLE {self._quote_identifier(probe_table)}")
         except Exception as e:
             logger.warning(
-                f"precheck could not drop its probe table {qualified}, drop it by hand: "
-                f"{self._probe_error_detail(e)}"
+                f"precheck could not drop its probe table {probe_table} in database "
+                f"'{database}', drop it by hand: {self._probe_error_detail(e)}"
             )
-        return False
+        return None, True
+
+    def _classify_create_denial(self, error: Exception, *, database: str) -> Optional[str]:
+        """The message for a CREATE the server refused on rights, else None.
+
+        Two codes qualify, and the message differs because what the customer has to grant
+        differs. 3524 refuses a right on the database, which on a CREATE TABLE is CREATE
+        TABLE, so the message says to grant it. 3523 refuses a right on an object inside a
+        database, which a CREATE TABLE needs for the UDT its VECTOR32 column is; naming
+        CREATE TABLE there sends a DBA to grant something the user may already hold.
+        """
+        if not _is_teradata_driver_error(error):
+            return None
+        code = _extract_teradata_error_code(error)
+        if code == _CREATE_TABLE_DENIAL_CODE:
+            return (
+                self._write_denied_message(
+                    "CREATE TABLE", object_kind="database", object_name=database
+                )
+                + self._blank_database_hint()
+                + self._unset_table_hint()
+            )
+        if code == _CREATE_PRIVILEGE_DENIAL_CODE:
+            return (
+                f"The destination credentials can connect to the database but Teradata "
+                f"refused a privilege the destination table needs to be created in database "
+                f"'{database}' (error {code}, "
+                f"{_USER_FAULT_TERADATA_CODES[_CREATE_PRIVILEGE_DENIAL_CODE]}). Records "
+                f"would fail to write. The refused right is not CREATE TABLE on the "
+                f"database, which this code does not report; the table has a VECTOR32 "
+                f"column, and a table with a UDT column needs UDTUSAGE on SYSUDTLIB too. "
+                f"Teradata names the right it refused in the same error in the database's "
+                f"own log."
+            ) + self._blank_database_hint() + self._unset_table_hint()
+        return None
+
+    def _unset_table_hint(self) -> str:
+        """Refused a right the job may never use, so name the field that settles it.
+
+        With no table configured the probe always runs: the caller names the table only
+        when it calls ``create_destination()``, so precheck has nothing to look up. A user
+        whose table already exists and who has since lost CREATE TABLE is therefore refused
+        here even though the upload would have found that table and never created one --
+        ``create_destination()`` returns early when it exists. That is the one case this
+        check can refuse a credential the job would not have needed. Naming the field turns
+        it into something the customer can act on rather than a dead end: set Table Name
+        and the lookup in ``check_create_table_permission`` skips this probe entirely.
+        """
+        if self.upload_config.table_name:
+            return ""
+        return (
+            " No Table Name is configured on this connector, so the check creates a table "
+            "to test the right rather than looking one up; if the table this destination "
+            "writes to already exists, set the Table Name field and the check will use it "
+            "instead of creating one."
+        )
+
+    def _blank_database_hint(self) -> str:
+        """Told to grant rights on a database nobody chose, say the Database field exists.
+
+        With the field blank the database in the message is only the session default, and
+        a DBA who does exactly what the message says gets tables auto-created in a database
+        nobody picked -- which is the complaint this check came from.
+        """
+        if self.connection_config.database:
+            return ""
+        return (
+            " The Database field on this connector is blank, so that database is only the "
+            "one this user's session defaults to; set the Database field instead if the "
+            "table should go somewhere else."
+        )
 
     def _quote_identifier(self, identifier: str) -> str:
         # Matches upload_dataframe, which double-quotes both the table and every
@@ -706,7 +849,7 @@ class TeradataUploader(SQLUploader):
         its own text and covers INSERT and DELETE alike, so ``privilege`` is what names
         the missing grant in the message.
 
-        Only the three codes that say "no privilege" and nothing else are treated as a
+        Only the four codes that say "no privilege" and nothing else are treated as a
         refusal. 3807 is in ``_USER_FAULT_TERADATA_CODES`` and is deliberately left out
         here: Teradata returns it both for an object that does not exist and for one the
         user has no rights on, because it hides the existence of objects a user cannot

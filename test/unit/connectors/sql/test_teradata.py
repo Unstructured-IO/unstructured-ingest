@@ -1,4 +1,5 @@
 import logging
+import re
 from unittest.mock import MagicMock
 
 import pandas as pd
@@ -26,6 +27,7 @@ from unstructured_ingest.processes.connectors.sql.teradata import (
     TeradataUploadStager,
     TeradataUploadStagerConfig,
     _build_proxy_params,
+    _elements_schema_sql,
     _extract_teradata_error_code,
     _is_teradata_driver_error,
     _raise_classified_teradata_error,
@@ -2161,8 +2163,16 @@ def test_teradata_precheck_skips_the_probe_when_the_table_is_auto_created(
 
 
 # --- CREATE TABLE precheck ---------------------------------------------------
-# create_destination() builds the table when it is absent, in the session's database,
-# so precheck proves CREATE TABLE there with a throwaway table.
+# create_destination() builds the table when it is absent, in the session's database, so
+# precheck runs that same DDL there under a throwaway name.
+
+_PROBE_CREATE_PREFIX = 'CREATE MULTISET TABLE "unstructured_precheck_'
+
+
+def _probe_table_name(statements: list[str]) -> str:
+    """The throwaway table name out of the probe's CREATE."""
+    create = next(s for s in statements if s.startswith(_PROBE_CREATE_PREFIX))
+    return re.match(r'CREATE MULTISET TABLE "([^"]+)"', create).group(1)
 
 
 def _scripted_cursor(mock_cursor: MagicMock, *, exists: bool, fail: dict | None = None):
@@ -2190,7 +2200,7 @@ def test_teradata_precheck_refuses_a_credential_that_cannot_create_the_missing_t
         mock_cursor,
         exists=False,
         fail={
-            "CREATE TABLE": _FakeTeradataDriverError(
+            _PROBE_CREATE_PREFIX: _FakeTeradataDriverError(
                 "[Teradata Database] [Error 3524] The user does not have CREATE TABLE access "
                 "to database test_db. logon password=hunter2"
             )
@@ -2204,6 +2214,89 @@ def test_teradata_precheck_refuses_a_credential_that_cannot_create_the_missing_t
     assert excinfo.value.status_code == 422
     assert "CREATE TABLE permission on database 'test_db'" in message
     assert "hunter2" not in message
+    # Database is configured on this connector, so the blank-Database hint stays off.
+    assert "Database field" not in message
+
+
+def test_teradata_precheck_refuses_a_privilege_the_create_needs_beyond_create_table(
+    teradata_uploader: TeradataUploader, mock_get_cursor, mock_cursor
+):
+    """3523 refuses too, and must not tell the customer CREATE TABLE is what is missing.
+
+    The probe runs the real DDL, whose CLOB / VECTOR32 / JSON columns can need a right
+    CREATE TABLE does not carry; Teradata answers that with 3523, not 3524.
+    """
+    _scripted_cursor(
+        mock_cursor,
+        exists=False,
+        fail={
+            _PROBE_CREATE_PREFIX: _FakeTeradataDriverError(
+                "[Teradata Database] [Error 3523] The user does not have UDTUSAGE access "
+                "to SYSUDTLIB. logon password=hunter2"
+            )
+        },
+    )
+
+    with pytest.raises(UserError) as excinfo:
+        teradata_uploader.precheck()
+
+    message = str(excinfo.value)
+    assert excinfo.value.status_code == 422
+    assert "test_db" in message
+    assert "3523" in message
+    assert "CREATE TABLE permission" not in message
+    assert "hunter2" not in message
+
+
+def test_teradata_precheck_refusal_points_at_the_database_field_when_it_is_blank(
+    teradata_access_config: TeradataAccessConfig, mock_get_cursor, mock_cursor
+):
+    """With the field blank the named database is only the session default, so the
+    message says so rather than sending a DBA to grant rights on it."""
+    uploader = TeradataUploader(
+        connection_config=TeradataConnectionConfig(
+            host="test-host.teradata.com",
+            user="test_user",
+            database=None,
+            access_config=Secret(teradata_access_config),
+        ),
+        upload_config=TeradataUploaderConfig(table_name=None),
+    )
+    _scripted_cursor(
+        mock_cursor,
+        exists=False,
+        fail={
+            _PROBE_CREATE_PREFIX: _FakeTeradataDriverError(
+                "[Teradata Database] [Error 3524] no CREATE TABLE access to database admin_db"
+            )
+        },
+    )
+    mock_cursor.fetchone.side_effect = [("admin_db",)]
+
+    with pytest.raises(UserError) as excinfo:
+        uploader.precheck()
+
+    message = str(excinfo.value)
+    assert "CREATE TABLE permission on database 'admin_db'" in message
+    assert "The Database field on this connector is blank" in message
+
+
+def test_teradata_precheck_probes_with_the_real_destination_ddl(
+    teradata_uploader: TeradataUploader, mock_get_cursor, mock_cursor
+):
+    """The probe's statement is create_destination()'s, only the table name differs.
+
+    A probe asking for less -- the one-INTEGER-column table this started as -- passes a
+    credential the real CREATE refuses.
+    """
+    statements = _scripted_cursor(mock_cursor, exists=False)
+
+    teradata_uploader.precheck()
+
+    create = next(s for s in statements if s.startswith(_PROBE_CREATE_PREFIX))
+    assert create == _elements_schema_sql(_probe_table_name(statements))
+    for fragment in ("CLOB", "VECTOR32", "JSON", "PRIMARY INDEX"):
+        assert fragment in create
 
 
 def test_teradata_precheck_creates_and_drops_a_probe_table_when_the_table_is_missing(
@@ -2213,13 +2306,31 @@ def test_teradata_precheck_creates_and_drops_a_probe_table_when_the_table_is_mis
 
     teradata_uploader.precheck()  # must not raise
 
-    creates = [s for s in statements if s.startswith("CREATE TABLE")]
+    creates = [s for s in statements if s.startswith(_PROBE_CREATE_PREFIX)]
     drops = [s for s in statements if s.startswith("DROP TABLE")]
     assert len(creates) == 1
-    assert creates[0].startswith('CREATE TABLE "test_db"."unstructured_precheck_')
-    probe = creates[0].split()[2]
-    assert drops == [f"DROP TABLE {probe}"]
+    probe = _probe_table_name(statements)
+    assert drops == [f'DROP TABLE "{probe}"']
     assert statements.index(drops[0]) > statements.index(creates[0])
+    # Unqualified, exactly as create_destination() runs it: the database never reaches
+    # the statement, only the session it runs in.
+    assert "test_db" not in creates[0]
+
+
+def test_teradata_precheck_names_its_probe_table_before_creating_it(
+    teradata_uploader: TeradataUploader, mock_get_cursor, mock_cursor, caplog
+):
+    """A process killed between the CREATE and the DROP leaves the table behind; this log
+    line is then the only record of the name."""
+    statements = _scripted_cursor(mock_cursor, exists=False)
+
+    with caplog.at_level(logging.INFO, logger="unstructured_ingest"):
+        teradata_uploader.precheck()
+
+    probe = _probe_table_name(statements)
+    assert probe in caplog.text
+    creating = next(line for line in caplog.text.splitlines() if probe in line)
+    assert "test_db" in creating
 
 
 def test_teradata_precheck_issues_no_create_when_the_table_exists(
@@ -2262,10 +2373,12 @@ def test_teradata_precheck_probes_the_session_database_when_database_is_blank(
 
     assert "SELECT DATABASE" in statements
     assert not any("DBC.TablesV" in s for s in statements)
-    creates = [s for s in statements if s.startswith("CREATE TABLE")]
+    creates = [s for s in statements if s.startswith(_PROBE_CREATE_PREFIX)]
     assert len(creates) == 1
-    assert creates[0].startswith('CREATE TABLE "session_default_db"."unstructured_precheck_')
-    assert "session_default_db" in caplog.text
+    # The probe runs unqualified in the session SELECT DATABASE just named, so what
+    # proves it went to the right place is the log line, not the statement.
+    assert "session_default_db" not in creates[0]
+    assert "destination writes resolve to Teradata database 'session_default_db'" in caplog.text
 
 
 @pytest.mark.parametrize(
@@ -2278,18 +2391,54 @@ def test_teradata_precheck_probes_the_session_database_when_database_is_blank(
     ],
 )
 def test_teradata_precheck_passes_when_the_create_probe_fails_for_another_reason(
-    teradata_uploader: TeradataUploader, mock_get_cursor, mock_cursor, code: int
+    teradata_uploader: TeradataUploader, mock_get_cursor, mock_cursor, caplog, code: int
 ):
     statements = _scripted_cursor(
         mock_cursor,
         exists=False,
-        fail={"CREATE TABLE": _FakeTeradataDriverError(f"[Teradata Database] [Error {code}] x")},
+        fail={
+            _PROBE_CREATE_PREFIX: _FakeTeradataDriverError(f"[Teradata Database] [Error {code}] x")
+        },
+    )
+
+    with caplog.at_level(logging.INFO, logger="unstructured_ingest"):
+        teradata_uploader.precheck()  # must not raise
+
+    assert any(s.startswith(_PROBE_CREATE_PREFIX) for s in statements)
+    assert not any(s.startswith("DROP TABLE") for s in statements)
+    # Passing is not the same as proving the right: the server never accepted a CREATE
+    # here, so the check must not also certify that it would have.
+    assert "CREATE TABLE permission check inconclusive" in caplog.text
+    assert "can create the destination table" not in caplog.text
+
+
+def test_teradata_precheck_certifies_the_right_only_when_the_create_is_accepted(
+    teradata_uploader: TeradataUploader, mock_get_cursor, mock_cursor, caplog
+):
+    """The other half of the pair above: a CREATE the server took does get logged."""
+    statements = _scripted_cursor(mock_cursor, exists=False)
+
+    with caplog.at_level(logging.INFO, logger="unstructured_ingest"):
+        teradata_uploader.precheck()
+
+    assert any(s.startswith(_PROBE_CREATE_PREFIX) for s in statements)
+    assert any(s.startswith("DROP TABLE") for s in statements)
+    assert "can create the destination table in database 'test_db'" in caplog.text
+
+
+def test_teradata_precheck_passes_when_the_create_fails_with_a_non_driver_error(
+    teradata_uploader: TeradataUploader, mock_get_cursor, mock_cursor
+):
+    """Not a teradatasql error, so no code to read: inconclusive, and the check passes."""
+    statements = _scripted_cursor(
+        mock_cursor,
+        exists=False,
+        fail={_PROBE_CREATE_PREFIX: RuntimeError("the connection went away")},
     )
 
     teradata_uploader.precheck()  # must not raise
 
-    assert any(s.startswith("CREATE TABLE") for s in statements)
-    assert not any(s.startswith("DROP TABLE") for s in statements)
+    assert any(s.startswith(_PROBE_CREATE_PREFIX) for s in statements)
 
 
 def test_teradata_precheck_passes_and_names_the_leftover_when_the_drop_fails(
@@ -2304,19 +2453,152 @@ def test_teradata_precheck_passes_and_names_the_leftover_when_the_drop_fails(
     with caplog.at_level(logging.WARNING, logger="unstructured_ingest"):
         teradata_uploader.precheck()  # must not raise
 
-    probe = next(s for s in statements if s.startswith("CREATE TABLE")).split()[2]
-    assert probe in caplog.text
+    assert _probe_table_name(statements) in caplog.text
 
 
-def test_teradata_precheck_quotes_the_database_as_the_server_spells_it(
+def test_teradata_precheck_names_the_database_as_the_server_spells_it(
     teradata_uploader: TeradataUploader, mock_get_cursor, mock_cursor
 ):
-    """The probe quotes the database, so it takes the server's spelling, not the config's."""
-    statements = _scripted_cursor(mock_cursor, exists=False)
+    """The refusal names the database the server reported, not the configured spelling."""
+    _scripted_cursor(
+        mock_cursor,
+        exists=False,
+        fail={
+            _PROBE_CREATE_PREFIX: _FakeTeradataDriverError(
+                "[Teradata Database] [Error 3524] no CREATE TABLE access"
+            )
+        },
+    )
     mock_cursor.fetchone.side_effect = [("TEST_DB",), None]
 
-    teradata_uploader.precheck()
+    with pytest.raises(UserError) as excinfo:
+        teradata_uploader.precheck()
 
-    creates = [s for s in statements if s.startswith("CREATE TABLE")]
-    assert len(creates) == 1
-    assert creates[0].startswith('CREATE TABLE "TEST_DB"."unstructured_precheck_')
+    assert "database 'TEST_DB'" in str(excinfo.value)
+
+
+@pytest.mark.parametrize(
+    "fail",
+    [
+        pytest.param({"SELECT DATABASE": RuntimeError("no session")}, id="select-database"),
+        pytest.param(
+            {
+                "SELECT 1 FROM DBC.TablesV": _FakeTeradataDriverError(
+                    "[Teradata Database] [Error 3523] no access to DBC.TablesV"
+                )
+            },
+            id="table-lookup",
+        ),
+    ],
+)
+def test_teradata_precheck_passes_when_the_check_cannot_reach_the_probe(
+    teradata_uploader: TeradataUploader, mock_get_cursor, mock_cursor, fail: dict
+):
+    """Everything before the CREATE is inconclusive, never a refusal: a 3523 the lookup
+    returns says nothing about creating a table."""
+    statements = _scripted_cursor(mock_cursor, exists=False, fail=fail)
+
+    teradata_uploader.precheck()  # must not raise
+
+    assert not any(s.startswith(_PROBE_CREATE_PREFIX) for s in statements)
+
+
+def test_teradata_precheck_passes_when_the_session_database_is_empty(
+    teradata_uploader: TeradataUploader, mock_get_cursor, mock_cursor
+):
+    """SELECT DATABASE returning no row is not a refusal."""
+    statements = _scripted_cursor(mock_cursor, exists=False)
+    mock_cursor.fetchone.side_effect = [None]
+
+    teradata_uploader.precheck()  # must not raise
+
+    assert not any(s.startswith(_PROBE_CREATE_PREFIX) for s in statements)
+
+
+def test_teradata_precheck_passes_when_the_cursor_cannot_be_opened(
+    teradata_uploader: TeradataUploader, mock_get_cursor, mock_cursor
+):
+    """The connection check has already passed; a session this one cannot open is
+    inconclusive, even when the driver error carries a denial code."""
+    _scripted_cursor(mock_cursor, exists=False)
+    mock_get_cursor.side_effect = [
+        mock_get_cursor.return_value,
+        _FakeTeradataDriverError("[Teradata Database] [Error 3524] no CREATE TABLE access"),
+    ]
+
+    teradata_uploader.precheck()  # must not raise
+
+
+def test_teradata_precheck_refuses_even_when_the_session_teardown_fails(
+    teradata_uploader: TeradataUploader, mock_get_cursor, mock_cursor
+):
+    """A refusal the server already gave survives a cursor close or a commit that raises
+    on the way out; dropping it would pass a credential that cannot write."""
+    statements = _scripted_cursor(
+        mock_cursor,
+        exists=False,
+        fail={
+            _PROBE_CREATE_PREFIX: _FakeTeradataDriverError(
+                "[Teradata Database] [Error 3524] no CREATE TABLE access to database test_db"
+            )
+        },
+    )
+
+    def teardown(*args):
+        # get_connection()'s commit/close and get_cursor()'s close all run on the way out
+        # of the block that got the refusal, and this stands in for any of them raising.
+        if any(s.startswith(_PROBE_CREATE_PREFIX) for s in statements):
+            raise _FakeTeradataDriverError("[Teradata Database] [Error 2644] commit failed")
+        return False
+
+    mock_get_cursor.return_value.__exit__.side_effect = teardown
+
+    with pytest.raises(UserError) as excinfo:
+        teradata_uploader.precheck()
+
+    assert "CREATE TABLE permission on database 'test_db'" in str(excinfo.value)
+
+
+def test_teradata_precheck_refusal_points_at_the_table_name_field_when_it_is_unset(
+    teradata_uploader_auto_create: TeradataUploader, mock_get_cursor, mock_cursor
+):
+    """With no table configured the probe always runs, so the refusal can refuse a right
+    the job would never have used: the upload finds an existing table and never creates
+    one. The message names the field that makes the check look the table up instead."""
+    _scripted_cursor(
+        mock_cursor,
+        exists=False,
+        fail={
+            _PROBE_CREATE_PREFIX: _FakeTeradataDriverError(
+                "[Teradata Database] [Error 3524] no CREATE TABLE access to database test_db"
+            )
+        },
+    )
+
+    with pytest.raises(UserError) as excinfo:
+        teradata_uploader_auto_create.precheck()
+
+    message = str(excinfo.value)
+    assert "No Table Name is configured" in message
+    assert "set the Table Name field" in message
+
+
+def test_teradata_precheck_refusal_omits_the_table_name_hint_when_one_is_configured(
+    teradata_uploader: TeradataUploader, mock_get_cursor, mock_cursor
+):
+    """The table is configured and absent, so the probe ran for a CREATE the upload will
+    really do. Telling that customer to set the field they already set is noise."""
+    _scripted_cursor(
+        mock_cursor,
+        exists=False,
+        fail={
+            _PROBE_CREATE_PREFIX: _FakeTeradataDriverError(
+                "[Teradata Database] [Error 3524] no CREATE TABLE access to database test_db"
+            )
+        },
+    )
+
+    with pytest.raises(UserError) as excinfo:
+        teradata_uploader.precheck()
+
+    assert "Table Name" not in str(excinfo.value)
