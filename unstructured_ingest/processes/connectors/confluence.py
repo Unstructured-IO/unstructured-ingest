@@ -36,6 +36,7 @@ from unstructured_ingest.processes.connector_registry import (
     LocationShape,
     SourceRegistryEntry,
 )
+from unstructured_ingest.processes.utils import DataSanitizer
 from unstructured_ingest.utils.acl import compute_permissions_version
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.utils.html import HtmlMixin
@@ -458,6 +459,27 @@ class ConfluenceIndexer(Indexer):
     def _get_next_page_path(response: dict) -> Optional[str]:
         return _next_page_path(response)
 
+    def _unexpected_response_message(self, path: str, body: object) -> str:
+        # The client returns a 2xx body it cannot parse as JSON as text, and an empty
+        # body as None. The body itself is never echoed.
+        if body is None:
+            got = "an empty body"
+        elif isinstance(body, str):
+            if body.lstrip().startswith("<"):
+                got = "an HTML page (often a login or SSO page, or the web UI)"
+            else:
+                got = "a body that is not JSON"
+        else:
+            got = f"a JSON {type(body).__name__}"
+        url = DataSanitizer.sanitize_url(self.connection_config.api_url())
+        return (
+            f"Unexpected response from Confluence at {url} ({path.split('?', 1)[0]}): "
+            f"expected a JSON object but got {got}. Check that the URL is the Confluence "
+            "base URL (for Confluence Cloud, https://<site>.atlassian.net/wiki) and that "
+            "the auth type matches the instance. Spaces and pages are listed through the "
+            "Confluence Cloud REST API v2."
+        )
+
     def _paginate_v2_results(
         self,
         client: "Confluence",
@@ -471,6 +493,8 @@ class ConfluenceIndexer(Indexer):
         next_params: Optional[dict] = params
         while next_path and len(results) < limit:
             response = client.get(next_path, params=next_params)
+            if not isinstance(response, dict):
+                raise UserError(self._unexpected_response_message(next_path, response))
             remaining = limit - len(results)
             results.extend(response.get("results", [])[:remaining])
             next_path = self._get_next_page_path(response)

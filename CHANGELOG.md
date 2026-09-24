@@ -1,3 +1,9 @@
+## [1.11.21]
+
+### Fixes
+
+- **fix(confluence): name the response when a Confluence URL answers with something other than JSON.** A base URL that lands on a login or SSO page, the web UI, or an empty 200 made the client hand back text (or `None`) where the v2 listing expects a JSON object, so the connection check failed with only `Failed to connect to find any Confluence space: AttributeError`. The v2 listing used by the space check, the configured-space lookup and the page listing now raises a `UserError` naming the URL it called (credentials and query stripped), the API path, and what came back (an HTML page, an empty body, a non-JSON body, or a JSON value that is not an object), points at the base URL (for Confluence Cloud, `https://<site>.atlassian.net/wiki`) and the auth type, and says spaces and pages are listed through the Confluence Cloud REST API v2. The body itself is never echoed.
+
 ## [1.11.20]
 
 ### Fixes

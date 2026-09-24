@@ -345,6 +345,75 @@ def test_keyed_space_lookup_sends_keys_as_a_plain_query_value(connection_config)
     ]
 
 
+def _send_ok(content_type, body):
+    def send(adapter, request, **kwargs):
+        response = Response()
+        response.status_code = 200
+        response.headers["Content-Type"] = content_type
+        response._content = body
+        response.request = request
+        response.url = request.url
+        return response
+
+    return send
+
+
+@pytest.mark.parametrize(
+    ("content_type", "body", "described_as"),
+    [
+        ("text/html", b"<!DOCTYPE html><html><body>Log in</body></html>", "an HTML page"),
+        ("text/plain", b"", "an empty body"),
+        ("text/plain", b"not json", "a body that is not JSON"),
+        ("application/json", b"[]", "a JSON list"),
+    ],
+)
+def test_precheck_names_a_space_listing_response_that_is_not_a_json_object(
+    connection_config, content_type, body, described_as
+):
+    # A base URL that lands on a login/SSO page or the web UI answers 200 with a body the
+    # client returns as text (or None when empty). Reading it as a JSON object used to
+    # surface only as "AttributeError".
+    indexer = ConfluenceIndexer(
+        connection_config=connection_config, index_config=ConfluenceIndexerConfig()
+    )
+
+    with (
+        mock.patch.object(HTTPAdapter, "send", _send_ok(content_type, body)),
+        pytest.raises(UserError) as exc_info,
+    ):
+        indexer.precheck()
+
+    message = str(exc_info.value)
+    assert "AttributeError" not in message
+    assert f"got {described_as}" in message
+    assert "https://dummy (api/v2/spaces)" in message
+    assert "base URL" in message
+    assert "auth type" in message
+    assert "Confluence Cloud REST API v2" in message
+
+
+def test_unexpected_response_error_omits_url_credentials_and_query():
+    connection_config = ConfluenceConnectionConfig(
+        url="https://someone:hunter2@dummy/wiki?session=abc",
+        username="user",
+        access_config=ConfluenceAccessConfig(api_token="token"),
+    )
+    indexer = ConfluenceIndexer(
+        connection_config=connection_config, index_config=ConfluenceIndexerConfig()
+    )
+
+    with (
+        mock.patch.object(HTTPAdapter, "send", _send_ok("text/html", b"<html></html>")),
+        pytest.raises(UserError) as exc_info,
+    ):
+        indexer.precheck()
+
+    message = str(exc_info.value)
+    assert "hunter2" not in message
+    assert "session=abc" not in message
+    assert "https://***@dummy/wiki (api/v2/spaces)" in message
+
+
 def test_get_space_by_key_is_case_sensitive_for_key_and_alias(connection_config):
     # `_space_matches_key` compares with a case-sensitive `==`. A configured key
     # differing only in case from what Confluence returns does not match today, for
