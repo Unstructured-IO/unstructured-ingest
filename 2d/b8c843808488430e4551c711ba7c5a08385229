@@ -1,0 +1,28 @@
+unstructured_ingest/processes/connectors/confluence.py
+  s_b19cade79f5d9d::t_345e9d9bc499a1 39
+  s_b19cade79f5d9d::t_57d3ed78ee3fcc 462-481
+  s_b19cade79f5d9d::t_1c889b96142180 495-496
+test/unit/connectors/test_confluence.py
+  s_b19cade79f5d9d::t_99cb32697eaafa 348-411
+  s_b19cade79f5d9d::t_55e03bbfd7d097 412-415
+CHANGELOG.md
+  s_b19cade79f5d9d::t_e8a4cd9861e6d6 1-6
+unstructured_ingest/__version__.py
+  s_b19cade79f5d9d::t_aeebd361e010e0 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "2db8c843808488430e4551c711ba7c5a08385229",
+  "prompts": {},
+  "sessions": {
+    "s_b19cade79f5d9d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "54c50100-acc6-4f42-afaf-8907284b8d20",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Trevor Bossert <trevor@unstructured.io>"
+    }
+  }
+}
