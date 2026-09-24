@@ -1,0 +1,19 @@
+test/integration/connectors/sql/test_teradata.py
+  s_135d05e8ddbca1::t_b6e18dd6ee9584 233-238,245-246,250
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "049e2fa4f6de939921f1f03e66db37f810cc5691",
+  "prompts": {},
+  "sessions": {
+    "s_135d05e8ddbca1": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6a3d79b0-e878-45b4-a13a-60f290151f4d",
+        "model": "claude-opus-5"
+      },
+      "human_author": "paulkarayan <pk@unstructured.io>"
+    }
+  }
+}
