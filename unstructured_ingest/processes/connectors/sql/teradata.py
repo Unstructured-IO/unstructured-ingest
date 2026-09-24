@@ -645,7 +645,7 @@ class TeradataUploader(SQLUploader):
         """
         table_name = self.upload_config.table_name
         denial: Optional[str] = None
-        probed = False
+        created = False
         database: Optional[str] = None
         try:
             with self.get_cursor() as cursor:
@@ -660,8 +660,7 @@ class TeradataUploader(SQLUploader):
                         f"CREATE TABLE probe"
                     )
                     return
-                denial = self._probe_table_creation(cursor, database=database)
-                probed = True
+                denial, created = self._probe_table_creation(cursor, database=database)
         except Exception as e:
             # A refusal the server has already given is not undone by a failure on the way
             # out: the cursor close and get_connection()'s own commit/close both run after
@@ -679,7 +678,10 @@ class TeradataUploader(SQLUploader):
             )
         if denial:
             raise UserError(denial)
-        if probed:
+        if created:
+            # Only a CREATE the server actually accepted certifies the right. A probe that
+            # failed for a reason this check cannot read is inconclusive, and saying the
+            # credentials can create the table there would be reporting a result nobody got.
             logger.info(
                 f"destination credentials can create the destination table in database '{database}'"
             )
@@ -701,12 +703,17 @@ class TeradataUploader(SQLUploader):
         )
         return cursor.fetchone() is not None
 
-    def _probe_table_creation(self, cursor: "TeradataCursor", *, database: str) -> Optional[str]:
+    def _probe_table_creation(
+        self, cursor: "TeradataCursor", *, database: str
+    ) -> tuple[Optional[str], bool]:
         """CREATE then DROP the real destination table under a throwaway name.
 
         Returns the message for a refusal the server gave unambiguously, else None --
         the same contract as ``_run_write_probe``, which is what owns the existing-table
-        case. The statement is ``create_destination()``'s own DDL from
+        case -- paired with whether the CREATE was actually accepted. The two are not
+        complements: a failure this check cannot read is neither a refusal nor a create,
+        and the caller must not report it as either. The statement is
+        ``create_destination()``'s own DDL from
         :func:`_elements_schema_sql`, so the rights asked for are the rights the upload
         will need: no wider, no narrower. It is unqualified, which is how
         ``create_destination()`` runs it, so it lands in this session's database --
@@ -728,11 +735,11 @@ class TeradataUploader(SQLUploader):
                     f"destination credentials cannot create the destination table in "
                     f"database '{database}': {self._probe_error_detail(e)}"
                 )
-                return denial
+                return denial, False
             logger.info(
                 f"CREATE TABLE permission check inconclusive: {self._probe_error_detail(e)}"
             )
-            return None
+            return None, False
         try:
             cursor.execute(f"DROP TABLE {self._quote_identifier(probe_table)}")
         except Exception as e:
@@ -740,7 +747,7 @@ class TeradataUploader(SQLUploader):
                 f"precheck could not drop its probe table {probe_table} in database "
                 f"'{database}', drop it by hand: {self._probe_error_detail(e)}"
             )
-        return None
+        return None, True
 
     def _classify_create_denial(self, error: Exception, *, database: str) -> Optional[str]:
         """The message for a CREATE the server refused on rights, else None.

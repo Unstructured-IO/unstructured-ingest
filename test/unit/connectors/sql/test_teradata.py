@@ -2391,7 +2391,7 @@ def test_teradata_precheck_probes_the_session_database_when_database_is_blank(
     ],
 )
 def test_teradata_precheck_passes_when_the_create_probe_fails_for_another_reason(
-    teradata_uploader: TeradataUploader, mock_get_cursor, mock_cursor, code: int
+    teradata_uploader: TeradataUploader, mock_get_cursor, mock_cursor, caplog, code: int
 ):
     statements = _scripted_cursor(
         mock_cursor,
@@ -2401,10 +2401,29 @@ def test_teradata_precheck_passes_when_the_create_probe_fails_for_another_reason
         },
     )
 
-    teradata_uploader.precheck()  # must not raise
+    with caplog.at_level(logging.INFO, logger="unstructured_ingest"):
+        teradata_uploader.precheck()  # must not raise
 
     assert any(s.startswith(_PROBE_CREATE_PREFIX) for s in statements)
     assert not any(s.startswith("DROP TABLE") for s in statements)
+    # Passing is not the same as proving the right: the server never accepted a CREATE
+    # here, so the check must not also certify that it would have.
+    assert "CREATE TABLE permission check inconclusive" in caplog.text
+    assert "can create the destination table" not in caplog.text
+
+
+def test_teradata_precheck_certifies_the_right_only_when_the_create_is_accepted(
+    teradata_uploader: TeradataUploader, mock_get_cursor, mock_cursor, caplog
+):
+    """The other half of the pair above: a CREATE the server took does get logged."""
+    statements = _scripted_cursor(mock_cursor, exists=False)
+
+    with caplog.at_level(logging.INFO, logger="unstructured_ingest"):
+        teradata_uploader.precheck()
+
+    assert any(s.startswith(_PROBE_CREATE_PREFIX) for s in statements)
+    assert any(s.startswith("DROP TABLE") for s in statements)
+    assert "can create the destination table in database 'test_db'" in caplog.text
 
 
 def test_teradata_precheck_passes_when_the_create_fails_with_a_non_driver_error(
