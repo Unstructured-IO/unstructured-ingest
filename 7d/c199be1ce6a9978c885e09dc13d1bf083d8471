@@ -1,0 +1,33 @@
+CHANGELOG.md
+  s_2aaf32bf4b06c2::t_ca2334cbef52ed 1-10
+pyproject.toml
+  s_2aaf32bf4b06c2::t_8fa854d3b17507 89
+test/unit/connectors/sql/test_teradata_auth.py
+  s_2aaf32bf4b06c2::t_1b5ec5932e5d9b 1-585
+test/unit/connectors/sql/test_teradata_jwt.py
+  s_2aaf32bf4b06c2::t_313b4eec573660 1-511
+unstructured_ingest/__version__.py
+  s_2aaf32bf4b06c2::t_12acf1b9be6e1e 1
+unstructured_ingest/processes/connectors/sql/teradata.py
+  s_2aaf32bf4b06c2::t_0bbc30a2ec9ba3 11,14,18-19,42-49,277-300,351-354,356-375,381-396,407-485,492-505,544-545,548,783-784,787-789
+unstructured_ingest/processes/connectors/sql/teradata_auth.py
+  s_2aaf32bf4b06c2::t_fb4427cc36295c 1-409
+uv.lock
+  s_2aaf32bf4b06c2::t_687a5cc010ac78 7288,7477
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "7dc199be1ce6a9978c885e09dc13d1bf083d8471",
+  "prompts": {},
+  "sessions": {
+    "s_2aaf32bf4b06c2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f5d3ee88-51bd-4f47-b70f-b1e61004d501",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Trevor Bossert <trevor@unstructured.io>"
+    }
+  }
+}
