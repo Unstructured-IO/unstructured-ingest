@@ -406,6 +406,19 @@ class TestPrecheck:
             build(_password_config()).precheck()
         assert "LEAKY" not in "".join(traceback.format_exception(exc.value))
 
+    def test_a_token_that_expires_during_the_create_probe_fails_precheck(self, driver):
+        # The SELECT 1 logs on; the token expires before the CREATE TABLE probe logs
+        # on again. That must not read as an inconclusive probe and pass.
+        config = _config(token=_jwt())
+
+        def expire_after_first_logon(**kwargs):
+            config._token._expires_at = time.time() - 1
+            return MagicMock()
+
+        driver.connect.side_effect = expire_after_first_logon
+        with pytest.raises(TokenExpiredError):
+            _uploader(config).precheck()
+
     def test_the_downloader_surfaces_the_same_verdict(self, driver):
         batch = MagicMock()
         batch.additional_metadata.table_name = "t"

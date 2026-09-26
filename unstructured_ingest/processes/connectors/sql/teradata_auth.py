@@ -35,6 +35,10 @@ TOKEN_EXPIRED_MESSAGE = (
     "provider's token lifetime, and re-run."
 )
 
+TOKEN_URL_NOT_HTTPS_MESSAGE = (
+    "The token URL must start with https://: the client secret is sent to it."
+)
+
 JWT_REFUSED_MESSAGE = (
     "Teradata refused the connector's JWT token. Check that the database trusts the "
     "token's issuer and maps the token to a database user that may log on with a null "
@@ -287,13 +291,14 @@ class ClientCredentialsTokenSource:
 
     Every ``get_token`` asks the issuer for a new token; ``RefreshingToken`` decides
     when. The client authenticates with HTTP Basic, which RFC 6749 2.3.1 requires
-    every issuer to accept. The token URL is checked for https when the connection
-    config is validated.
+    every issuer to accept.
     """
 
     rereadable = True
 
     def __init__(self, token_url: str, client_id: str, client_secret: str, scope: Optional[str]):
+        if not token_url.lower().startswith("https://"):
+            raise ValueError(TOKEN_URL_NOT_HTTPS_MESSAGE)
         self._url = token_url
         pair = f"{quote_plus(client_id)}:{quote_plus(client_secret)}"
         self._authorization = "Basic " + base64.b64encode(pair.encode()).decode()

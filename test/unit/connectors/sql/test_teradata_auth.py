@@ -405,6 +405,15 @@ class TestTheClientCredentialsRequest:
         assert "scope" not in ep.calls[0]["data"]
         assert ep.calls[1]["data"]["scope"] == "teradata.logon"
 
+    def test_a_source_built_with_an_http_token_url_never_sends_the_secret(self, endpoint):
+        # The connection config refuses http first; this guards direct construction.
+        ep = endpoint(_response(200, {"access_token": _jwt(3600)}))
+        with pytest.raises(ValueError, match="must start with https://"):
+            ClientCredentialsTokenSource(
+                "http://idp.example.com/token", CLIENT_ID, CLIENT_SECRET, None
+            )
+        assert ep.calls == []
+
     def test_the_call_is_bounded_and_does_not_follow_redirects(self, endpoint):
         # A redirect would carry the client secret to a host nobody configured.
         ep = endpoint(_response(200, {"access_token": _jwt(3600)}))

@@ -42,6 +42,7 @@ from unstructured_ingest.processes.connectors.sql.sql import (
 from unstructured_ingest.processes.connectors.sql.teradata_auth import (
     JWT_REFUSED_MESSAGE,
     TOKEN_EXPIRED_MESSAGE,
+    TOKEN_URL_NOT_HTTPS_MESSAGE,
     ClientCredentialsTokenSource,
     RefreshingToken,
     StaticTokenSource,
@@ -444,9 +445,7 @@ class TeradataConnectionConfig(SQLConnectionConfig):
         if access.password is not None and self.user is None:
             raise ValueError("A database password needs the database username as well.")
         if self.token_url and not self.token_url.lower().startswith("https://"):
-            raise ValueError(
-                "The token URL must start with https://: the client secret is sent to it."
-            )
+            raise ValueError(TOKEN_URL_NOT_HTTPS_MESSAGE)
         # Built here, once the set is known to be complete: pydantic runs
         # model_post_init before this validator.
         if not missing:
@@ -822,6 +821,10 @@ class TeradataUploader(SQLUploader):
                     )
                     return
                 denial, created = self._probe_table_creation(cursor, database=database)
+        except UnstructuredIngestError:
+            # The logon itself failed with a verdict (an expired or refused JWT), which
+            # is not an inconclusive probe.
+            raise
         except Exception as e:
             # A refusal the server has already given is not undone by a failure on the way
             # out: the cursor close and get_connection()'s own commit/close both run after
