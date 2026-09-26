@@ -1,0 +1,35 @@
+CHANGELOG.md
+  s_5ae5e1a66d53e8::t_557b7ded042dd7 1-8
+test/unit/connectors/sql/test_teradata.py
+  s_5ae5e1a66d53e8::t_e939882ccc000f 2607-2859,2862
+  s_5ae5e1a66d53e8::t_7b40aa6e4fde42 2127
+  s_5ae5e1a66d53e8::t_8a19fabe73ec0a 2144
+  s_5ae5e1a66d53e8::t_cfe995e66f7b55 2860-2861,2863-2865
+unstructured_ingest/__version__.py
+  s_5ae5e1a66d53e8::t_2d1c41708627ca 1
+unstructured_ingest/processes/connectors/sql/teradata.py
+  s_5ae5e1a66d53e8::t_69172c445739db 789-794,799,809-852,862-867,869,876-878
+  s_5ae5e1a66d53e8::t_4ce0b71eb01066 558-570
+  s_5ae5e1a66d53e8::t_00b4ad26184c4a 723-735,738
+  s_5ae5e1a66d53e8::t_ad73c7181c0e61 984
+  s_5ae5e1a66d53e8::t_28e8faadfa25d3 795-798,800-808
+  s_5ae5e1a66d53e8::t_e497b9aedb3f2d 985
+  s_5ae5e1a66d53e8::t_6bc13bbaf4965c 649-665,683-687
+  s_5ae5e1a66d53e8::t_042d8493e8b652 853-861,868,870-875
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "624a737e8902fab3669a206813bbb05b5d31989b",
+  "prompts": {},
+  "sessions": {
+    "s_5ae5e1a66d53e8": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e3e20ba1-d4e1-41f0-b3f7-3573b9458528",
+        "model": "claude-opus-5"
+      },
+      "human_author": null
+    }
+  }
+}
