@@ -534,14 +534,18 @@ def test_no_secret_reaches_a_log_or_an_error(driver, audit, monkeypatch, caplog)
         ),
     ],
 )
-def test_a_jwt_config_survives_pickling(credentials):
+def test_a_jwt_config_survives_pickling(credentials, monkeypatch):
     """The default pipeline runs steps in worker processes, which pickles the connection
-    config; a held threading.Lock made that raise TypeError before any document ran."""
+    config; a held threading.Lock made that raise TypeError before any document ran.
+
+    The copy must still serve a token, which takes its (recreated) lock on first use."""
     import pickle
 
+    minted = _jwt()
+    monkeypatch.setattr(requests, "post", lambda *a, **k: _token_response({"access_token": minted}))
     config = _config(**credentials)
     copy = pickle.loads(pickle.dumps(config))
 
     assert copy.auth_method == config.auth_method
-    if "token" in credentials:
-        assert copy._token.value == credentials["token"]
+    assert copy._token is not None
+    assert copy._token.value == credentials.get("token", minted)
