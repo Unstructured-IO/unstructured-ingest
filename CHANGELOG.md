@@ -1,3 +1,9 @@
+## [1.11.22]
+
+### Fixes
+
+- **fix(milvus): a collection that could not be described is not a schema-only collection.** `has_dynamic_fields_enabled()` caught every exception and answered `False`, and `False` sends `_prepare_data_for_insert()` down the branch that keeps only the keys in the collection schema. When that first `describe_collection` failed and the second one, in the schema-only branch, succeeded, rows bound for a dynamic-field collection were inserted without their metadata keys, with a warning as the only trace. The check now goes through `_reclassify_milvus_errors` like the second describe, so the failure is raised as a classified `WriteError` (or `UserError`/`UserAuthError` for customer-caused gRPC codes) instead of changing what gets written.
+
 ## [1.11.21]
 
 ### Enhancements
