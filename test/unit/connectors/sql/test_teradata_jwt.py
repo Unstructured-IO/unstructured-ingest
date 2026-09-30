@@ -522,3 +522,26 @@ def test_no_secret_reaches_a_log_or_an_error(driver, audit, monkeypatch, caplog)
     assert rendered, "the failing attempts must have raised"
     for secret in secrets:
         assert secret not in everything
+
+
+@pytest.mark.parametrize(
+    "credentials",
+    [
+        pytest.param({"token": _jwt()}, id="jwt"),
+        pytest.param(
+            {"token_url": "https://idp.example/token", "client_id": "c", "client_secret": "s"},
+            id="client_credentials",
+        ),
+    ],
+)
+def test_a_jwt_config_survives_pickling(credentials):
+    """The default pipeline runs steps in worker processes, which pickles the connection
+    config; a held threading.Lock made that raise TypeError before any document ran."""
+    import pickle
+
+    config = _config(**credentials)
+    copy = pickle.loads(pickle.dumps(config))
+
+    assert copy.auth_method == config.auth_method
+    if "token" in credentials:
+        assert copy._token.value == credentials["token"]

@@ -190,6 +190,17 @@ class RefreshingToken:
         # Set once the issuer refuses the credential; never cleared.
         self._refused: Optional[tuple[type[BaseException], str]] = None
 
+    def __getstate__(self) -> dict:
+        # Pipeline steps run in worker processes, which pickle the connection config; a
+        # lock cannot cross that boundary, and each process needs its own anyway.
+        state = self.__dict__.copy()
+        del state["_lock"]
+        return state
+
+    def __setstate__(self, state: dict) -> None:
+        self.__dict__.update(state)
+        self._lock = threading.Lock()
+
     def _expired(self, now: float) -> bool:
         return self._token is None or (self._expires_at is not None and now >= self._expires_at)
 
