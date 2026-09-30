@@ -283,21 +283,29 @@ class MilvusUploader(Uploader):
     connector_type: str = CONNECTOR_TYPE
 
     def has_dynamic_fields_enabled(self) -> bool:
-        """Check if the target collection has dynamic fields enabled."""
-        try:
-            with self.get_client() as client:
-                collection_info = client.describe_collection(self.upload_config.collection_name)
+        """Check if the target collection has dynamic fields enabled.
 
-                # Check if dynamic field is enabled
-                # The schema info should contain enable_dynamic_field or enableDynamicField
-                schema_info = collection_info.get(
-                    "enable_dynamic_field",
-                    collection_info.get("enableDynamicField", False),
+        Raises rather than answering False when the collection cannot be described: False
+        makes ``_prepare_data_for_insert`` drop every key that is not in the schema, which on
+        a dynamic-field collection silently discards metadata.
+        """
+        with (
+            _reclassify_milvus_errors(
+                lambda exc: WriteError(
+                    f"failed to describe Milvus collection: {safe_error_summary(exc)}"
                 )
-                return bool(schema_info)
-        except Exception as e:
-            logger.warning(f"Could not determine if collection has dynamic fields enabled: {e}")
-            return False
+            ),
+            self.get_client() as client,
+        ):
+            collection_info = client.describe_collection(self.upload_config.collection_name)
+
+        # Check if dynamic field is enabled
+        # The schema info should contain enable_dynamic_field or enableDynamicField
+        schema_info = collection_info.get(
+            "enable_dynamic_field",
+            collection_info.get("enableDynamicField", False),
+        )
+        return bool(schema_info)
 
     def precheck(self):
         # Note: intentionally not decorated with @DestinationConnectionError.wrap.
