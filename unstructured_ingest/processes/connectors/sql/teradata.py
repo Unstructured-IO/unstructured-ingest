@@ -8,12 +8,15 @@ from types import MappingProxyType
 from typing import TYPE_CHECKING, Any, Generator, Literal, Mapping, NoReturn, Optional
 from uuid import uuid4
 
-from pydantic import Field, Secret
+from pydantic import Field, PrivateAttr, Secret, field_validator, model_validator
 
 from unstructured_ingest.data_types.file_data import FileData
+from unstructured_ingest.error import ConnectionError as IngestConnectionError
 from unstructured_ingest.error import (
     DestinationConnectionError,
     SourceConnectionError,
+    UnstructuredIngestError,
+    UserAuthError,
     UserError,
     safe_error_summary,
 )
@@ -35,6 +38,15 @@ from unstructured_ingest.processes.connectors.sql.sql import (
     SQLUploaderConfig,
     SQLUploadStager,
     SQLUploadStagerConfig,
+)
+from unstructured_ingest.processes.connectors.sql.teradata_auth import (
+    JWT_REFUSED_MESSAGE,
+    TOKEN_EXPIRED_MESSAGE,
+    TOKEN_URL_NOT_HTTPS_MESSAGE,
+    ClientCredentialsTokenSource,
+    RefreshingToken,
+    StaticTokenSource,
+    TokenExpiredError,
 )
 from unstructured_ingest.utils.constants import RECORD_ID_LABEL
 from unstructured_ingest.utils.data_prep import get_enhanced_element_id, split_dataframe
@@ -263,6 +275,30 @@ def _summarize_error(host: str, raw: Exception, context: str = "") -> str:
     return prefix
 
 
+# The logon errors the database's JWT mechanism answers with. The driver's own
+# connection failures never name JWT, so a logon error that does is the database's
+# verdict on the token. 8017 is the database refusing the logon itself.
+_JWT_EXPIRED_RE = re.compile(r"JWT token expired", re.IGNORECASE)
+_JWT_RE = re.compile(r"\bJWT\b", re.IGNORECASE)
+_TERADATA_DATABASE_ERROR_CODE_RE = re.compile(r"\[Teradata Database\]\s*\[Error (\d+)\]")
+_LOGON_REFUSED_CODE = 8017
+
+
+def _jwt_logon_error(host: str, error: Exception) -> Exception:
+    """Replace a driver logon error on the JWT path with one carrying fixed text.
+
+    Every call site then gets the same verdict, including the downloader's and the
+    indexer's, which let a driver error through as it is.
+    """
+    text = str(error)
+    if _JWT_EXPIRED_RE.search(text):
+        return TokenExpiredError(TOKEN_EXPIRED_MESSAGE)
+    database_codes = {int(code) for code in _TERADATA_DATABASE_ERROR_CODE_RE.findall(text)}
+    if _JWT_RE.search(text) or _LOGON_REFUSED_CODE in database_codes:
+        return UserAuthError(JWT_REFUSED_MESSAGE)
+    return IngestConnectionError(_summarize_error(host, error))
+
+
 def _build_proxy_params() -> dict:
     """Read standard proxy env vars and translate to teradatasql connection parameters.
 
@@ -313,14 +349,52 @@ def _resolve_db_column_case(
     return cache[table_name].get(column_name.lower(), column_name)
 
 
+def _blank_to_none(value: Any) -> Any:
+    return None if isinstance(value, str) and not value.strip() else value
+
+
 class TeradataAccessConfig(SQLAccessConfig):
-    password: str = Field(description="Teradata user password")
+    password: Optional[str] = Field(
+        default=None, description="Teradata user password, for username and password logon"
+    )
+    token: Optional[str] = Field(
+        default=None,
+        description="A JWT the database trusts, for JWT logon. The database user is the one "
+        "the token maps to.",
+    )
+    client_secret: Optional[str] = Field(
+        default=None, description="OAuth client secret, for JWT via client credentials"
+    )
+
+    # Blank means absent for the JWT credentials. The password is unchanged: an empty
+    # one was sent as-is before JWT existed.
+    _blank_token_to_none = field_validator("token", "client_secret", mode="before")(_blank_to_none)
+
+    @field_validator("token")
+    @classmethod
+    def _strip_token(cls, value: Optional[str]) -> Optional[str]:
+        return value.strip() if value is not None else None
 
 
 class TeradataConnectionConfig(SQLConnectionConfig):
     access_config: Secret[TeradataAccessConfig]
     host: str = Field(description="Teradata server hostname or IP address")
-    user: str = Field(description="Teradata database username")
+    user: Optional[str] = Field(
+        default=None,
+        description="Teradata database username, for username and password logon. Not sent "
+        "with JWT: the database user is the one the token maps to.",
+    )
+    token_url: Optional[str] = Field(
+        default=None,
+        description="The identity provider's OAuth 2.0 token endpoint (https), for JWT via "
+        "client credentials",
+    )
+    client_id: Optional[str] = Field(
+        default=None, description="OAuth client ID, for JWT via client credentials"
+    )
+    scope: Optional[str] = Field(
+        default=None, description="OAuth scope to request, for JWT via client credentials"
+    )
     database: Optional[str] = Field(
         default=None,
         description="Default database/schema to use for queries",
@@ -331,23 +405,103 @@ class TeradataConnectionConfig(SQLConnectionConfig):
         description="Teradata database port (default: 1025)",
     )
     connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
+    _token: Optional[RefreshingToken] = PrivateAttr(default=None)
+    _audited: set[str] = PrivateAttr(default_factory=set)
+
+    _blank_client_credentials_to_none = field_validator(
+        "token_url", "client_id", "scope", mode="before"
+    )(_blank_to_none)
+
+    @field_validator("token_url", "client_id", "scope")
+    @classmethod
+    def _strip(cls, value: Optional[str]) -> Optional[str]:
+        return value.strip() if value is not None else None
+
+    @model_validator(mode="after")
+    def _one_credential_set(self) -> "TeradataConnectionConfig":
+        # Which fields are present IS the selection. Messages name fields, never values.
+        access = self.access_config.get_secret_value()
+        client_credentials = {
+            "token URL": self.token_url,
+            "client ID": self.client_id,
+            "client secret": access.client_secret,
+        }
+        missing = [name for name, value in client_credentials.items() if value is None]
+        if 0 < len(missing) < len(client_credentials):
+            raise ValueError(
+                f"Client credentials are incomplete: provide the {' and '.join(missing)} as well."
+            )
+        chosen = [access.password is not None, access.token is not None, not missing]
+        if sum(chosen) > 1:
+            raise ValueError(
+                "Provide one credential set: a database password, a JWT token, or client "
+                "credentials. Pick one authentication method."
+            )
+        if not any(chosen):
+            raise ValueError(
+                "Authentication required: provide a database password, paste a JWT token, "
+                "or configure client credentials."
+            )
+        if access.password is not None and self.user is None:
+            raise ValueError("A database password needs the database username as well.")
+        if self.token_url and not self.token_url.lower().startswith("https://"):
+            raise ValueError(TOKEN_URL_NOT_HTTPS_MESSAGE)
+        # Built here, once the set is known to be complete: pydantic runs
+        # model_post_init before this validator.
+        if not missing:
+            self._token = RefreshingToken(
+                ClientCredentialsTokenSource(
+                    self.token_url, self.client_id, access.client_secret, self.scope
+                )
+            )
+        elif access.token is not None:
+            self._token = RefreshingToken(StaticTokenSource(access.token))
+        return self
+
+    @property
+    def auth_method(self) -> str:
+        if self.token_url:
+            return "jwt_client_credentials"
+        return "password" if self._token is None else "jwt"
+
+    def _logon_params(self) -> dict[str, str]:
+        if self._token is None:
+            return {"user": self.user, "password": self.access_config.get_secret_value().password}
+        # The driver's JWT logon: the database takes the user from the token.
+        return {"logmech": "JWT", "logdata": f"token={self._token.value}"}
+
+    def _audit(self, outcome: str) -> None:
+        """Record the method each run logs on with, once per outcome. Never a credential."""
+        if outcome in self._audited:
+            return
+        self._audited.add(outcome)
+        logger.info(
+            "Teradata authentication: auth.method=%s outcome=%s job_id=%s dag_node_id=%s",
+            self.auth_method,
+            outcome,
+            os.getenv("JOB_ID", "-"),
+            os.getenv("DAG_NODE_ID", "-"),
+        )
 
     @contextmanager
     @requires_dependencies(["teradatasql"], extras="teradata")
     def get_connection(self) -> Generator["TeradataConnection", None, None]:
         from teradatasql import connect
 
-        conn_params = {
-            "host": self.host,
-            "user": self.user,
-            "password": self.access_config.get_secret_value().password,
-            "dbs_port": self.dbs_port,
-        }
-        if self.database:
-            conn_params["database"] = self.database
-        conn_params.update(_build_proxy_params())
-
-        connection = connect(**conn_params)
+        try:
+            conn_params = {"host": self.host, **self._logon_params(), "dbs_port": self.dbs_port}
+            if self.database:
+                conn_params["database"] = self.database
+            conn_params.update(_build_proxy_params())
+            connection = connect(**conn_params)
+        except Exception as e:
+            if self._token is not None and _is_teradata_driver_error(e):
+                error = _jwt_logon_error(self.host, e)
+                self._audit(type(error).__name__)
+                raise error from None
+            self._audit(type(e).__name__)
+            raise
+        self._audit("authenticated")
         try:
             cursor = connection.cursor()
             try:
@@ -386,9 +540,11 @@ class TeradataIndexer(SQLIndexer):
         try:
             with self.get_cursor() as cursor:
                 cursor.execute("SELECT 1")
+        except UnstructuredIngestError:
+            raise
         except Exception as e:
             logger.error(f"failed to validate connection: {safe_error_summary(e)}")
-            raise SourceConnectionError(_summarize_error(self.connection_config.host, e))
+            raise SourceConnectionError(_summarize_error(self.connection_config.host, e)) from None
 
         table_name = self.index_config.table_name
         try:
@@ -623,9 +779,13 @@ class TeradataUploader(SQLUploader):
         try:
             with self.get_cursor() as cursor:
                 cursor.execute("SELECT 1")
+        except UnstructuredIngestError:
+            raise
         except Exception as e:
             logger.error(f"failed to validate connection: {safe_error_summary(e)}")
-            raise DestinationConnectionError(_summarize_error(self.connection_config.host, e))
+            raise DestinationConnectionError(
+                _summarize_error(self.connection_config.host, e)
+            ) from None
         self.check_create_table_permission()
         if self.upload_config.table_name:
             # Skipped when the table name is unset: create_destination() names the
@@ -661,6 +821,10 @@ class TeradataUploader(SQLUploader):
                     )
                     return
                 denial, created = self._probe_table_creation(cursor, database=database)
+        except UnstructuredIngestError:
+            # The logon itself failed with a verdict (an expired or refused JWT), which
+            # is not an inconclusive probe.
+            raise
         except Exception as e:
             # A refusal the server has already given is not undone by a failure on the way
             # out: the cursor close and get_connection()'s own commit/close both run after

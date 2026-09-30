@@ -7285,6 +7285,7 @@ snowflake = [
 ]
 teradata = [
     { name = "pandas" },
+    { name = "requests" },
     { name = "teradatasql" },
 ]
 togetherai = [
@@ -7473,6 +7474,7 @@ requires-dist = [
     { name = "requests", marker = "extra == 'github'" },
     { name = "requests", marker = "extra == 'onedrive'" },
     { name = "requests", marker = "extra == 'sharepoint'" },
+    { name = "requests", marker = "extra == 'teradata'" },
     { name = "requests", marker = "extra == 'vectara'" },
     { name = "s3fs", marker = "extra == 'ibm-watsonx-s3'" },
     { name = "s3fs", marker = "extra == 's3'" },
