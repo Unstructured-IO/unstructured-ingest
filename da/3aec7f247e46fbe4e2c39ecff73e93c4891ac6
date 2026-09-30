@@ -1,0 +1,19 @@
+test/unit/connectors/sql/test_teradata_jwt.py
+  s_ac3b74c6d42b77::t_3af396285eb3b9 537,539-541,544-545,550-551
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "da3aec7f247e46fbe4e2c39ecff73e93c4891ac6",
+  "prompts": {},
+  "sessions": {
+    "s_ac3b74c6d42b77": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f55ae1d0-269a-4377-8dea-699022fafba5",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Trevor Bossert <trevor@unstructured.io>"
+    }
+  }
+}
