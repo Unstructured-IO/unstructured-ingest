@@ -368,14 +368,18 @@ def indexer_factory(base_sharepoint_config):
     [
         ("invalid_creds", "UserAuthError"),
         ("nonexistent_site", "UserError"),
-        ("invalid_path", "UserError"),
+        ("invalid_path", "NotFoundError"),
     ],
 )
 async def test_sharepoint_precheck_error_scenarios(indexer_factory, error_scenario, expected_error):
     """Parametrized test for different SharePoint precheck error scenarios."""
-    from unstructured_ingest.error import UserAuthError, UserError
+    from unstructured_ingest.error import NotFoundError, UserAuthError, UserError
 
-    error_class_map = {"UserAuthError": UserAuthError, "UserError": UserError}
+    error_class_map = {
+        "UserAuthError": UserAuthError,
+        "UserError": UserError,
+        "NotFoundError": NotFoundError,
+    }
 
     expected_exception = error_class_map[expected_error]
 

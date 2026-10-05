@@ -1,3 +1,10 @@
+## [1.11.22]
+
+### Fixes
+
+- **Notion databases are no longer silently skipped when the API adds a response field.** Notion's database responses now include `database_type`, and the database type passed every unknown key to its constructor, which raised; the connector logged the error and indexed nothing from that database. Unknown fields are now ignored, as pages already did.
+- **Integration tests updated for current behavior.** The SharePoint invalid-path precheck test expects `NotFoundError`, which a 404 raises since the precheck refactor, and the S3 source tests read the fixtures bucket with the `S3_INGEST_TEST_*` credentials because the bucket no longer allows anonymous listing.
+
 ## [1.11.21]
 
 ### Enhancements
