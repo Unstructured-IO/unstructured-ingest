@@ -16,16 +16,16 @@ services:
 
   minio:
     container_name: milvus-minio
-    image: minio/minio:RELEASE.2023-03-20T20-16-18Z
+    image: cgr.dev/chainguard/minio:latest-dev@sha256:154067bb87d1e204b1ae4c74e85b9ccee021f6833035f140d5328331dca945ed
     environment:
-      MINIO_ACCESS_KEY: minioadmin
-      MINIO_SECRET_KEY: minioadmin
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
     ports:
       - "9001:9001"
       - "9000:9000"
-    command: minio server /minio_data --console-address ":9001"
+    command: server /data --console-address ":9001"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      test: ["CMD", "mc", "ready", "local"]
       interval: 30s
       timeout: 20s
       retries: 3

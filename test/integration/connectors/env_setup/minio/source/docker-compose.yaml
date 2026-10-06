@@ -1,7 +1,7 @@
 services:
   # run an S3 instance (minio)
   s3:
-    image: minio/minio
+    image: cgr.dev/chainguard/minio:latest-dev@sha256:154067bb87d1e204b1ae4c74e85b9ccee021f6833035f140d5328331dca945ed
     container_name: minio-server
     ports:
       - ${S3_API_PORT}:${S3_API_PORT}
@@ -21,7 +21,7 @@ services:
 
   # create the bucket
   seed:
-    image: minio/mc
+    image: cgr.dev/chainguard/minio-client:latest-dev@sha256:3821d1d13eeed245d780432596c41e5a8632aef6ea61f841e3da870c2518db01
     container_name: minio-client
     env_file: .env
     volumes:
