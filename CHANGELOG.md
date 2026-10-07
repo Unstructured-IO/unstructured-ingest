@@ -1,3 +1,9 @@
+## [1.11.22]
+
+### Fixes
+
+- **fix(airtable): accept a trailing slash in source paths.** The documented `base_id/` form was read as a table with an empty ID, so the base's tables were not enumerated, and a trailing slash on a table or view path was rejected. One trailing slash is now accepted for base, table, and view paths. Paths with an empty ID, such as `base//view` or `base/table//`, previously passed validation and are now rejected when the config is loaded.
+
 ## [1.11.21]
 
 ### Enhancements
