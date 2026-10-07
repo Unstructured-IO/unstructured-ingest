@@ -1,3 +1,9 @@
+## [1.11.22]
+
+### Fixes
+
+- **fix(gitlab): index from the repository root with the default path.** The indexer sent its default `path` of `/` to GitLab unchanged, and computing each file path relative to `/` raised `ValueError` before any file was indexed. The path is now normalized to a repository-relative path for the tree request and file metadata: `/` and `.` select the repository root, and subdirectory paths with or without a trailing slash keep their relative file paths. File identifiers and record locators are unchanged.
+
 ## [1.11.21]
 
 ### Enhancements
