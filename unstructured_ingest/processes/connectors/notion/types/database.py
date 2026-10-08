@@ -1,5 +1,5 @@
 # https://developers.notion.com/reference/database
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, fields
 from typing import Dict, List, Optional
 
 from htmlBuilder.tags import Div, HtmlTag, Span
@@ -48,8 +48,13 @@ class Database(FromJSONMixin, GetHTMLMixin):
         parent = data.pop("parent")
         title = data.pop("title")
         description = data.pop("description")
+        properties = data.pop("properties", {})
+        # Notion adds response fields over time (e.g. database_type); passing an unknown one to
+        # the constructor would raise.
+        known_fields = {f.name for f in fields(cls)}
+        data = {k: v for k, v in data.items() if k in known_fields}
         page = cls(
-            properties=map_properties(data.pop("properties", {})),
+            properties=map_properties(properties),
             created_by=PartialUser.from_dict(created_by),
             last_edited_by=PartialUser.from_dict(last_edited_by),
             icon=FileObject.from_dict(icon) if icon else None,
