@@ -1,10 +1,16 @@
-## [1.11.22]
+## [1.11.23]
 
 ### Fixes
 
 - **Notion databases are no longer silently skipped when the API adds a response field.** Notion's database responses now include `database_type`, and the database type passed every unknown key to its constructor, which raised; the connector logged the error and indexed nothing from that database. Unknown fields are now ignored, as pages already did.
 - **Integration tests updated for current behavior.** The SharePoint invalid-path precheck test expects `NotFoundError`, which a 404 raises since the precheck refactor, and the S3 source tests read the fixtures bucket with the `S3_INGEST_TEST_*` credentials because the bucket no longer allows anonymous listing.
 - **Integration test environments repaired.** The MinIO and Milvus compose stacks pull MinIO from Chainguard (`cgr.dev/chainguard/minio`, `minio-client`), pinned by digest, because the `minio/minio` and `minio/mc` images are no longer on Docker Hub. The Milvus missing-collection precheck test expects `UserError`, and the three OpenSearch IAM tests are skipped while their AWS domain is gone.
+
+## [1.11.22]
+
+### Fixes
+
+- **fix(gitlab): index from the repository root with the default path.** The indexer sent its default `path` of `/` to GitLab unchanged, and computing each file path relative to `/` raised `ValueError` before any file was indexed. The path is now normalized to a repository-relative path for the tree request and file metadata: `/` and `.` select the repository root, and subdirectory paths with or without a trailing slash keep their relative file paths. File identifiers and record locators are unchanged.
 
 ## [1.11.21]
 
