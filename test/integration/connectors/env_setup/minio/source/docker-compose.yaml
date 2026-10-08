@@ -1,20 +1,20 @@
 services:
-  # run an S3 instance (minio)
+  # run an S3 instance (RustFS, S3-compatible)
   s3:
-    image: cgr.dev/chainguard/minio:latest-dev@sha256:154067bb87d1e204b1ae4c74e85b9ccee021f6833035f140d5328331dca945ed
+    image: rustfs/rustfs:1.0.1@sha256:1803faef57627e2d9c2e7d89d655d712ddded5389040054987163043fecb6a3c
     container_name: minio-server
     ports:
       - ${S3_API_PORT}:${S3_API_PORT}
       - ${S3_WEB_PORT}:${S3_WEB_PORT}
     env_file: .env
     environment:
-      MINIO_ROOT_USER: ${S3_ACCESS_KEY}
-      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY}
-      MINIO_SERVER_URL: ${S3_ENDPOINT_URL}
-      MINIO_BROWSER_REDIRECT_URL: ${S3_WEB_URL}
-    command: server /data --address ":${S3_API_PORT}" --console-address ":${S3_WEB_PORT}"
+      RUSTFS_ACCESS_KEY: ${S3_ACCESS_KEY}
+      RUSTFS_SECRET_KEY: ${S3_SECRET_KEY}
+      RUSTFS_ADDRESS: ":${S3_API_PORT}"
+      RUSTFS_CONSOLE_ENABLE: "true"
+      RUSTFS_CONSOLE_ADDRESS: ":${S3_WEB_PORT}"
     healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
+      test: ["CMD", "curl", "-f", "http://localhost:${S3_API_PORT}/health"]
       interval: 5s
       timeout: 1s
     restart: always

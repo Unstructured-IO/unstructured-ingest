@@ -16,16 +16,16 @@ services:
 
   minio:
     container_name: milvus-minio
-    image: cgr.dev/chainguard/minio:latest-dev@sha256:154067bb87d1e204b1ae4c74e85b9ccee021f6833035f140d5328331dca945ed
+    image: rustfs/rustfs:1.0.1@sha256:1803faef57627e2d9c2e7d89d655d712ddded5389040054987163043fecb6a3c
     environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
+      RUSTFS_ACCESS_KEY: minioadmin
+      RUSTFS_SECRET_KEY: minioadmin
+      RUSTFS_CONSOLE_ENABLE: "true"
     ports:
       - "9001:9001"
       - "9000:9000"
-    command: server /data --console-address ":9001"
     healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
+      test: ["CMD", "curl", "-f", "http://localhost:9000/health"]
       interval: 30s
       timeout: 20s
       retries: 3
