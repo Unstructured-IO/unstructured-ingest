@@ -171,3 +171,17 @@ def test_missing_token_file_env_is_a_user_error(wire, monkeypatch):
 def test_invalid_auth_combinations_are_rejected(kwargs):
     with pytest.raises(ValueError):
         AzureOpenAIEmbeddingConfig(azure_endpoint=ENDPOINT, **kwargs)
+
+
+def test_embedder_config_passes_workload_identity_through():
+    from unstructured_ingest.processes.embedder import EmbedderConfig
+
+    encoder = EmbedderConfig(
+        embedding_provider="azure-openai",
+        embedding_azure_endpoint=ENDPOINT,
+        embedding_azure_tenant_id="tenant-1",
+        embedding_azure_client_id="client-1",
+    ).get_embedder()
+
+    assert encoder.config.api_key is None
+    assert (encoder.config.tenant_id, encoder.config.client_id) == ("tenant-1", "client-1")
