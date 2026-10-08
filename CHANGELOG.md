@@ -1,8 +1,14 @@
-## [1.11.22]
+## [1.11.23]
 
 ### Fixes
 
 - **fix(airtable): accept a trailing slash in source paths.** The documented `base_id/` form was read as a table with an empty ID, so the base's tables were not enumerated, and a trailing slash on a view path was rejected. One trailing slash is now accepted for base, table, and view paths. Paths with an empty ID, such as `base//view` or `base//`, previously passed validation and are now rejected when the config is loaded.
+
+## [1.11.22]
+
+### Fixes
+
+- **fix(gitlab): index from the repository root with the default path.** The indexer sent its default `path` of `/` to GitLab unchanged, and computing each file path relative to `/` raised `ValueError` before any file was indexed. The path is now normalized to a repository-relative path for the tree request and file metadata: `/` and `.` select the repository root, and subdirectory paths with or without a trailing slash keep their relative file paths. File identifiers and record locators are unchanged.
 
 ## [1.11.21]
 
