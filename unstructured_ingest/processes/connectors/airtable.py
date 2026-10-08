@@ -100,13 +100,19 @@ class AirtableIndexerConfig(IndexerConfig):
     )
 
     @classmethod
-    def validate_path(cls, path: str):
-        components = path.split("/")
-        if len(components) > 3:
+    def parse_path(cls, path: str) -> list[str]:
+        components = path.removesuffix("/").split("/")
+        if len(components) > 3 or any(not component for component in components):
             raise ValueError(
                 f"Path must be of the format: base_id/table_id/view_id, "
                 f"where table id and view id are optional. Got: {path}"
             )
+
+        return components
+
+    @classmethod
+    def validate_path(cls, path: str):
+        cls.parse_path(path)
 
     @field_validator("list_of_paths")
     @classmethod
@@ -142,7 +148,7 @@ class AirtableIndexer(Indexer):
     def get_meta_from_list(self) -> list[AirtableTableMeta]:
         airtable_meta = []
         for path in self.index_config.list_of_paths:
-            components = path.split("/")
+            components = self.index_config.parse_path(path)
             if len(components) == 1:
                 airtable_meta.extend(self.get_base_tables_meta(base_id=components[0]))
             elif len(components) == 2:
