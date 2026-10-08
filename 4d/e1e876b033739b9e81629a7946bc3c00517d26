@@ -1,0 +1,23 @@
+CHANGELOG.md
+  s_7d6060c4c2f040::t_c8aae9ccdf0b30 5
+test/unit/embed/test_azure_openai_workload_identity.py
+  s_7d6060c4c2f040::t_f1a6353cda1aa8 174-187
+unstructured_ingest/processes/embedder.py
+  s_7d6060c4c2f040::t_f1c00921a9baf9 55-62,103-104
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "4de1e876b033739b9e81629a7946bc3c00517d26",
+  "prompts": {},
+  "sessions": {
+    "s_7d6060c4c2f040": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9d2baa9d-0650-4f70-8bec-9bf13a18feb9",
+        "model": "claude-sonnet-5-5"
+      },
+      "human_author": "Trevor Bossert <trevor@unstructured.io>"
+    }
+  }
+}
