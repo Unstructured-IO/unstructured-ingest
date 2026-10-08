@@ -7056,6 +7056,11 @@ azure = [
 azure-ai-search = [
     { name = "azure-search-documents" },
 ]
+azure-openai = [
+    { name = "azure-identity" },
+    { name = "openai" },
+    { name = "tiktoken" },
+]
 bedrock = [
     { name = "aioboto3" },
     { name = "aiobotocore" },
@@ -7381,6 +7386,7 @@ requires-dist = [
     { name = "astrapy", marker = "extra == 'astradb'", specifier = ">2.0.0" },
     { name = "atlassian-python-api", marker = "extra == 'confluence'" },
     { name = "atlassian-python-api", marker = "extra == 'jira'" },
+    { name = "azure-identity", marker = "extra == 'azure-openai'", specifier = ">=1.19.0" },
     { name = "azure-search-documents", marker = "extra == 'azure-ai-search'" },
     { name = "backoff", marker = "extra == 'notion'" },
     { name = "beautifulsoup4", marker = "extra == 'biomed'" },
@@ -7436,6 +7442,7 @@ requires-dist = [
     { name = "office365-rest-python-client", marker = "extra == 'onedrive'" },
     { name = "office365-rest-python-client", marker = "extra == 'outlook'", specifier = ">=2.6.2,<4" },
     { name = "office365-rest-python-client", marker = "extra == 'sharepoint'" },
+    { name = "openai", marker = "extra == 'azure-openai'", specifier = ">=2.20,<3" },
     { name = "openai", marker = "extra == 'octoai'" },
     { name = "openai", marker = "extra == 'openai'", specifier = ">=2.20,<3" },
     { name = "opensearch-py", marker = "extra == 'opensearch'", specifier = ">=2.4.0,<3.0.0" },
@@ -7490,6 +7497,7 @@ requires-dist = [
     { name = "tenacity", marker = "extra == 'onedrive'" },
     { name = "tenacity", marker = "extra == 'sharepoint'" },
     { name = "teradatasql", marker = "extra == 'teradata'" },
+    { name = "tiktoken", marker = "extra == 'azure-openai'" },
     { name = "tiktoken", marker = "extra == 'octoai'" },
     { name = "tiktoken", marker = "extra == 'openai'" },
     { name = "together", marker = "extra == 'togetherai'" },
@@ -7516,7 +7524,7 @@ requires-dist = [
     { name = "weaviate-client", marker = "extra == 'weaviate'" },
     { name = "wikipedia", marker = "extra == 'wikipedia'" },
 ]
-provides-extras = ["airtable", "astradb", "azure", "azure-ai-search", "bedrock", "biomed", "box", "chroma", "clarifai", "confluence", "couchbase", "databricks-delta-tables", "databricks-volumes", "delta-table", "discord", "doc", "docx", "dropbox", "duckdb", "elasticsearch", "epub", "gcs", "github", "gitlab", "google-drive", "hubspot", "huggingface", "ibm-watsonx-s3", "image", "jira", "kafka", "kdbai", "lancedb", "md", "milvus", "mixedbreadai", "mongodb", "neo4j", "notion", "octoai", "odt", "onedrive", "openai", "opensearch", "org", "outlook", "pdf", "pinecone", "postgres", "ppt", "pptx", "qdrant", "reddit", "redis", "remote", "rst", "rtf", "s3", "salesforce", "sftp", "sharepoint", "singlestore", "slack", "snowflake", "teradata", "togetherai", "tsv", "vastdb", "vectara", "vertexai", "voyageai", "weaviate", "wikipedia", "xlsx", "zendesk"]
+provides-extras = ["airtable", "astradb", "azure", "azure-ai-search", "azure-openai", "bedrock", "biomed", "box", "chroma", "clarifai", "confluence", "couchbase", "databricks-delta-tables", "databricks-volumes", "delta-table", "discord", "doc", "docx", "dropbox", "duckdb", "elasticsearch", "epub", "gcs", "github", "gitlab", "google-drive", "hubspot", "huggingface", "ibm-watsonx-s3", "image", "jira", "kafka", "kdbai", "lancedb", "md", "milvus", "mixedbreadai", "mongodb", "neo4j", "notion", "octoai", "odt", "onedrive", "openai", "opensearch", "org", "outlook", "pdf", "pinecone", "postgres", "ppt", "pptx", "qdrant", "reddit", "redis", "remote", "rst", "rtf", "s3", "salesforce", "sftp", "sharepoint", "singlestore", "slack", "snowflake", "teradata", "togetherai", "tsv", "vastdb", "vectara", "vertexai", "voyageai", "weaviate", "wikipedia", "xlsx", "zendesk"]
 
 [package.metadata.requires-dev]
 lint = [{ name = "ruff" }]
