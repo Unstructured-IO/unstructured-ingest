@@ -1,3 +1,9 @@
+## [1.11.24]
+
+### Fixes
+
+- **fix(chunker): apply `chunk_combine_text_under_n_chars` when chunking locally.** `ChunkerConfig.to_chunking_kwargs()` emits the Unstructured API's parameter name, `combine_under_n_chars`, and local chunking passed those same kwargs to `unstructured`'s `dispatch.chunk()`, which silently drops any kwarg the chunker does not accept, and `by_title` takes `combine_text_under_n_chars`. So a local `by_title` run ignored the setting and fell back to its default (`max_characters`, capped at `new_after_n_chars`). Local chunking now renames the kwarg before dispatching; the API path is unchanged.
+
 ## [1.11.23]
 
 ### Fixes
