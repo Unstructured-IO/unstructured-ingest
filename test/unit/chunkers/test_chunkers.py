@@ -47,3 +47,12 @@ def test_chunker(partition_config_params: dict):
     chunker_config = ChunkerConfig.model_validate(partition_config_params)
     chunker = Chunker(config=chunker_config)
     assert chunker
+
+
+def test_chunker_config_api_kwargs_use_api_parameter_name():
+    # The Unstructured API names this parameter `combine_under_n_chars`; only local chunking
+    # renames it to `combine_text_under_n_chars`.
+    chunker_config = ChunkerConfig(chunk_combine_text_under_n_chars=100)
+    kwargs = chunker_config.to_chunking_kwargs()
+    assert kwargs["combine_under_n_chars"] == 100
+    assert "combine_text_under_n_chars" not in kwargs
