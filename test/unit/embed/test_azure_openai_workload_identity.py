@@ -1,7 +1,9 @@
+import asyncio
+import functools
+import importlib
 import importlib.util
 import time
 
-import httpx
 import pytest
 
 from unstructured_ingest.embed.azure_openai import (
@@ -42,26 +44,34 @@ class _FakeCredential:
         return AccessToken(TOKEN, int(time.time()) + 3600)
 
 
+@functools.cache
+def _sdk():
+    """The SDK's real HTTP client classes and the HTTP library it is built on (httpx or httpx2)."""
+    from openai import DefaultAsyncHttpxClient, DefaultHttpxClient
+
+    http = importlib.import_module(DefaultHttpxClient.__mro__[1].__module__.split(".")[0])
+    return DefaultHttpxClient, DefaultAsyncHttpxClient, http
+
+
 @pytest.fixture
 def wire(mocker, monkeypatch):
     """Capture requests that reach the wire; the credential is faked, the SDK is real."""
+    sync_client, async_client, sdk_http = _sdk()  # resolved before the SDK classes are patched
     _FakeCredential.instances = []
     monkeypatch.setenv("AZURE_FEDERATED_TOKEN_FILE", "/var/run/secrets/azure/tokens/azure-identity")
     monkeypatch.delenv("AZURE_OPENAI_AD_TOKEN", raising=False)
     monkeypatch.delenv("AZURE_OPENAI_API_KEY", raising=False)
     mocker.patch("azure.identity.WorkloadIdentityCredential", _FakeCredential)
 
-    requests: list[httpx.Request] = []
+    requests: list = []
 
-    def handler(request: httpx.Request) -> httpx.Response:
+    def handler(request):
         requests.append(request)
-        return httpx.Response(200, json=EMBEDDING_BODY)
+        return sdk_http.Response(200, json=EMBEDDING_BODY)
 
-    transport = httpx.MockTransport(handler)
-    mocker.patch("openai.DefaultHttpxClient", lambda **kw: httpx.Client(transport=transport))
-    mocker.patch(
-        "openai.DefaultAsyncHttpxClient", lambda **kw: httpx.AsyncClient(transport=transport)
-    )
+    transport = sdk_http.MockTransport(handler)
+    mocker.patch("openai.DefaultHttpxClient", lambda **kw: sync_client(transport=transport))
+    mocker.patch("openai.DefaultAsyncHttpxClient", lambda **kw: async_client(transport=transport))
     return requests
 
 
@@ -75,7 +85,7 @@ def _wi_config(**overrides) -> AzureOpenAIEmbeddingConfig:
     )
 
 
-def _assert_bearer_only(request: httpx.Request) -> None:
+def _assert_bearer_only(request) -> None:
     assert request.headers["authorization"] == f"Bearer {TOKEN}"
     assert "api-key" not in request.headers
     assert "/openai/deployments/my-deployment/embeddings" in request.url.path
@@ -111,13 +121,26 @@ async def test_async_embedding_sends_bearer_token_and_no_api_key(wire):
     _assert_bearer_only(wire[0])
 
 
-def test_ambient_env_credentials_do_not_leak_onto_the_wire(wire, monkeypatch):
-    monkeypatch.setenv("AZURE_OPENAI_AD_TOKEN", "stale-env-token")
-    monkeypatch.setenv("AZURE_OPENAI_API_KEY", "stale-env-key")
+@pytest.mark.parametrize("use_async", [False, True])
+def test_ambient_env_credentials_do_not_leak_onto_the_wire(wire, monkeypatch, use_async):
+    decoys = {
+        "AZURE_OPENAI_AD_TOKEN": "decoy-env-ad-token",
+        "AZURE_OPENAI_API_KEY": "decoy-env-api-key",
+        "AZURE_OPENAI_KEY": "decoy-env-key",
+    }
+    for name, value in decoys.items():
+        monkeypatch.setenv(name, value)
 
-    _wi_config().get_client().embeddings.create(input="hello", model="my-deployment")
+    if use_async:
+        asyncio.run(
+            _wi_config().get_async_client().embeddings.create(input="hello", model="my-deployment")
+        )
+    else:
+        _wi_config().get_client().embeddings.create(input="hello", model="my-deployment")
 
     _assert_bearer_only(wire[0])
+    sent = [wire[0].url.query.decode(), *wire[0].headers.values()]
+    assert not any(decoy in value for decoy in decoys.values() for value in sent)
 
 
 def test_precheck_authenticates_with_bearer_token(wire):
@@ -128,13 +151,15 @@ def test_precheck_authenticates_with_bearer_token(wire):
 
 
 def test_precheck_surfaces_auth_rejection(mocker, wire):
-    def reject(request: httpx.Request) -> httpx.Response:
-        return httpx.Response(
+    sync_client, _, sdk_http = _sdk()
+
+    def reject(request):
+        return sdk_http.Response(
             401, json={"error": {"code": "401", "message": "Token audience is invalid."}}
         )
 
-    transport = httpx.MockTransport(reject)
-    mocker.patch("openai.DefaultHttpxClient", lambda **kw: httpx.Client(transport=transport))
+    transport = sdk_http.MockTransport(reject)
+    mocker.patch("openai.DefaultHttpxClient", lambda **kw: sync_client(transport=transport))
 
     with pytest.raises(UserAuthError, match="audience"):
         _wi_config().run_precheck()

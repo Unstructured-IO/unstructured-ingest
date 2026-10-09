@@ -64,7 +64,14 @@ class AzureOpenAIEmbeddingConfig(OpenAIEmbeddingConfig):
     def _auth_kwargs(self) -> dict:
         if self.api_key is not None:
             return {"api_key": self.api_key.get_secret_value()}
-        return {"azure_ad_token_provider": self._get_token_provider()}
+        from openai import Omit
+
+        return {
+            "azure_ad_token_provider": self._get_token_provider(),
+            # the SDK reads AZURE_OPENAI_API_KEY and some versions send it beside the bearer
+            # token; Omit() drops that header so a keyless client never sends an api key
+            "default_headers": {"api-key": Omit()},
+        }
 
     @requires_dependencies(["openai"], extras="openai")
     def run_precheck(self) -> None:
