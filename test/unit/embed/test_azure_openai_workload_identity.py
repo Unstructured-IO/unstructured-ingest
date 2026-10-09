@@ -13,9 +13,16 @@ from unstructured_ingest.embed.azure_openai import (
 )
 from unstructured_ingest.error import UserAuthError, UserError
 
+
+def _installed(module: str) -> bool:
+    try:
+        return importlib.util.find_spec(module) is not None
+    except ModuleNotFoundError:
+        return False
+
+
 pytestmark = pytest.mark.skipif(
-    importlib.util.find_spec("openai") is None
-    or importlib.util.find_spec("azure.identity") is None,
+    not (_installed("openai") and _installed("azure.identity")),
     reason="azure-openai extra not installed",
 )
 
