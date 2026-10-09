@@ -52,6 +52,14 @@ class EmbedderConfig(BaseModel):
     embedding_azure_api_version: Optional[str] = Field(
         description="Azure API version", default=None
     )
+    embedding_azure_tenant_id: Optional[str] = Field(
+        default=None,
+        description="Entra tenant ID for Azure OpenAI workload identity, instead of an API key",
+    )
+    embedding_azure_client_id: Optional[str] = Field(
+        default=None,
+        description="Entra client ID for Azure OpenAI workload identity, instead of an API key",
+    )
     embedding_vertexai_region: Optional[str] = Field(
         default=None,
         description="Vertex AI region. Only used by Gemini-family models; falls back to the "
@@ -92,6 +100,8 @@ class EmbedderConfig(BaseModel):
         config_kwargs = {
             "api_key": self.embedding_api_key,
             "azure_endpoint": self.embedding_azure_endpoint,
+            "tenant_id": self.embedding_azure_tenant_id,
+            "client_id": self.embedding_azure_client_id,
         }
         if api_version := self.embedding_azure_api_version:
             config_kwargs["api_version"] = api_version
