@@ -1,0 +1,19 @@
+test/unit/embed/test_azure_openai_workload_identity.py
+  s_7d6060c4c2f040::t_b9cd0b8dca22c4 16-23,25
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "6be885d2a893bdd603ca9a479738c189928da2cf",
+  "prompts": {},
+  "sessions": {
+    "s_7d6060c4c2f040": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9d2baa9d-0650-4f70-8bec-9bf13a18feb9",
+        "model": "claude-sonnet-5-5"
+      },
+      "human_author": "Trevor Bossert <trevor@unstructured.io>"
+    }
+  }
+}
