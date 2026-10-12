@@ -65,6 +65,13 @@ class EmbedderConfig(BaseModel):
         description="Vertex AI region. Only used by Gemini-family models; falls back to the "
         "VERTEXAI_REGION environment variable.",
     )
+    embedding_vertexai_service_account_email: Optional[str] = Field(
+        default=None,
+        description="Service account for Vertex AI workload identity, instead of an API key",
+    )
+    embedding_vertexai_project_id: Optional[str] = Field(
+        default=None, description="Google Cloud project for Vertex AI workload identity"
+    )
     embedding_vertexai_dimensionality: Optional[int] = Field(
         default=None,
         description="Output embedding dimension. Only used by Gemini-family Vertex AI models, "
@@ -146,6 +153,8 @@ class EmbedderConfig(BaseModel):
             "region": self.embedding_vertexai_region,
             "dimensionality": self.embedding_vertexai_dimensionality,
             "task": self.embedding_vertexai_task,
+            "service_account_email": self.embedding_vertexai_service_account_email,
+            "project_id": self.embedding_vertexai_project_id,
         }
         embedding_kwargs = embedding_kwargs | {
             key: value for key, value in gemini_kwargs.items() if value is not None
