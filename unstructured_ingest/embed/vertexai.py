@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Annotated, Any, Optional
 
-from pydantic import Field, Secret, ValidationError
+from pydantic import Field, Secret, ValidationError, model_validator
 from pydantic.functional_validators import BeforeValidator
 
 from unstructured_ingest.embed.interfaces import (
@@ -67,7 +67,9 @@ _GENAI_MAX_CONCURRENT_REQUESTS = 8
 # than one of them in the same process — and the client must be built for the location named in the
 # path, or the request 404s. Plain model ids (``gemini-embedding-2``) do not match and keep using
 # the configured/global region.
-_VERTEX_RESOURCE_LOCATION_RE = re.compile(r"^projects/[^/]+/locations/(?P<location>[^/]+)/")
+_VERTEX_RESOURCE_LOCATION_RE = re.compile(
+    r"^projects/(?P<project>[^/]+)/locations/(?P<location>[^/]+)/"
+)
 
 # A publisher-style resource path names the model in its final segment, so transport routing can
 # still tell a Gemini model from a legacy one. A bare ``endpoints/<id>`` path names no model at all,
@@ -89,6 +91,26 @@ _VERTEX_MULTI_REGIONS = frozenset({"us", "eu"})
 # NOTE: ``global`` is deliberately not in _VERTEX_MULTI_REGIONS — google-genai builds the correct
 # host for it on its own, and forcing the "rep" host here would break it.
 _VERTEX_DEFAULT_LOCATION = "global"
+
+# Workload identity field rules, the same as the platform's provider config: the region and project
+# form the Vertex host and path, and only user-managed service accounts may be impersonated.
+VERTEX_WORKLOAD_IDENTITY_RULES: dict[str, tuple[re.Pattern, str]] = {
+    "region": (
+        re.compile(r"global|us|eu|[a-z]+-[a-z]+[0-9]+"),
+        "vertexai: region must be global, us, eu or a region such as us-central1",
+    ),
+    "project_id": (
+        re.compile(r"[a-z][a-z0-9-]{4,28}[a-z0-9]"),
+        "vertexai: project_id must be a Google Cloud project ID",
+    ),
+    "service_account_email": (
+        re.compile(
+            r"[a-z][a-z0-9-]{4,28}[a-z0-9]@[a-z][a-z0-9-]{4,28}[a-z0-9]\.iam\.gserviceaccount\.com"
+        ),
+        "vertexai: service_account_email must be a user-managed service account "
+        "(<name>@<project>.iam.gserviceaccount.com)",
+    ),
+}
 
 
 def _vertex_location_from_resource_path(model_name: Optional[str]) -> Optional[str]:
@@ -118,7 +140,18 @@ def _vertex_multi_region_base_url(location: Optional[str]) -> Optional[str]:
 
 
 class VertexAIEmbeddingConfig(EmbeddingConfig):
-    api_key: ApiKeyType = Field(description="API key for Vertex AI")
+    api_key: Optional[ApiKeyType] = Field(
+        default=None,
+        description="API key for Vertex AI. Omit to use workload identity "
+        "(service_account_email and project_id).",
+    )
+    service_account_email: Optional[str] = Field(
+        default=None,
+        description="Service account to impersonate with workload identity, instead of an API key",
+    )
+    project_id: Optional[str] = Field(
+        default=None, description="Google Cloud project for Vertex AI calls with workload identity"
+    )
     embedder_model_name: Optional[str] = Field(
         default="text-embedding-005", alias="model_name", description="Vertex AI model name"
     )
@@ -126,7 +159,8 @@ class VertexAIEmbeddingConfig(EmbeddingConfig):
         default=None,
         description=(
             "Vertex AI region. Only used by Gemini-family models; falls back to the "
-            "VERTEXAI_REGION environment variable, then to 'global'."
+            "VERTEXAI_REGION environment variable, then to 'global'. Required with workload "
+            "identity, which has no fallback."
         ),
     )
     dimensionality: Optional[int] = Field(
@@ -143,9 +177,28 @@ class VertexAIEmbeddingConfig(EmbeddingConfig):
         ),
     )
 
+    @model_validator(mode="after")
+    def _validate_auth(self) -> "VertexAIEmbeddingConfig":
+        has_identity = bool(self.service_account_email) or bool(self.project_id)
+        if self.api_key is not None and has_identity:
+            raise ValueError("set either api_key or service_account_email and project_id, not both")
+        if self.api_key is not None:
+            return self
+        if not (self.service_account_email and self.project_id):
+            raise ValueError("api_key, or both service_account_email and project_id, is required")
+        for name, (pattern, message) in VERTEX_WORKLOAD_IDENTITY_RULES.items():
+            value = (getattr(self, name) or "").strip()
+            if not pattern.fullmatch(value):
+                raise ValueError(message)
+            setattr(self, name, value)
+        return self
+
     @property
     def uses_genai_transport(self) -> bool:
         """Whether this model must be driven through google-genai rather than TextEmbeddingModel."""
+        if self.api_key is None:
+            # The legacy transport reads a key file from the environment.
+            return True
         model_name = _vertex_routing_model_id(self.embedder_model_name).lower()
         return model_name.startswith(_GENAI_MODEL_PREFIXES)
 
@@ -202,23 +255,35 @@ class VertexAIEmbeddingConfig(EmbeddingConfig):
     def get_genai_client(self):
         """Creates a google-genai client in Vertex mode for Gemini-family embedding models."""
         from google import genai
-        from google.oauth2 import service_account
 
-        credentials_json = self.api_key.get_secret_value()
-        project = credentials_json.get("project_id")
-        if not project:
-            raise UserError(
-                "Vertex AI credentials are missing 'project_id'; a service account JSON is "
-                "required for Gemini-family embedding models."
+        if self.api_key is None:
+            project, credentials = self.project_id, self._workload_identity_credentials()
+        else:
+            from google.oauth2 import service_account
+
+            credentials_json = self.api_key.get_secret_value()
+            project = credentials_json.get("project_id")
+            if not project:
+                raise UserError(
+                    "Vertex AI credentials are missing 'project_id'; a service account JSON is "
+                    "required for Gemini-family embedding models."
+                )
+            credentials = service_account.Credentials.from_service_account_info(
+                credentials_json, scopes=["https://www.googleapis.com/auth/cloud-platform"]
             )
-        credentials = service_account.Credentials.from_service_account_info(
-            credentials_json, scopes=["https://www.googleapis.com/auth/cloud-platform"]
-        )
         location = self._resolve_location()
         client_kwargs: dict[str, Any] = {}
-        multi_region_base_url = _vertex_multi_region_base_url(location)
-        if multi_region_base_url:
-            client_kwargs["http_options"] = genai.types.HttpOptions(base_url=multi_region_base_url)
+        base_url = _vertex_multi_region_base_url(location)
+        if base_url is None and self.api_key is None:
+            # An explicit host, so GOOGLE_VERTEX_BASE_URL or a process-wide default cannot
+            # redirect the impersonated token.
+            base_url = (
+                "https://aiplatform.googleapis.com/"
+                if location == _VERTEX_DEFAULT_LOCATION
+                else f"https://{location}-aiplatform.googleapis.com/"
+            )
+        if base_url:
+            client_kwargs["http_options"] = genai.types.HttpOptions(base_url=base_url)
         return genai.Client(
             vertexai=True,
             credentials=credentials,
@@ -226,6 +291,39 @@ class VertexAIEmbeddingConfig(EmbeddingConfig):
             location=location,
             **client_kwargs,
         )
+
+    def _workload_identity_credentials(self) -> Any:
+        from unstructured_ingest.embed.vertexai_identity import (
+            refusal,
+            vertex_workload_identity_credentials,
+        )
+
+        # The resource path picks the host, so it must stay in the configured project and pass
+        # the region rule before the impersonated token goes anywhere.
+        model_name = self.embedder_model_name or ""
+        scope = _VERTEX_RESOURCE_LOCATION_RE.match(model_name)
+        region_rule = VERTEX_WORKLOAD_IDENTITY_RULES["region"][0]
+        if model_name.startswith("projects/") and not (
+            scope
+            and scope.group("project") == self.project_id
+            and region_rule.fullmatch(scope.group("location"))
+        ):
+            raise refusal(
+                f"Model {self.embedder_model_name} is not in project {self.project_id}.",
+                "vertex_model_outside_project",
+            )
+        return vertex_workload_identity_credentials(self.service_account_email)
+
+    def run_precheck(self) -> None:
+        """Embed one input with workload identity, which proves the whole token chain, the
+        Vertex AI role and the model. Key configs are not prechecked."""
+        if self.api_key is not None:
+            return
+        try:
+            client = self.get_genai_client()
+            self._genai_embed_one(client, "precheck", self._genai_embed_config())
+        except Exception as e:
+            raise self.wrap_error(e=e)
 
     @requires_dependencies(["vertexai"], extras="vertexai")
     def get_legacy_client(self) -> "TextEmbeddingModel":
@@ -306,6 +404,9 @@ class VertexAIEmbeddingConfig(EmbeddingConfig):
 class VertexAIEmbeddingEncoder(BaseEmbeddingEncoder):
     config: VertexAIEmbeddingConfig
 
+    def precheck(self):
+        self.config.run_precheck()
+
     def wrap_error(self, e: Exception) -> Exception:
         return self.config.wrap_error(e=e)
 
@@ -319,6 +420,9 @@ class VertexAIEmbeddingEncoder(BaseEmbeddingEncoder):
 @dataclass
 class AsyncVertexAIEmbeddingEncoder(AsyncBaseEmbeddingEncoder):
     config: VertexAIEmbeddingConfig
+
+    def precheck(self):
+        self.config.run_precheck()
 
     def wrap_error(self, e: Exception) -> Exception:
         return self.config.wrap_error(e=e)
