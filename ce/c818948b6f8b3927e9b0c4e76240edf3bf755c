@@ -1,0 +1,41 @@
+unstructured_ingest/embed/vertexai_identity.py
+  s_7d6060c4c2f040::t_510c7992c9554e 1-174
+  s_7d6060c4c2f040::t_15b445e7ceb553 175-185
+test/unit/embed/test_vertexai_workload_identity.py
+  s_7d6060c4c2f040::t_2fa4c43aa857e6 291-292
+  s_7d6060c4c2f040::t_136a967a507abf 304-315
+  s_7d6060c4c2f040::t_afffc37ab6eccb 1-290,293-303,316-473,475-603
+  s_ebd2883e698a4a::t_096f869006dd21 474
+CHANGELOG.md
+  s_7d6060c4c2f040::t_5373499b96b725 1-6
+unstructured_ingest/__version__.py
+  s_7d6060c4c2f040::t_ee2788e0cd858c 1
+unstructured_ingest/embed/vertexai.py
+  s_7d6060c4c2f040::t_92bbb32d74a801 10,70-72,95-114,143-154,162-163,180-195,199-201,258-272,287-317,397-399,414-416
+unstructured_ingest/processes/embedder.py
+  s_7d6060c4c2f040::t_571f38894128a3 68-74,156-157
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "cec818948b6f8b3927e9b0c4e76240edf3bf755c",
+  "prompts": {},
+  "sessions": {
+    "s_7d6060c4c2f040": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9d2baa9d-0650-4f70-8bec-9bf13a18feb9",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Trevor Bossert <trevor@unstructured.io>"
+    },
+    "s_ebd2883e698a4a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "35b7f839-41e8-4f1f-a461-0ba82e75d925",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Trevor Bossert <trevor@unstructured.io>"
+    }
+  }
+}
