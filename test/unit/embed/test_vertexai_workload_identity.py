@@ -260,6 +260,7 @@ def test_ambient_env_credentials_never_reach_the_wire(
         "GOOGLE_API_KEY": "decoy-google-api-key",
         "GEMINI_API_KEY": "decoy-gemini-api-key",
         "GOOGLE_GENAI_USE_VERTEXAI": "false",
+        "GOOGLE_VERTEX_BASE_URL": "https://env-leak.example/",
     }
     for name, value in decoys.items():
         monkeypatch.setenv(name, value)
@@ -461,6 +462,7 @@ def test_allowed_vertex_project_does_not_admit_a_foreign_service_account(
         f"projects/{PROJECT}/locations/evil.example#/publishers/google/models/gemini-embedding-001",
         f"projects/{PROJECT}/locations/evil.example?/endpoints/1",
         f"projects/{PROJECT}/locations/x@evil.example/endpoints/1",
+        "projects/other-project/locations/us-central1",
     ],
 )
 def test_resource_paths_outside_the_project_or_region_rules_are_refused(gke, google, wire, model):

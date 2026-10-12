@@ -273,9 +273,17 @@ class VertexAIEmbeddingConfig(EmbeddingConfig):
             )
         location = self._resolve_location()
         client_kwargs: dict[str, Any] = {}
-        multi_region_base_url = _vertex_multi_region_base_url(location)
-        if multi_region_base_url:
-            client_kwargs["http_options"] = genai.types.HttpOptions(base_url=multi_region_base_url)
+        base_url = _vertex_multi_region_base_url(location)
+        if base_url is None and self.api_key is None:
+            # An explicit host, so GOOGLE_VERTEX_BASE_URL or a process-wide default cannot
+            # redirect the impersonated token.
+            base_url = (
+                "https://aiplatform.googleapis.com/"
+                if location == _VERTEX_DEFAULT_LOCATION
+                else f"https://{location}-aiplatform.googleapis.com/"
+            )
+        if base_url:
+            client_kwargs["http_options"] = genai.types.HttpOptions(base_url=base_url)
         return genai.Client(
             vertexai=True,
             credentials=credentials,
@@ -292,10 +300,12 @@ class VertexAIEmbeddingConfig(EmbeddingConfig):
 
         # The resource path picks the host, so it must stay in the configured project and pass
         # the region rule before the impersonated token goes anywhere.
-        scope = _VERTEX_RESOURCE_LOCATION_RE.match(self.embedder_model_name or "")
+        model_name = self.embedder_model_name or ""
+        scope = _VERTEX_RESOURCE_LOCATION_RE.match(model_name)
         region_rule = VERTEX_WORKLOAD_IDENTITY_RULES["region"][0]
-        if scope and not (
-            scope.group("project") == self.project_id
+        if model_name.startswith("projects/") and not (
+            scope
+            and scope.group("project") == self.project_id
             and region_rule.fullmatch(scope.group("location"))
         ):
             raise refusal(
