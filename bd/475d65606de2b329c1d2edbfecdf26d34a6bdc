@@ -1,0 +1,14 @@
+unstructured_ingest/embed/vertexai.py
+  h_9f6f21e96ada16 309
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "bd475d65606de2b329c1d2edbfecdf26d34a6bdc",
+  "prompts": {},
+  "humans": {
+    "h_9f6f21e96ada16": {
+      "author": "Trevor Bossert <trevor@unstructured.io>"
+    }
+  }
+}
