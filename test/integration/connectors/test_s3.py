@@ -48,16 +48,31 @@ def anon_connection_config() -> S3ConnectionConfig:
     return S3ConnectionConfig(access_config=S3AccessConfig(), anonymous=True)
 
 
+@pytest.fixture
+def fixtures_connection_config() -> S3ConnectionConfig:
+    # utic-dev-tech-fixtures no longer allows anonymous listing.
+    aws_credentials = get_aws_credentials()
+    return S3ConnectionConfig(
+        access_config=S3AccessConfig(
+            key=aws_credentials["aws_access_key_id"],
+            secret=aws_credentials["aws_secret_access_key"],
+        ),
+    )
+
+
 @pytest.mark.asyncio
 @pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, BLOB_STORAGE_TAG)
-async def test_s3_source(anon_connection_config: S3ConnectionConfig):
+@requires_env("S3_INGEST_TEST_ACCESS_KEY", "S3_INGEST_TEST_SECRET_KEY")
+async def test_s3_source(fixtures_connection_config: S3ConnectionConfig):
     indexer_config = S3IndexerConfig(remote_url="s3://utic-dev-tech-fixtures/small-pdf-set/")
     with tempfile.TemporaryDirectory() as tempdir:
         tempdir_path = Path(tempdir)
         download_config = S3DownloaderConfig(download_dir=tempdir_path)
-        indexer = S3Indexer(connection_config=anon_connection_config, index_config=indexer_config)
+        indexer = S3Indexer(
+            connection_config=fixtures_connection_config, index_config=indexer_config
+        )
         downloader = S3Downloader(
-            connection_config=anon_connection_config, download_config=download_config
+            connection_config=fixtures_connection_config, download_config=download_config
         )
         await source_connector_validation(
             indexer=indexer,
@@ -79,14 +94,17 @@ async def test_s3_source(anon_connection_config: S3ConnectionConfig):
 
 @pytest.mark.asyncio
 @pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, BLOB_STORAGE_TAG)
-async def test_s3_source_special_char(anon_connection_config: S3ConnectionConfig):
+@requires_env("S3_INGEST_TEST_ACCESS_KEY", "S3_INGEST_TEST_SECRET_KEY")
+async def test_s3_source_special_char(fixtures_connection_config: S3ConnectionConfig):
     indexer_config = S3IndexerConfig(remote_url="s3://utic-dev-tech-fixtures/special-characters/")
     with tempfile.TemporaryDirectory() as tempdir:
         tempdir_path = Path(tempdir)
         download_config = S3DownloaderConfig(download_dir=tempdir_path)
-        indexer = S3Indexer(connection_config=anon_connection_config, index_config=indexer_config)
+        indexer = S3Indexer(
+            connection_config=fixtures_connection_config, index_config=indexer_config
+        )
         downloader = S3Downloader(
-            connection_config=anon_connection_config, download_config=download_config
+            connection_config=fixtures_connection_config, download_config=download_config
         )
         await source_connector_validation(
             indexer=indexer,
