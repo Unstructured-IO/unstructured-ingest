@@ -1,3 +1,9 @@
+## [1.11.25]
+
+### Fixes
+
+- **The S3 special-characters source integration test is skipped.** Its `special-characters/` fixtures were removed from the `utic-dev-tech-fixtures` bucket, so the listing comes back empty; the test can be re-enabled once they are restored.
+
 ## [1.11.24]
 
 ### Fixes

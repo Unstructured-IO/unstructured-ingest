@@ -95,6 +95,10 @@ async def test_s3_source(fixtures_connection_config: S3ConnectionConfig):
 @pytest.mark.asyncio
 @pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, BLOB_STORAGE_TAG)
 @requires_env("S3_INGEST_TEST_ACCESS_KEY", "S3_INGEST_TEST_SECRET_KEY")
+@pytest.mark.skip(
+    reason="The special-characters/ fixtures were removed from utic-dev-tech-fixtures, so the "
+    "listing comes back empty; https://linear.app/unstructured/issue/INFRA-1308"
+)
 async def test_s3_source_special_char(fixtures_connection_config: S3ConnectionConfig):
     indexer_config = S3IndexerConfig(remote_url="s3://utic-dev-tech-fixtures/special-characters/")
     with tempfile.TemporaryDirectory() as tempdir:
