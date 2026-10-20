@@ -7392,7 +7392,7 @@ requires-dist = [
     { name = "botocore", marker = "extra == 'opensearch'", specifier = ">=1.29.0" },
     { name = "boxfs", marker = "extra == 'box'" },
     { name = "boxsdk", marker = "extra == 'box'" },
-    { name = "certifi", specifier = ">=2026.1.4" },
+    { name = "certifi", specifier = ">=2026.10.19" },
     { name = "chromadb", marker = "extra == 'chroma'" },
     { name = "clarifai", marker = "extra == 'clarifai'" },
     { name = "click" },
