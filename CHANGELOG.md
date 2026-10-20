@@ -1,3 +1,11 @@
+## [1.11.26]
+
+### Fixes
+
+- **Bump locked `certifi` to 2026.10.19.** The release removes the emSign ECC Root CA - G3 root after eight eMudhra intermediate CA private keys were compromised. `requests` and `httpx` trust certifi's bundle and do not check revocation, so with the older bundle they accepted certificates chaining to that root. The `certifi` requirement is also raised to `>=2026.10.19`, so pip installs pick up the new bundle too.
+
+- Require `uv>=0.13.4`: earlier uv bundles a CA store that trusts the emSign ECC Root CA - G3 (GHSA-hq85-5cpj-mr62).
+
 ## [1.11.25]
 
 ### Fixes
