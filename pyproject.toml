@@ -193,7 +193,7 @@ build-backend = "hatchling.build"
 override-dependencies = [
     "ruff>=0.15.0",
     "psutil>=7.0.0",
-    "uv>=0.10.0",
+    "uv>=0.13.4",
     "pykx>=2.4.0",
     "aiobotocore>=3.0.0",
 ]
