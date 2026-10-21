@@ -159,7 +159,7 @@ def test_fetch_file(
     assert result == mock_file
     assert mock_client.sites.get_by_url.return_value.get.return_value.execute_query.call_count == 1
     assert mock_drive_item.get_by_path.return_value.get.return_value.execute_query.call_count == 1
-    mock_drive_item.get_by_path.assert_called_with("/sites/test/Shared Documents/test.docx")
+    mock_drive_item.get_by_path.assert_called_with("/sites/test/Shared%20Documents/test.docx")
 
 
 def test_fetch_file_retries_on_429_error(
@@ -1558,9 +1558,98 @@ class TestDownloaderDriveIdResolution:
         result = downloader._fetch_file(fd)
 
         assert result is mock_file
-        mock_drive_item.get_by_path.assert_called_with("/sites/test/Shared Documents/f.docx")
+        mock_drive_item.get_by_path.assert_called_with("/sites/test/Shared%20Documents/f.docx")
         # The drive-id branch must not be used when no drive ref is present.
         client.drives.__getitem__.assert_not_called()
+
+
+class TestSharepointPathQuoting:
+    def test_legacy_fallback_quotes_hash_and_spaces(self, mock_download_config):
+        client = MagicMock()
+        mock_site = Mock()
+        mock_drive_item = Mock()
+        mock_file = Mock()
+        client.sites.get_by_url.return_value.get.return_value.execute_query.return_value = mock_site
+        mock_drive_item.get_by_path.return_value.get.return_value.execute_query.return_value = (
+            mock_file
+        )
+        conn = Mock(spec=SharepointConnectionConfig)
+        conn.site = "https://test.sharepoint.com/sites/test"
+        conn.get_client.return_value = client
+        conn._get_drive_item.return_value = mock_drive_item
+        downloader = SharepointDownloader(
+            connection_config=conn, download_config=mock_download_config
+        )
+        fd = FileData(
+            source_identifiers=SourceIdentifiers(
+                filename="Quarterly #1.pdf",
+                fullpath="/sites/test/Shared Documents/Quarterly #1.pdf",
+            ),
+            connector_type="sharepoint",
+            identifier="i1",
+        )
+
+        result = downloader._fetch_file(fd)
+
+        assert result is mock_file
+        mock_drive_item.get_by_path.assert_called_with(
+            "/sites/test/Shared%20Documents/Quarterly%20%231.pdf"
+        )
+
+    def test_sdk_resource_path_url_construction_encodes_hash_and_spaces(self):
+        """Test at the Office365 SDK layer that get_by_path resource_path.to_url()
+
+        contains '%23' for '#' and '%20' for spaces, preserving '/' separators."""
+        from office365.graph_client import GraphClient
+
+        client = GraphClient(lambda: ("bearer", "token"))
+        root_item = client.sites.get_by_url("https://test.sharepoint.com/sites/test").drive.root
+
+        from unstructured_ingest.processes.connectors.sharepoint import (
+            _encode_server_relative_path,
+        )
+
+        raw_path = "Shared Documents/Folder #1/Quarterly #1.pdf"
+        encoded_path = _encode_server_relative_path(raw_path)
+        target_item = root_item.get_by_path(encoded_path)
+
+        url = target_item.resource_path.to_url()
+        assert "%23" in url
+        assert "%20" in url
+        assert "Quarterly #1.pdf" not in url
+        assert url.endswith("root:/Shared%20Documents/Folder%20%231/Quarterly%20%231.pdf:/")
+
+    def test_path_quoting_prevents_double_encoding(self, mock_download_config):
+        client = MagicMock()
+        mock_site = Mock()
+        mock_drive_item = Mock()
+        mock_file = Mock()
+        client.sites.get_by_url.return_value.get.return_value.execute_query.return_value = mock_site
+        mock_drive_item.get_by_path.return_value.get.return_value.execute_query.return_value = (
+            mock_file
+        )
+        conn = Mock(spec=SharepointConnectionConfig)
+        conn.site = "https://test.sharepoint.com/sites/test"
+        conn.get_client.return_value = client
+        conn._get_drive_item.return_value = mock_drive_item
+        downloader = SharepointDownloader(
+            connection_config=conn, download_config=mock_download_config
+        )
+        fd = FileData(
+            source_identifiers=SourceIdentifiers(
+                filename="Quarterly%20%231.pdf",
+                fullpath="/sites/test/Shared%20Documents/Quarterly%20%231.pdf",
+            ),
+            connector_type="sharepoint",
+            identifier="i1",
+        )
+
+        downloader._fetch_file(fd)
+
+        # Idempotent: must not produce double-encoded %2520 or %2523
+        mock_drive_item.get_by_path.assert_called_with(
+            "/sites/test/Shared%20Documents/Quarterly%20%231.pdf"
+        )
 
 
 # ---------------------------------------------------------------------------
