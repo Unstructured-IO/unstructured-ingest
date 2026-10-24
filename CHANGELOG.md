@@ -1,3 +1,9 @@
+## [1.11.27]
+
+### Fixes
+
+- **Batching by size no longer drops or empties batches.** `generator_batching_wbytes` returned no batches at all when neither a byte limit nor a batch size was set, so an Elasticsearch or OpenSearch upload with `batch_size_bytes=0` sent nothing. It also yielded an empty first batch when the first item alone was over the byte limit. Without limits it now yields everything as one batch, and an oversized item always gets a batch of its own.
+
 ## [1.11.26]
 
 ### Fixes
