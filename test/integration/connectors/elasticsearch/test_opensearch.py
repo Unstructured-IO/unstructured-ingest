@@ -380,6 +380,11 @@ def test_opensearch_stager(
 # AWS IAM Authentication Tests
 # These tests require AWS credentials to be set in environment variables
 
+SKIP_AWS_DOMAIN_GONE = pytest.mark.skip(
+    reason="The OpenSearch domain in OPENSEARCH_AWS_HOST no longer resolves; recreating it is "
+    "tracked in https://linear.app/unstructured/issue/INFRA-1094"
+)
+
 
 @pytest.fixture
 def aws_credentials():
@@ -423,6 +428,7 @@ def aoss_credentials():
 
 @pytest.mark.asyncio
 @pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, NOSQL_TAG, "aws", "iam")
+@SKIP_AWS_DOMAIN_GONE
 async def test_opensearch_source_with_iam(aws_credentials: dict):
     """Test OpenSearch source connector with AWS IAM authentication."""
     indexer_config = OpenSearchIndexerConfig(index_name="opensearch_e2e_source")
@@ -479,6 +485,7 @@ async def test_opensearch_source_with_iam(aws_credentials: dict):
 
 @pytest.mark.asyncio
 @pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, NOSQL_TAG, "aws", "iam")
+@SKIP_AWS_DOMAIN_GONE
 async def test_opensearch_destination_with_iam(
     upload_file: Path,
     tmp_path: Path,
@@ -537,6 +544,7 @@ async def test_opensearch_destination_with_iam(
 
 
 @pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, NOSQL_TAG, "aws", "iam")
+@SKIP_AWS_DOMAIN_GONE
 def test_opensearch_source_iam_precheck_validates_credentials(aws_credentials: dict):
     """Test that precheck properly validates IAM credentials and connection."""
     indexer_config = OpenSearchIndexerConfig(index_name="opensearch_e2e_source")
