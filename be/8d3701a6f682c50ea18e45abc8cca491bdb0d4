@@ -1,0 +1,40 @@
+test/integration/connectors/env_setup/milvus/docker-compose.yml
+  s_b870f9a343c0b3::t_5f4b7a0b441a4a 19,21-23,28
+test/integration/connectors/test_milvus.py
+  s_b870f9a343c0b3::t_5f4b7a0b441a4a 30,527-528
+CHANGELOG.md
+  s_b870f9a343c0b3::t_5f4b7a0b441a4a 7-27
+  s_b870f9a343c0b3::t_d9553ac720ffb6 28
+test/integration/connectors/env_setup/minio/source/docker-compose.yaml
+  s_b870f9a343c0b3::t_5f4b7a0b441a4a 2,4,11-15,17,24
+test/integration/connectors/elasticsearch/test_opensearch.py
+  s_b870f9a343c0b3::t_5f4b7a0b441a4a 383-387,431,488,547
+test/integration/connectors/test_s3.py
+  s_b870f9a343c0b3::t_5f4b7a0b441a4a 51-62,65-66,71-73,75,97-102,107-109,111
+test/unit/connectors/notion/types/test_database.py
+  s_b870f9a343c0b3::t_5f4b7a0b441a4a 1-32
+unstructured_ingest/processes/connectors/notion/types/database.py
+  s_b870f9a343c0b3::t_5f4b7a0b441a4a 2,51-55,57
+pyproject.toml
+  s_b870f9a343c0b3::t_5f4b7a0b441a4a 29-30,197
+test/integration/connectors/test_sharepoint.py
+  s_b870f9a343c0b3::t_5f4b7a0b441a4a 371,376,378-382
+uv.lock
+  s_b870f9a343c0b3::t_b7ca012de314a0 2,31,730,732,734,7401,7653-7674
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "be8d3701a6f682c50ea18e45abc8cca491bdb0d4",
+  "prompts": {},
+  "sessions": {
+    "s_b870f9a343c0b3": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d3663324-b83e-4e7a-9b3f-56999e1a096b",
+        "model": "claude-sonnet-5-5"
+      },
+      "human_author": "Trevor Bossert <trevor@unstructured.io>"
+    }
+  }
+}
