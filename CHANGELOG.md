@@ -1,8 +1,14 @@
-## [1.11.27]
+## [1.12.1]
 
 ### Fixes
 
 - **fix(milvus): a collection that could not be described is not a schema-only collection.** `has_dynamic_fields_enabled()` caught every exception and answered `False`, and `False` sends `_prepare_data_for_insert()` down the branch that keeps only the keys in the collection schema. When that first `describe_collection` failed and the second one, in the schema-only branch, succeeded, rows bound for a dynamic-field collection were inserted without their metadata keys, with a warning as the only trace. The check now goes through `_reclassify_milvus_errors` like the second describe, so the failure is raised as a classified `WriteError` (or `UserError`/`UserAuthError` for customer-caused gRPC codes) instead of changing what gets written.
+
+## [1.12.0]
+
+### Enhancements
+
+- **feat(azure-openai): authenticate the Azure OpenAI embedder with Entra workload identity.** `AzureOpenAIEmbeddingConfig` takes optional `tenant_id` and `client_id`, and `api_key` becomes optional. With no `api_key`, the config exchanges the pod's projected service-account token (the file named by `AZURE_FEDERATED_TOKEN_FILE`) for an Entra token scoped to `https://cognitiveservices.azure.com/.default`, and the sync client, async client, and precheck send it as a bearer token with no `api-key` header. A static token in `AZURE_OPENAI_AD_TOKEN` is ignored on this path, and so is `AZURE_OPENAI_API_KEY`: newer `openai` releases (2.46 and 3.1 were observed) otherwise send it beside the bearer token, so the clients drop the `api-key` header. Setting both `api_key` and `tenant_id`/`client_id`, or neither, is rejected when the config is loaded, and a missing `AZURE_FEDERATED_TOKEN_FILE` raises a `UserError`. API-key configs behave as before. `EmbedderConfig` passes the identity through as `embedding_azure_tenant_id` and `embedding_azure_client_id`. The new `azure-openai` extra adds `azure-identity>=1.19.0` to the `openai` dependencies.
 
 ## [1.11.26]
 
