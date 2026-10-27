@@ -27,7 +27,7 @@ from test.integration.connectors.utils.validation.destination import (
     stager_validation,
 )
 from unstructured_ingest.data_types.file_data import FileData, SourceIdentifiers
-from unstructured_ingest.error import DestinationConnectionError
+from unstructured_ingest.error import DestinationConnectionError, UserError
 from unstructured_ingest.processes.connectors.milvus import (
     CONNECTOR_TYPE,
     MilvusConnectionConfig,
@@ -524,8 +524,8 @@ def test_precheck_fails_on_nonexistent_collection(collection: str):
         ),
     )
     with pytest.raises(
-        DestinationConnectionError,
-        match=f"Collection '{NONEXISTENT_COLLECTION_NAME}' does not exist",
+        UserError,
+        match=f"Milvus collection '{NONEXISTENT_COLLECTION_NAME}' does not exist",
     ):
         uploader.precheck()
 

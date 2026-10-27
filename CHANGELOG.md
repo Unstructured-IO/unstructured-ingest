@@ -4,6 +4,28 @@
 
 - **feat(azure-openai): authenticate the Azure OpenAI embedder with Entra workload identity.** `AzureOpenAIEmbeddingConfig` takes optional `tenant_id` and `client_id`, and `api_key` becomes optional. With no `api_key`, the config exchanges the pod's projected service-account token (the file named by `AZURE_FEDERATED_TOKEN_FILE`) for an Entra token scoped to `https://cognitiveservices.azure.com/.default`, and the sync client, async client, and precheck send it as a bearer token with no `api-key` header. A static token in `AZURE_OPENAI_AD_TOKEN` is ignored on this path, and so is `AZURE_OPENAI_API_KEY`: newer `openai` releases (2.46 and 3.1 were observed) otherwise send it beside the bearer token, so the clients drop the `api-key` header. Setting both `api_key` and `tenant_id`/`client_id`, or neither, is rejected when the config is loaded, and a missing `AZURE_FEDERATED_TOKEN_FILE` raises a `UserError`. API-key configs behave as before. `EmbedderConfig` passes the identity through as `embedding_azure_tenant_id` and `embedding_azure_client_id`. The new `azure-openai` extra adds `azure-identity>=1.19.0` to the `openai` dependencies.
 
+## [1.11.26]
+
+### Fixes
+
+- **Bump locked `certifi` to 2026.10.19.** The release removes the emSign ECC Root CA - G3 root after eight eMudhra intermediate CA private keys were compromised. `requests` and `httpx` trust certifi's bundle and do not check revocation, so with the older bundle they accepted certificates chaining to that root. The `certifi` requirement is also raised to `>=2026.10.19`, so pip installs pick up the new bundle too.
+
+- Require `uv>=0.13.4`: earlier uv bundles a CA store that trusts the emSign ECC Root CA - G3 (GHSA-hq85-5cpj-mr62).
+
+## [1.11.25]
+
+### Fixes
+
+- **The S3 special-characters source integration test is skipped.** Its `special-characters/` fixtures were removed from the `utic-dev-tech-fixtures` bucket, so the listing comes back empty; the test can be re-enabled once they are restored.
+
+## [1.11.24]
+
+### Fixes
+
+- **Notion databases are no longer silently skipped when the API adds a response field.** Notion's database responses now include `database_type`, and the database type passed every unknown key to its constructor, which raised; the connector logged the error and indexed nothing from that database. Unknown fields are now ignored, as pages already did.
+- **Integration tests updated for current behavior.** The SharePoint invalid-path precheck test expects `NotFoundError`, which a 404 raises since the precheck refactor, and the S3 source tests read the fixtures bucket with the `S3_INGEST_TEST_*` credentials because the bucket no longer allows anonymous listing.
+- **Integration test environments repaired.** The MinIO and Milvus compose stacks run RustFS (`rustfs/rustfs`, pinned by digest) as their S3 server, because the `minio/minio` and `minio/mc` images are no longer on Docker Hub and MinIO's open-source repository is archived. The MinIO source stack still seeds its bucket with Chainguard's `minio-client`. The Milvus missing-collection precheck test expects `UserError`, and the three OpenSearch IAM tests are skipped while their AWS domain is gone.
+
 ## [1.11.23]
 
 ### Fixes
