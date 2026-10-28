@@ -150,11 +150,39 @@ class DatabricksVolumesIndexer(Indexer, ABC):
             # cannot resurface through full-traceback logging; wrap_error already redacts.
             raise self.connection_config.wrap_error(e=e) from None
 
+    def _walk(self, client: "WorkspaceClient", path: str) -> Generator[Any, None, None]:
+        """Yield every file at or below ``path``, at any depth.
+
+        This exists instead of the SDK's own ``recursive=True`` because that option is
+        broken below one level of nesting. ``_VolumesPath.list`` enqueues a discovered
+        subdirectory as ``self.child(file.name)`` -- resolving the name against the path
+        the walk *started* from rather than the directory it was found in. So
+        ``<base>/sub/deeper`` is looked up as ``<base>/deeper``, which does not exist, and
+        the listing raises NotFound mid-iteration. Confirmed in databricks-sdk 0.50.0,
+        0.141.0 and 0.157.0, so pinning forward is not a fix.
+
+        Each entry carries its own absolute ``path``, so following that instead sidesteps
+        the faulty name resolution entirely. The frontier is an explicit list rather than
+        recursive calls: volume hierarchies are user-shaped and need not respect Python's
+        recursion limit.
+        """
+        pending = [path]
+        while pending:
+            for info in client.dbfs.list(path=pending.pop(), recursive=False):
+                if info.is_dir:
+                    pending.append(info.path)
+                else:
+                    yield info
+
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
         try:
-            for file_info in self.connection_config.get_client().dbfs.list(
-                path=self.index_config.path, recursive=self.index_config.recursive
-            ):
+            client = self.connection_config.get_client()
+            file_infos = (
+                self._walk(client, self.index_config.path)
+                if self.index_config.recursive
+                else client.dbfs.list(path=self.index_config.path, recursive=False)
+            )
+            for file_info in file_infos:
                 if file_info.is_dir:
                     continue
                 rel_path = file_info.path.replace(self.index_config.path, "")

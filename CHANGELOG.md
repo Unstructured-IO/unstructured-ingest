@@ -1,3 +1,9 @@
+## [1.12.1]
+
+### Fixes
+
+- **fix(databricks-volumes): index files more than one level below the configured path.** `DatabricksVolumesIndexer` delegated recursive listing to the Databricks SDK, whose `_VolumesPath.list` enqueues a discovered subdirectory as `self.child(file.name)`, resolving the name against the path the walk started from rather than the directory it was found in. `<base>/sub/deeper` was therefore looked up as `<base>/deeper`, which does not exist, so the listing raised `NotFound` part-way through iteration and failed the run. A single level of subfolders worked; anything deeper did not. The bug is present in `databricks-sdk` 0.50.0, 0.141.0 and 0.157.0, so raising the pin does not fix it. The indexer now walks the tree itself, following each entry's own absolute `path` as returned by the Files API, with an explicit frontier rather than recursive calls so that deep hierarchies cannot exhaust the recursion limit. `recursive=False` is untouched and remains the default.
+
 ## [1.12.0]
 
 ### Enhancements
