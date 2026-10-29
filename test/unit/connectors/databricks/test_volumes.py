@@ -280,3 +280,20 @@ def test_non_recursive_reads_only_the_top_level(mocker: MockerFixture):
     rel_paths = {fd.source_identifiers.rel_path for fd in indexer.run()}
 
     assert rel_paths == {"top-level.txt"}
+
+
+def test_rel_path_strips_only_the_leading_base_path(mocker: MockerFixture):
+    # A descendant whose path repeats the base must keep its full relative path; stripping
+    # every occurrence would collapse it onto `b.txt` and collide in download paths.
+    client = _fake_volume(mocker, {BASE: [(f"{BASE}/a{BASE}/b.txt", False)]})
+    mocker.patch.object(_connection_config().__class__, "get_client", return_value=client)
+    indexer = DatabricksNativeVolumesIndexer(
+        connection_config=_connection_config(),
+        index_config=DatabricksNativeVolumesIndexerConfig(
+            catalog="catalog", volume="volume", volume_path="path", recursive=True
+        ),
+    )
+
+    (file_data,) = indexer.run()
+
+    assert file_data.source_identifiers.rel_path == f"a{BASE}/b.txt"

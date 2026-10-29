@@ -185,7 +185,7 @@ class DatabricksVolumesIndexer(Indexer, ABC):
             for file_info in file_infos:
                 if file_info.is_dir:
                     continue
-                rel_path = file_info.path.replace(self.index_config.path, "")
+                rel_path = file_info.path.removeprefix(self.index_config.path)
                 if rel_path.startswith("/"):
                     rel_path = rel_path[1:]
                 filename = Path(file_info.path).name
