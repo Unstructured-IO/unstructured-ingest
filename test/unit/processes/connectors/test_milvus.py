@@ -459,9 +459,8 @@ def test_delete_by_record_id_reclassifies_raw_grpc_error(file_data: FileData):
 
 
 def test_prepare_data_reclassifies_raw_grpc_on_describe():
-    # has_dynamic_fields_enabled() swallows the first describe error (best
-    # effort) and returns False, so the non-dynamic branch calls
-    # describe_collection again -- which must surface as a classified error.
+    # The dynamic-fields check describes the collection first, so a failure
+    # there must surface as a classified error.
     uploader = _uploader()
     client = MagicMock()
     client.describe_collection.side_effect = _FakeRpcError(grpc.StatusCode.UNAUTHENTICATED)
@@ -469,6 +468,37 @@ def test_prepare_data_reclassifies_raw_grpc_on_describe():
 
     with pytest.raises(UserAuthError):
         uploader._prepare_data_for_insert(data=[{"embeddings": [0.1], "text": "x"}])
+
+
+def test_prepare_data_does_not_strip_dynamic_fields_after_a_failed_describe():
+    # A dynamic-field collection keeps keys that are not in its schema. If the
+    # dynamic-fields check fails and a second describe then succeeds, those keys
+    # must not be filtered out as if the collection were schema-only.
+    uploader = _uploader()
+    client = MagicMock()
+    client.describe_collection.side_effect = [
+        _FakeRpcError(grpc.StatusCode.UNAVAILABLE),
+        {"enable_dynamic_field": True, "fields": [{"name": "embeddings"}, {"name": "text"}]},
+    ]
+    _with_client(uploader, client)
+
+    with pytest.raises(WriteError):
+        uploader._prepare_data_for_insert(
+            data=[{"embeddings": [0.1], "text": "x", "filename": "a.pdf"}]
+        )
+
+
+def test_prepare_data_keeps_dynamic_fields_when_describe_succeeds():
+    uploader = _uploader()
+    client = MagicMock()
+    client.describe_collection.return_value = {"enable_dynamic_field": True}
+    _with_client(uploader, client)
+
+    prepared = uploader._prepare_data_for_insert(
+        data=[{"embeddings": [0.1], "text": "x", "filename": "a.pdf"}]
+    )
+
+    assert prepared == [{"embeddings": [0.1], "text": "x", "filename": "a.pdf"}]
 
 
 def test_run_data_missing_collection_delete_grpc_not_found_is_user_error(file_data: FileData):
