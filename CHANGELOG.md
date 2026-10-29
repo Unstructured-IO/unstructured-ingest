@@ -1,8 +1,14 @@
-## [1.11.27]
+## [1.12.1]
 
 ### Fixes
 
 - **fix(chunker): apply `chunk_combine_text_under_n_chars` when chunking locally.** `ChunkerConfig.to_chunking_kwargs()` emits the Unstructured API's parameter name, `combine_under_n_chars`, and local chunking passed those same kwargs to `unstructured`'s `dispatch.chunk()`, which silently drops any kwarg the chunker does not accept, and `by_title` takes `combine_text_under_n_chars`. So a local `by_title` run ignored the setting and fell back to its default (`max_characters`, capped at `new_after_n_chars`). Local chunking now renames the kwarg before dispatching; the API path is unchanged.
+
+## [1.12.0]
+
+### Enhancements
+
+- **feat(azure-openai): authenticate the Azure OpenAI embedder with Entra workload identity.** `AzureOpenAIEmbeddingConfig` takes optional `tenant_id` and `client_id`, and `api_key` becomes optional. With no `api_key`, the config exchanges the pod's projected service-account token (the file named by `AZURE_FEDERATED_TOKEN_FILE`) for an Entra token scoped to `https://cognitiveservices.azure.com/.default`, and the sync client, async client, and precheck send it as a bearer token with no `api-key` header. A static token in `AZURE_OPENAI_AD_TOKEN` is ignored on this path, and so is `AZURE_OPENAI_API_KEY`: newer `openai` releases (2.46 and 3.1 were observed) otherwise send it beside the bearer token, so the clients drop the `api-key` header. Setting both `api_key` and `tenant_id`/`client_id`, or neither, is rejected when the config is loaded, and a missing `AZURE_FEDERATED_TOKEN_FILE` raises a `UserError`. API-key configs behave as before. `EmbedderConfig` passes the identity through as `embedding_azure_tenant_id` and `embedding_azure_client_id`. The new `azure-openai` extra adds `azure-identity>=1.19.0` to the `openai` dependencies.
 
 ## [1.11.26]
 
