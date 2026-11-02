@@ -1,3 +1,9 @@
+## [1.12.2]
+
+### Fixes
+
+- **The OpenSearch IAM integration tests run again.** `test_opensearch_source_with_iam`, `test_opensearch_destination_with_iam` and `test_opensearch_source_iam_precheck_validates_credentials` were skipped after the domain behind `OPENSEARCH_AWS_HOST` was deleted. That secret now points at a replacement domain that maps the CI IAM identity and has the seeded source index, so the skip is removed.
+
 ## [1.12.1]
 
 ### Fixes
