@@ -1,8 +1,14 @@
-## [1.12.2]
+## [1.12.3]
 
 ### Fixes
 
 - **fix(milvus): a collection that could not be described is not a schema-only collection.** `has_dynamic_fields_enabled()` caught every exception and answered `False`, and `False` sends `_prepare_data_for_insert()` down the branch that keeps only the keys in the collection schema. When that first `describe_collection` failed and the second one, in the schema-only branch, succeeded, rows bound for a dynamic-field collection were inserted without their metadata keys, with a warning as the only trace. The check now goes through `_reclassify_milvus_errors` like the second describe, so the failure is raised as a classified `WriteError` (or `UserError`/`UserAuthError` for customer-caused gRPC codes) instead of changing what gets written.
+
+## [1.12.2]
+
+### Fixes
+
+- **The OpenSearch IAM integration tests run again.** `test_opensearch_source_with_iam`, `test_opensearch_destination_with_iam` and `test_opensearch_source_iam_precheck_validates_credentials` were skipped after the domain behind `OPENSEARCH_AWS_HOST` was deleted. That secret now points at a replacement domain that maps the CI IAM identity and has the seeded source index, so the skip is removed.
 
 ## [1.12.1]
 
