@@ -1,3 +1,9 @@
+## [1.12.3]
+
+### Fixes
+
+- **OneDrive no longer aborts when a file time is the Windows null filetime.** Microsoft Graph uses `1601-01-01 00:00:00` for recovered or unsaved files. `datetime.timestamp()` goes through the platform C `mktime`: on Windows that raises `OSError` and stops the ingest, and on other platforms it returns a large negative epoch that is not a real file time. Outlook wrote the same Graph value through `.timestamp()` after labeling it UTC, so the null was stored as a modification time there too. `safe_timestamp()` treats that exact instant as missing, and also returns `None` when `timestamp()` raises `OSError`, `OverflowError`, or `ValueError`. OneDrive and Outlook leave `date_created` and `date_modified` unset. Ordinary timestamps are unchanged.
+
 ## [1.12.2]
 
 ### Fixes
