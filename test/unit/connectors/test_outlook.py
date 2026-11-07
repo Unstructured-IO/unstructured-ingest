@@ -141,6 +141,41 @@ class TestMessageToFileDataVersion:
         assert file_data.metadata.version is None
 
 
+class TestMessageToFileDataTimestamps:
+    @pytest.mark.parametrize(
+        "stamp",
+        [
+            datetime(1601, 1, 1, 0, 0, 0),
+            datetime(1601, 1, 1, 0, 0, 0, tzinfo=timezone.utc),
+        ],
+    )
+    def test_windows_null_filetime_is_omitted(self, stamp: datetime):
+        # Same null filetime as OneDrive: 1601-01-01 00:00:00 must not be
+        # stored as the message's created or modified time.
+        indexer = _make_indexer()
+        message = _make_message()
+        message.last_modified_datetime = stamp
+        message.created_datetime = stamp
+        file_data = indexer._message_to_file_data(message)
+        assert file_data.metadata.date_modified is None
+        assert file_data.metadata.date_created is None
+
+    def test_real_timestamp_is_preserved(self):
+        indexer = _make_indexer()
+        message = _make_message()
+        modified = datetime(2024, 6, 1, 12, 0, 0)
+        created = datetime(2024, 5, 1, 8, 30, 0)
+        message.last_modified_datetime = modified
+        message.created_datetime = created
+        file_data = indexer._message_to_file_data(message)
+        assert float(file_data.metadata.date_modified) == pytest.approx(
+            modified.replace(tzinfo=timezone.utc).timestamp()
+        )
+        assert float(file_data.metadata.date_created) == pytest.approx(
+            created.replace(tzinfo=timezone.utc).timestamp()
+        )
+
+
 class TestMessageToFileDataIdentity:
     """The message id must reach every identity field unmodified.
 

@@ -35,6 +35,7 @@ from unstructured_ingest.processes.connectors.outlook_mime import (
     prepare_body_replacement,
 )
 from unstructured_ingest.utils.dep_check import requires_dependencies
+from unstructured_ingest.utils.string_and_date_utils import safe_timestamp
 
 # Graph accepts $top between 1 and 1000 for /messages and warns that large
 # full-message pages can 504; get_all() still follows @odata.nextLink to
@@ -344,10 +345,10 @@ class OutlookIndexer(Indexer):
                 # stored empty-string version, defeating the platform's
                 # unchanged-record skip; normalize falsy to None.
                 version=message.get_property("changeKey") or None,
-                date_modified=str(
-                    message.last_modified_datetime.replace(tzinfo=timezone.utc).timestamp()
+                date_modified=safe_timestamp(
+                    message.last_modified_datetime.replace(tzinfo=timezone.utc)
                 ),
-                date_created=str(message.created_datetime.replace(tzinfo=timezone.utc).timestamp()),
+                date_created=safe_timestamp(message.created_datetime.replace(tzinfo=timezone.utc)),
                 date_processed=str(time.time()),
                 record_locator={
                     "message_id": message.id,
