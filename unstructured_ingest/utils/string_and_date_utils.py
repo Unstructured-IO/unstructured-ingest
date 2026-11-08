@@ -99,3 +99,34 @@ def parse_timestamp(value: Optional[str]) -> Optional[float]:
     if parsed.tzinfo is None:
         parsed = parsed.replace(tzinfo=timezone.utc)
     return parsed.timestamp()
+
+
+# Windows FILETIME epoch. Microsoft Graph uses this instant as a null timestamp
+# on recovered or unsaved files (issue #517).
+_WINDOWS_NULL_FILETIME = (1601, 1, 1, 0, 0, 0, 0)
+
+
+def safe_timestamp(dt: Optional[datetime]) -> Optional[str]:
+    """Epoch seconds as a string, or None when the value is not a real file time.
+
+    ``datetime.timestamp()`` raises OSError or OverflowError for 1601-01-01 on
+    platforms whose C mktime rejects it, and otherwise returns a large negative
+    epoch. Dates the platform cannot convert raise ValueError. Indexers omit
+    all of those instead of aborting the file.
+    """
+    if dt is None:
+        return None
+    if (
+        dt.year,
+        dt.month,
+        dt.day,
+        dt.hour,
+        dt.minute,
+        dt.second,
+        dt.microsecond,
+    ) == _WINDOWS_NULL_FILETIME:
+        return None
+    try:
+        return str(dt.timestamp())
+    except (OSError, OverflowError, ValueError):
+        return None

@@ -47,6 +47,7 @@ from unstructured_ingest.processes.utils.blob_storage import (
 )
 from unstructured_ingest.utils.acl import compute_permissions_version
 from unstructured_ingest.utils.dep_check import requires_dependencies
+from unstructured_ingest.utils.string_and_date_utils import safe_timestamp
 
 if TYPE_CHECKING:
     from office365.graph_client import GraphClient
@@ -330,8 +331,8 @@ class OnedriveIndexer(Indexer):
             metadata=FileDataSourceMetadata(
                 url=drive_item.parent_reference.path + "/" + drive_item.name,
                 version=drive_item.etag,
-                date_modified=str(date_modified_dt.timestamp()) if date_modified_dt else None,
-                date_created=str(date_created_at.timestamp()) if date_created_at else None,
+                date_modified=safe_timestamp(date_modified_dt),
+                date_created=safe_timestamp(date_created_at),
                 date_processed=str(time()),
                 record_locator={
                     "user_pname": self.connection_config.user_pname,
