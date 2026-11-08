@@ -1,3 +1,9 @@
+## [1.12.3]
+
+### Fixes
+
+- **Preserve UTC instants when staging Weaviate metadata dates.** Epoch timestamps no longer depend on the host timezone, and dates with explicit offsets are converted to UTC before formatting with a `Z` suffix. Dates without a timezone continue to be treated as UTC.
+
 ## [1.12.2]
 
 ### Fixes

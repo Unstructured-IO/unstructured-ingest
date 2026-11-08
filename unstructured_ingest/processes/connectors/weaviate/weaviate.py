@@ -3,7 +3,7 @@ import re
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from dataclasses import dataclass, field
-from datetime import date, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Generator, Optional
 
@@ -91,13 +91,16 @@ class WeaviateUploadStager(UploadStager):
     )
 
     @staticmethod
-    def parse_date_string(date_string: str) -> date:
+    def parse_date_string(date_string: str) -> datetime:
         try:
             timestamp = float(date_string)
-            return datetime.fromtimestamp(timestamp)
+            return datetime.fromtimestamp(timestamp, tz=timezone.utc)
         except Exception as e:
             logger.debug(f"date {date_string} string not a timestamp: {e}")
-        return parser.parse(date_string)
+        parsed = parser.parse(date_string)
+        if parsed.tzinfo is None:
+            return parsed.replace(tzinfo=timezone.utc)
+        return parsed.astimezone(timezone.utc)
 
     def conform_dict(self, element_dict: dict, file_data: FileData) -> dict:
         """
