@@ -7,6 +7,7 @@ import logging
 import re
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, AsyncIterator, NoReturn, Optional
+from urllib.parse import quote, unquote
 
 from pydantic import Field
 
@@ -48,6 +49,18 @@ if TYPE_CHECKING:
 
 CONNECTOR_TYPE = "sharepoint"
 LEGACY_DEFAULT_PATH = "Shared Documents"
+
+
+def _encode_server_relative_path(path: Optional[str]) -> Optional[str]:
+    """URL-encode server_relative_path before calling get_by_path().
+
+    Characters like '#' in SharePoint filenames break the Office365 SDK's REST URL construction.
+    Quoting with safe="/" turns '#' into '%23' while preserving path separators and avoiding
+    double-encoding.
+    """
+    if not path:
+        return path
+    return quote(unquote(path), safe="/")
 
 GRAPH_BASE_URL = "https://graph.microsoft.com/v1.0"
 
@@ -1020,6 +1033,8 @@ class SharepointDownloader(OnedriveDownloader):
         server_relative_path = (
             file_data.source_identifiers.fullpath if file_data.source_identifiers else None
         )
+        if server_relative_path:
+            server_relative_path = _encode_server_relative_path(server_relative_path)
         # Either a drive-id reference (preferred; works across sites incl. Teams private/
         # shared channels) or a server-relative path (legacy site+path resolution) is enough.
         if not has_drive_ref and not server_relative_path:
