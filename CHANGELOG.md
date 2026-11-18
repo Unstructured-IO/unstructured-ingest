@@ -1,8 +1,94 @@
-## [1.11.17]
+## [1.12.3]
 
 ### Enhancements
 
 - **feat(weaviate): identify the connector to Weaviate with the `X-Weaviate-Client-Integration` header.** Weaviate 1.38.0 and later record which integration a request came from, so traffic can be attributed to the tool that produced it. The Weaviate destination sent nothing, so its uploads could not be told apart from any other Python client. `WeaviateConnectionConfig.get_headers()` now returns `X-Weaviate-Client-Integration: unstructured-ingest/<version>`, and the local, cloud and embedded connection configs pass it to the client. The client sends it on both transports, HTTP and gRPC, and batch inserts use gRPC. This is the same kind of identification the MongoDB connector already sends with `DriverInfo`. Servers older than 1.38.0 ignore the header. No configuration change is needed.
+
+## [1.12.2]
+
+### Fixes
+
+- **The OpenSearch IAM integration tests run again.** `test_opensearch_source_with_iam`, `test_opensearch_destination_with_iam` and `test_opensearch_source_iam_precheck_validates_credentials` were skipped after the domain behind `OPENSEARCH_AWS_HOST` was deleted. That secret now points at a replacement domain that maps the CI IAM identity and has the seeded source index, so the skip is removed.
+
+## [1.12.1]
+
+### Fixes
+
+- **fix(databricks-volumes): index files more than one level below the configured path.** `DatabricksVolumesIndexer` delegated recursive listing to the Databricks SDK, whose `_VolumesPath.list` enqueues a discovered subdirectory as `self.child(file.name)`, resolving the name against the path the walk started from rather than the directory it was found in. `<base>/sub/deeper` was therefore looked up as `<base>/deeper`, which does not exist, so the listing raised `NotFound` part-way through iteration and failed the run. A single level of subfolders worked; anything deeper did not. The bug is present in `databricks-sdk` 0.50.0, 0.141.0 and 0.157.0, so raising the pin does not fix it. The indexer now walks the tree itself, following each entry's own absolute `path` as returned by the Files API, with an explicit frontier rather than recursive calls so that deep hierarchies cannot exhaust the recursion limit. `recursive=False` is untouched and remains the default. `rel_path` now strips only the leading base path, so a descendant whose path repeats the base keeps its full relative path instead of colliding with another file's download path.
+
+## [1.12.0]
+
+### Enhancements
+
+- **feat(azure-openai): authenticate the Azure OpenAI embedder with Entra workload identity.** `AzureOpenAIEmbeddingConfig` takes optional `tenant_id` and `client_id`, and `api_key` becomes optional. With no `api_key`, the config exchanges the pod's projected service-account token (the file named by `AZURE_FEDERATED_TOKEN_FILE`) for an Entra token scoped to `https://cognitiveservices.azure.com/.default`, and the sync client, async client, and precheck send it as a bearer token with no `api-key` header. A static token in `AZURE_OPENAI_AD_TOKEN` is ignored on this path, and so is `AZURE_OPENAI_API_KEY`: newer `openai` releases (2.46 and 3.1 were observed) otherwise send it beside the bearer token, so the clients drop the `api-key` header. Setting both `api_key` and `tenant_id`/`client_id`, or neither, is rejected when the config is loaded, and a missing `AZURE_FEDERATED_TOKEN_FILE` raises a `UserError`. API-key configs behave as before. `EmbedderConfig` passes the identity through as `embedding_azure_tenant_id` and `embedding_azure_client_id`. The new `azure-openai` extra adds `azure-identity>=1.19.0` to the `openai` dependencies.
+
+## [1.11.26]
+
+### Fixes
+
+- **Bump locked `certifi` to 2026.10.19.** The release removes the emSign ECC Root CA - G3 root after eight eMudhra intermediate CA private keys were compromised. `requests` and `httpx` trust certifi's bundle and do not check revocation, so with the older bundle they accepted certificates chaining to that root. The `certifi` requirement is also raised to `>=2026.10.19`, so pip installs pick up the new bundle too.
+
+- Require `uv>=0.13.4`: earlier uv bundles a CA store that trusts the emSign ECC Root CA - G3 (GHSA-hq85-5cpj-mr62).
+
+## [1.11.25]
+
+### Fixes
+
+- **The S3 special-characters source integration test is skipped.** Its `special-characters/` fixtures were removed from the `utic-dev-tech-fixtures` bucket, so the listing comes back empty; the test can be re-enabled once they are restored.
+
+## [1.11.24]
+
+### Fixes
+
+- **Notion databases are no longer silently skipped when the API adds a response field.** Notion's database responses now include `database_type`, and the database type passed every unknown key to its constructor, which raised; the connector logged the error and indexed nothing from that database. Unknown fields are now ignored, as pages already did.
+- **Integration tests updated for current behavior.** The SharePoint invalid-path precheck test expects `NotFoundError`, which a 404 raises since the precheck refactor, and the S3 source tests read the fixtures bucket with the `S3_INGEST_TEST_*` credentials because the bucket no longer allows anonymous listing.
+- **Integration test environments repaired.** The MinIO and Milvus compose stacks run RustFS (`rustfs/rustfs`, pinned by digest) as their S3 server, because the `minio/minio` and `minio/mc` images are no longer on Docker Hub and MinIO's open-source repository is archived. The MinIO source stack still seeds its bucket with Chainguard's `minio-client`. The Milvus missing-collection precheck test expects `UserError`, and the three OpenSearch IAM tests are skipped while their AWS domain is gone.
+
+## [1.11.23]
+
+### Fixes
+
+- **fix(airtable): accept a trailing slash in source paths.** The documented `base_id/` form was read as a table with an empty ID, so the base's tables were not enumerated, and a trailing slash on a view path was rejected. One trailing slash is now accepted for base, table, and view paths. Paths with an empty ID, such as `base//view` or `base//`, previously passed validation and are now rejected when the config is loaded.
+
+## [1.11.22]
+
+### Fixes
+
+- **fix(gitlab): index from the repository root with the default path.** The indexer sent its default `path` of `/` to GitLab unchanged, and computing each file path relative to `/` raised `ValueError` before any file was indexed. The path is now normalized to a repository-relative path for the tree request and file metadata: `/` and `.` select the repository root, and subdirectory paths with or without a trailing slash keep their relative file paths. File identifiers and record locators are unchanged.
+
+## [1.11.21]
+
+### Enhancements
+
+- **feat(teradata): log on with a JWT, pasted or minted with OAuth 2.0 client credentials.** The Teradata connector (source and destination) authenticated with a database username and password only, so a site whose database trusts JWTs from its identity provider could not use that identity for the connector. It now takes exactly one of three credential sets, selected by which fields are present: `user` + `access_config.password` (unchanged), `access_config.token` (a pasted JWT), or `token_url` + `client_id` + `access_config.client_secret` with an optional `scope`, from which the connector mints its own JWT (RFC 6749 4.4, client secret sent with HTTP Basic, `token_url` must be https). A config with none, two, or a partial set is refused with a message that names fields, never values. JWT logon is the driver's `logmech=JWT` with `logdata=token=<JWT>`, and neither `user` nor `password` is sent: the database takes the user from the token, which needs the "logon with null password" right and a database configured to trust the token's issuer.
+- **The token is checked before it is sent, at every logon.** The connector opens a connection per query, so each one reads the token again. A token that is not a compact JWS, or is past its `exp`, is refused without contacting the database (the driver itself does not check `logdata` before connecting). A client-credentials token is renewed two minutes before it expires, or halfway through a shorter life, so a long run keeps working; if the identity provider is unreachable the held token keeps working until it expires, and if it refuses the client the run stops.
+- **JWT failures carry fixed text and a distinct expiry.** On the JWT path a driver logon error is replaced with fixed text, raised `from None` so default traceback formatting does not render the driver's text (it stays reachable as `__context__`): `JWT Token expired` becomes `TokenExpiredError` (401, "The connector's JWT token has expired ..."), any other error naming JWT, or database error 8017, becomes `UserAuthError` (401, "Teradata refused the connector's JWT token ..."), and anything else keeps the connection-error summary. Identity-provider failures are a terminal `UserAuthError` for a refused client, an untrusted certificate, a redirect or a non-JWT access token, and a retryable 503 `ProviderError` for a connection failure, other TLS failure, 408, 429 or 5xx. No token, secret, or identity-provider free text is logged or raised.
+- **The authentication method is logged, never the credential.** A connection config logs one line the first time it sees each outcome: `Teradata authentication: auth.method=<password|jwt|jwt_client_credentials> outcome=<authenticated|ErrorType> job_id=<JOB_ID> dag_node_id=<DAG_NODE_ID>`.
+- **Password logon is unchanged**, down to the connection parameters and their order, and so is every error it raises. Both prechecks now raise their connection error `from None`, so default traceback formatting no longer renders the driver's text as the exception's context. An auth verdict raised while the destination precheck probes CREATE TABLE is no longer taken for an inconclusive probe. `password` and `user` become optional in the model, which the new validator requires together; `requests` joins the `teradata` extra.
+
+## [1.11.20]
+
+### Fixes
+
+- **fix(teradata): probe the CREATE TABLE right with the real destination DDL, not a one-column stand-in.** 1.11.18's precheck probe was `CREATE TABLE <throwaway> (probe_col INTEGER)`, which asks the server for less than `create_destination()` will: the connector's own DDL asset carries `CLOB`, `VECTOR32`, `JSON` and a `PRIMARY INDEX`, and a right that only those types need was invisible to the check and reached the customer at upload instead. The probe now runs `create_destination()`'s own statement through the shared `_elements_schema_sql()` under the throwaway name, so the rights it asks for are the rights the upload needs: no wider, no narrower, which is the rule 1.11.16 set for every dialect. It runs unqualified, the way `create_destination()` runs it, so it lands in the session database the check just resolved and that database name never reaches the SQL text.
+- **Teradata 3523 now refuses the destination alongside 3524.** The probe is the real statement, so an answer meaning "a right was refused and nothing else" is an answer about the real CREATE, and a right the column types need comes back as 3523 rather than 3524 (a `VECTOR32` column refused UDTUSAGE on `SYSUDTLIB` arrives that way). The two codes differ in the granularity of the object refused, not in naming the right: 3524 refuses a right on a database, which on a CREATE TABLE is CREATE TABLE, and 3523 refuses a right on an object inside one. The 3523 message therefore does not tell the customer CREATE TABLE is what they are missing, because on that code it is not.
+- **With the Database field blank, both refusal messages now say so.** The database they name is only the session default, so a DBA who follows the message otherwise grants rights on a database nobody chose, which is the complaint this check came from. The message now also points at the Database field.
+- **With no Table Name configured, the refusal now names the field that settles it.** That is the one case this check can refuse a credential the job would not have needed: the probe always runs when no table is configured, because the caller names the table only when it calls `create_destination()`, so a user whose table already exists and who has since lost CREATE TABLE is refused even though the upload would have found that table and returned early without creating one. The refusal now says so and points at the Table Name field, which makes the check look the table up and skip the CREATE probe entirely. The refusal is kept rather than downgraded to a warning because that is the path the platform uses, so warning there would switch the check off where it is meant to run.
+- **A refusal the server already gave is no longer dropped on the way out of the block.** `denied` is set before the `try`, so a cursor close or the connection's own commit raising after the CREATE came back refused no longer turns a confirmed refusal into "inconclusive" and passes the credential.
+- **Logging.** The probe table is named before it is created, so a process killed between the CREATE and the DROP leaves a traceable name; `create_destination()` now names the database it is creating in, which only precheck used to report; and each precheck outcome (skipped, refused, created, inconclusive) has its own line, with inconclusive at `info` to match the shared `_run_write_probe`.
+- **Completing what 1.11.18's entry did not say.** Two behaviour changes shipped in 1.11.18 and were not written down. First, a destination with **no table configured** can now be refused where it used to pass: the probe always runs in that case, because the caller names the table only when it calls `create_destination()`, so precheck has nothing to look up, and a user whose per-workflow table already exists but who has since lost the right to create one is refused by the connector check even though the job would have written to the existing table. Second, **3524 was reclassified on the source side too**: it joined `_USER_FAULT_TERADATA_CODES`, which is consulted at every classification site in this connector, so `TeradataIndexer.precheck`'s `SELECT TOP 1` probe now raises `UserError` rather than `SourceConnectionError` on 3524. On a SELECT that code is unlikely, but source callers catching `SourceConnectionError` no longer catch it.
+
+## [1.11.19]
+
+### Fixes
+
+- **fix(confluence): find a configured space by its key or its current alias.** The keyed lookup sent `keys=['ENG']`, a Python list literal, instead of `keys=ENG`, so a space configured by its key could fail with "Failed to find ... space" even though it existed. A space configured by its current alias now resolves too. The connector used to match an `alias` field the v2 API never returns. It now matches `currentActiveAlias`, and rescans up to 100,000 spaces when the keyed lookup misses. Documents from an alias-configured space use the space key as their identity, the same as a key-configured space, and a space listed by both its key and its alias is indexed once. The not-found error lists up to 25 of the spaces it checked and counts personal spaces instead of naming them. Blank entries in `spaces` are skipped, and a list of only blank entries is rejected.
+
+## [1.11.18]
+
+### Fixes
+
+- **fix(teradata): refuse a destination credential that cannot create the table it would auto-create.** When the configured table does not exist yet, or no table is configured, the Teradata uploader creates it at upload time with `create_destination()`, which needs CREATE TABLE in the session's database. The destination precheck never asked for that right, so a user without it passed the connector check and the job then failed creating the table. With the Database field blank, the table lands in whatever database the session defaults to, and nothing reported which one. Precheck now resolves that database with `SELECT DATABASE` (the configured one when set, else the session default, spelled as the server stores it), logs it, and creates and drops a throwaway `unstructured_precheck_<hex>` table in it, unless the configured table already exists there. With no table configured the probe always runs, because the caller names the table only when it calls `create_destination()`. Teradata error 3524 refuses the destination with a `UserError` naming the database; any other failure is logged and passes, and a probe table whose DROP fails is named in a warning rather than failing the check. A configured table that already exists is unchanged: it gets the zero-row INSERT/DELETE probe from 1.11.16. 3524 is also now classified as the user's to fix on the upload path, where it used to surface as "Failed to connect to server".
 
 ## [1.11.16]
 

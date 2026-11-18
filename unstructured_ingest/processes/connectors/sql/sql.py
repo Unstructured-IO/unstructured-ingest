@@ -616,12 +616,15 @@ class SQLUploader(Uploader):
         """
         return None
 
-    def _write_denied_message(self, privilege: str) -> str:
+    def _write_denied_message(
+        self, privilege: str, object_kind: str = "table", object_name: Optional[str] = None
+    ) -> str:
+        object_name = object_name or self.upload_config.table_name
         return (
             f"The destination credentials can connect to the database but do not have "
-            f"{privilege} permission on table '{self.upload_config.table_name}'. Records "
-            f"would fail to write. Grant {privilege} on that table to the user this "
-            f"connector authenticates as."
+            f"{privilege} permission on {object_kind} '{object_name}'. Records would fail "
+            f"to write. Grant {privilege} on that {object_kind} to the user this connector "
+            f"authenticates as."
         )
 
     @contextmanager

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 from dataclasses import dataclass
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import TYPE_CHECKING, Any, Generator, Optional
 from urllib.parse import urlparse
 
@@ -189,11 +189,15 @@ class GitLabIndexer(Indexer):
             FileData: A generator that yields `FileData` objects representing each file (blob)
             in the repository.
         """
+        # GitLab tree paths are relative to the repository, including the root selector.
+        repository_path = PurePosixPath(str(self.index_config.path).lstrip("/"))
+        tree_path = "" if repository_path == PurePosixPath(".") else str(repository_path)
+
         with self.connection_config.get_project() as project:
             ref = self.index_config.git_branch or project.default_branch
 
             files = project.repository_tree(
-                path=str(self.index_config.path),
+                path=tree_path,
                 ref=ref,
                 recursive=self.index_config.recursive,
                 iterator=True,
@@ -201,7 +205,7 @@ class GitLabIndexer(Indexer):
             )
 
         for file in files:
-            relative_path = str(Path(file["path"]).relative_to(self.index_config.path))
+            relative_path = str(PurePosixPath(file["path"]).relative_to(repository_path))
             if file["type"] == "blob":
                 record_locator = {
                     "file_path": file["path"],
@@ -209,7 +213,7 @@ class GitLabIndexer(Indexer):
                 }
                 source_identifiers = SourceIdentifiers(
                     fullpath=file["path"],
-                    filename=Path(file["path"]).name,
+                    filename=PurePosixPath(file["path"]).name,
                     rel_path=relative_path,
                 )
                 yield FileData(
