@@ -49,14 +49,16 @@ def generator_batching_wbytes(
     batch_size_limit_bytes: Optional[int] = None,
     max_batch_size: Optional[int] = None,
 ) -> IterableT:
-    if not batch_size_limit_bytes and not max_batch_size:
-        return iterable
     """A helper function to break an iterable into chunks of specified bytes."""
     current_batch, current_batch_size = [], 0
 
     for item in iterable:
         item_size_bytes = len(json.dumps(item).encode("utf-8"))
-        if batch_size_limit_bytes and current_batch_size + item_size_bytes > batch_size_limit_bytes:
+        if (
+            batch_size_limit_bytes
+            and current_batch
+            and current_batch_size + item_size_bytes > batch_size_limit_bytes
+        ):
             yield current_batch
             current_batch, current_batch_size = [item], item_size_bytes
             continue
