@@ -1,3 +1,27 @@
+## [1.12.5]
+
+### Fixes
+
+- **Preserve UTC instants when staging Weaviate metadata dates.** Epoch timestamps no longer depend on the host timezone, and dates with explicit offsets are converted to UTC before formatting with a `Z` suffix. Dates without a timezone continue to be treated as UTC.
+
+## [1.12.4]
+
+### Fixes
+
+- **OneDrive no longer aborts when a file time is the Windows null filetime.** Microsoft Graph uses `1601-01-01 00:00:00` for recovered or unsaved files. `datetime.timestamp()` goes through the platform C `mktime`: on Windows that raises `OSError` and stops the ingest, and on other platforms it returns a large negative epoch that is not a real file time. Outlook wrote the same Graph value through `.timestamp()` after labeling it UTC, so the null was stored as a modification time there too. `safe_timestamp()` treats that exact instant as missing, and also returns `None` when `timestamp()` raises `OSError`, `OverflowError`, or `ValueError`. OneDrive and Outlook leave `date_created` and `date_modified` unset. Ordinary timestamps are unchanged.
+
+## [1.12.3]
+
+### Fixes
+
+- Send Bedrock inference profile IDs and ARNs as `modelId` for synchronous and asynchronous embeddings, avoiding an unsupported `inferenceProfileId` request parameter. Keep the configured embedding model for provider-specific request and response formatting.
+
+## [1.12.2]
+
+### Fixes
+
+- **The OpenSearch IAM integration tests run again.** `test_opensearch_source_with_iam`, `test_opensearch_destination_with_iam` and `test_opensearch_source_iam_precheck_validates_credentials` were skipped after the domain behind `OPENSEARCH_AWS_HOST` was deleted. That secret now points at a replacement domain that maps the CI IAM identity and has the seeded source index, so the skip is removed.
+
 ## [1.12.1]
 
 ### Fixes
