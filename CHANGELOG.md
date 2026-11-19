@@ -1,3 +1,9 @@
+## [1.12.8]
+
+### Fixes
+
+- **fix(sharepoint): encode special characters in path-based downloads.** The path-based download fallback now percent-encodes the server-relative path before calling `get_by_path()`, so a name containing `#` is no longer cut off as a URL fragment.
+
 ## [1.12.7]
 
 ### Fixes
