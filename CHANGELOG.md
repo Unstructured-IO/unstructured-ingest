@@ -1,8 +1,44 @@
-## [1.12.3]
+## [1.12.9]
 
 ### Fixes
 
 - **fix(discord): fail the download instead of hanging when the channel cannot be read.** `DiscordDownloader` fetched messages inside `on_ready`, where discord.py only logs exceptions, and `client.close()` was never reached on that path, so `client.start()` never returned. A missing channel or a `Forbidden` error from `channel.history` therefore hung the download forever. The handler now always closes the client and the error is re-raised from `run_async`.
+
+## [1.12.8]
+
+### Fixes
+
+- **fix(sharepoint): encode special characters in path-based downloads.** The path-based download fallback now percent-encodes the server-relative path before calling `get_by_path()`, so a name containing `#` is no longer cut off as a URL fragment.
+
+## [1.12.7]
+
+### Fixes
+
+- **fix(milvus): a collection that could not be described is not a schema-only collection.** `has_dynamic_fields_enabled()` caught every exception and answered `False`, and `False` sends `_prepare_data_for_insert()` down the branch that keeps only the keys in the collection schema. When that first `describe_collection` failed and the second one, in the schema-only branch, succeeded, rows bound for a dynamic-field collection were inserted without their metadata keys, with a warning as the only trace. The check now goes through `_reclassify_milvus_errors` like the second describe, so the failure is raised as a classified `WriteError` (or `UserError`/`UserAuthError` for customer-caused gRPC codes) instead of changing what gets written.
+
+## [1.12.6]
+
+### Fixes
+
+- **fix(chunker): apply `chunk_combine_text_under_n_chars` when chunking locally.** `ChunkerConfig.to_chunking_kwargs()` emits the Unstructured API's parameter name, `combine_under_n_chars`, and local chunking passed those same kwargs to `unstructured`'s `dispatch.chunk()`, which silently drops any kwarg the chunker does not accept, and `by_title` takes `combine_text_under_n_chars`. So a local `by_title` run ignored the setting and fell back to its default (`max_characters`, capped at `new_after_n_chars`). Local chunking now renames the kwarg before dispatching; the API path is unchanged.
+
+## [1.12.5]
+
+### Fixes
+
+- **Preserve UTC instants when staging Weaviate metadata dates.** Epoch timestamps no longer depend on the host timezone, and dates with explicit offsets are converted to UTC before formatting with a `Z` suffix. Dates without a timezone continue to be treated as UTC.
+
+## [1.12.4]
+
+### Fixes
+
+- **OneDrive no longer aborts when a file time is the Windows null filetime.** Microsoft Graph uses `1601-01-01 00:00:00` for recovered or unsaved files. `datetime.timestamp()` goes through the platform C `mktime`: on Windows that raises `OSError` and stops the ingest, and on other platforms it returns a large negative epoch that is not a real file time. Outlook wrote the same Graph value through `.timestamp()` after labeling it UTC, so the null was stored as a modification time there too. `safe_timestamp()` treats that exact instant as missing, and also returns `None` when `timestamp()` raises `OSError`, `OverflowError`, or `ValueError`. OneDrive and Outlook leave `date_created` and `date_modified` unset. Ordinary timestamps are unchanged.
+
+## [1.12.3]
+
+### Fixes
+
+- Send Bedrock inference profile IDs and ARNs as `modelId` for synchronous and asynchronous embeddings, avoiding an unsupported `inferenceProfileId` request parameter. Keep the configured embedding model for provider-specific request and response formatting.
 
 ## [1.12.2]
 
