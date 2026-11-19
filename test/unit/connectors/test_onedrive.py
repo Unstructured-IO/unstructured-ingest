@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from typing import Any
 from unittest.mock import Mock, patch
 
@@ -390,6 +391,50 @@ class TestDriveItemToFileDataSync:
         file_data = indexer.drive_item_to_file_data_sync(drive_item, raw_permissions=None)
         assert file_data.metadata.permissions_data is None
         assert file_data.metadata.permissions_version is None
+
+    @pytest.mark.parametrize(
+        "stamp",
+        [
+            datetime(1601, 1, 1, 0, 0, 0),
+            datetime(1601, 1, 1, 0, 0, 0, tzinfo=timezone.utc),
+        ],
+    )
+    def test_windows_null_filetime_is_omitted(self, stamp: datetime):
+        # Microsoft Graph uses 1601-01-01 00:00:00 (the Windows FILETIME epoch)
+        # as a null timestamp. Indexing that file must not raise, and the null
+        # must not be stored as a modification time.
+        indexer = _make_indexer()
+        drive_item = _make_drive_item()
+        drive_item.last_modified_datetime = stamp
+        drive_item.created_datetime = stamp
+        file_data = indexer.drive_item_to_file_data_sync(drive_item)
+        assert file_data.metadata.date_modified is None
+        assert file_data.metadata.date_created is None
+
+    def test_unrepresentable_timestamp_is_omitted(self):
+        # Platforms whose C mktime rejects a date raise from datetime.timestamp()
+        # (OSError on Windows for the 1601 null filetime; ValueError here for
+        # year 1). The file is still indexed, with that date left unset.
+        indexer = _make_indexer()
+        drive_item = _make_drive_item()
+        drive_item.last_modified_datetime = datetime(1, 1, 1, 0, 0, 0)
+        drive_item.created_datetime = datetime(2024, 6, 1, 12, 0, 0)
+        file_data = indexer.drive_item_to_file_data_sync(drive_item)
+        assert file_data.metadata.date_modified is None
+        assert float(file_data.metadata.date_created) == pytest.approx(
+            datetime(2024, 6, 1, 12, 0, 0).timestamp()
+        )
+
+    def test_real_timestamp_is_preserved(self):
+        indexer = _make_indexer()
+        drive_item = _make_drive_item()
+        modified = datetime(2024, 6, 1, 12, 0, 0)
+        created = datetime(2024, 5, 1, 8, 30, 0)
+        drive_item.last_modified_datetime = modified
+        drive_item.created_datetime = created
+        file_data = indexer.drive_item_to_file_data_sync(drive_item)
+        assert float(file_data.metadata.date_modified) == pytest.approx(modified.timestamp())
+        assert float(file_data.metadata.date_created) == pytest.approx(created.timestamp())
 
 
 def _batch_response(status_code: int = 200, responses: list[dict[str, Any]] | None = None) -> Mock:
