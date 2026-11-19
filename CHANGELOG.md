@@ -1,3 +1,9 @@
+## [1.12.9]
+
+### Fixes
+
+- **fix(discord): fail the download instead of hanging when the channel cannot be read.** `DiscordDownloader` fetched messages inside `on_ready`, where discord.py only logs exceptions, and `client.close()` was never reached on that path, so `client.start()` never returned. A missing channel or a `Forbidden` error from `channel.history` therefore hung the download forever. The handler now always closes the client and the error is re-raised from `run_async`.
+
 ## [1.12.8]
 
 ### Fixes
