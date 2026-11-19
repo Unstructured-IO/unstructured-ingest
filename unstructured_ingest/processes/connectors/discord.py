@@ -127,22 +127,34 @@ class DiscordDownloader(Downloader):
         messages = []
         channel_id = record_locator["channel_id"]
 
+        failure: list[BaseException] = []
+
         @client.event
         async def on_ready():
-            logger.debug("Discord Bot is ready")
-            channel = client.get_channel(int(channel_id))
-            if not channel:
-                raise ValueError(f"channel not found for id: {channel_id}")
-            logger.debug(f"Processing messages for channel: {channel.name}")
-            async for msg in channel.history(limit=self.download_config.limit):
-                messages.append(msg)
-            logger.debug(f"Fetched {len(messages)} messages")
-            await client.close()
+            # discord.py logs (and otherwise swallows) exceptions raised in event handlers, so
+            # record any failure, always close the client so ``client.start`` returns, and
+            # re-raise below.
+            try:
+                logger.debug("Discord Bot is ready")
+                channel = client.get_channel(int(channel_id))
+                if not channel:
+                    raise ValueError(f"channel not found for id: {channel_id}")
+                logger.debug(f"Processing messages for channel: {channel.name}")
+                async for msg in channel.history(limit=self.download_config.limit):
+                    messages.append(msg)
+                logger.debug(f"Fetched {len(messages)} messages")
+            except Exception as e:
+                failure.append(e)
+            finally:
+                await client.close()
 
         try:
             await client.start(self.connection_config.access_config.get_secret_value().token)
         finally:
             await client.close()
+
+        if failure:
+            raise failure[0]
 
         content = "\n".join([message.content for message in messages])
 
