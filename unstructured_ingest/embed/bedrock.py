@@ -33,7 +33,6 @@ if TYPE_CHECKING:
             modelId: str,
             accept: str,
             contentType: str,
-            inferenceProfileId: str = None,
         ) -> dict:
             pass
 
@@ -44,7 +43,6 @@ if TYPE_CHECKING:
             modelId: str,
             accept: str,
             contentType: str,
-            inferenceProfileId: str = None,
         ) -> dict:
             pass
 
@@ -90,7 +88,7 @@ class BedrockEmbeddingConfig(EmbeddingConfig):
         description="AWS Bedrock model name",
     )
     inference_profile_id: str | None = Field(
-        description="AWS Bedrock inference profile ID",
+        description="AWS Bedrock inference profile ID or ARN",
         default_factory=lambda: os.getenv("BEDROCK_INFERENCE_PROFILE_ID"),
     )
 
@@ -234,14 +232,10 @@ class BedrockEmbeddingEncoder(BaseEmbeddingEncoder):
         try:
             invoke_params = {
                 "body": json.dumps(body),
-                "modelId": self.config.embedder_model_name,
+                "modelId": self.config.inference_profile_id or self.config.embedder_model_name,
                 "accept": "application/json",
                 "contentType": "application/json",
             }
-
-            # Add inference profile if configured
-            if self.config.inference_profile_id:
-                invoke_params["inferenceProfileId"] = self.config.inference_profile_id
 
             response = bedrock_client.invoke_model(**invoke_params)
         except Exception as e:
@@ -286,14 +280,11 @@ class AsyncBedrockEmbeddingEncoder(AsyncBaseEmbeddingEncoder):
                 try:
                     invoke_params = {
                         "body": json.dumps(body),
-                        "modelId": self.config.embedder_model_name,
+                        "modelId": self.config.inference_profile_id
+                        or self.config.embedder_model_name,
                         "accept": "application/json",
                         "contentType": "application/json",
                     }
-
-                    # Add inference profile if configured
-                    if self.config.inference_profile_id:
-                        invoke_params["inferenceProfileId"] = self.config.inference_profile_id
 
                     response = await bedrock_client.invoke_model(**invoke_params)
                 except Exception as e:
