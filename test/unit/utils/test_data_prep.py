@@ -1,6 +1,38 @@
 from pathlib import Path
 
-from unstructured_ingest.utils.data_prep import generator_batching_wbytes, get_json_data
+import pytest
+
+from unstructured_ingest.utils.data_prep import (
+    generator_batching_wbytes,
+    get_json_data,
+    write_data,
+)
+
+
+@pytest.fixture
+def cp1252_default_encoding(monkeypatch):
+    """Simulate Windows, where open() without an encoding decodes as cp1252."""
+    original_open = Path.open
+
+    def open_with_cp1252_default(self, mode="r", buffering=-1, encoding=None, *args, **kwargs):
+        if "b" not in mode and encoding is None:
+            encoding = "cp1252"
+        return original_open(self, mode, buffering, encoding, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "open", open_with_cp1252_default)
+
+
+@pytest.mark.parametrize("suffix", [".json", ".ndjson"])
+def test_write_and_get_json_data_round_trip_non_ascii(
+    tmp_path: Path, cp1252_default_encoding, suffix: str
+):
+    path = tmp_path / f"data{suffix}"
+    data = [{"text": "Привет, мир — 你好 “quoted”"}]
+
+    write_data(path, data)
+
+    assert path.read_bytes().decode("utf-8")
+    assert get_json_data(path) == data
 
 
 def test_get_json_data_reads_ndjson_from_unrecognized_extension(tmp_path: Path):

@@ -154,7 +154,7 @@ def validate_date_args(date: Optional[str] = None) -> bool:
 
 
 def get_data_by_suffix(path: Path) -> list[dict]:
-    with path.open() as f:
+    with path.open(encoding="utf-8") as f:
         if path.suffix == ".json":
             return json.load(f)
         elif path.suffix == ".ndjson":
@@ -174,7 +174,7 @@ def get_data_by_suffix(path: Path) -> list[dict]:
 
 
 def write_data(path: Path, data: list[dict], indent: Optional[int] = 2) -> None:
-    with path.open("w") as f:
+    with path.open("w", encoding="utf-8") as f:
         if path.suffix == ".json":
             json.dump(data, f, indent=indent, ensure_ascii=False)
         elif path.suffix == ".ndjson":
@@ -270,7 +270,7 @@ def write_data_streaming(path: Path, data: Iterable[dict], indent: Optional[int]
     fd, tmp_name = tempfile.mkstemp(dir=path.parent, prefix=f".{path.name}.", suffix=".tmp")
     tmp_path = Path(tmp_name)
     try:
-        with os.fdopen(fd, "w") as f:
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
             if path.suffix == ".json":
                 _write_json_array_stream(f=f, data=data, indent=indent)
             else:
@@ -283,7 +283,7 @@ def write_data_streaming(path: Path, data: Iterable[dict], indent: Optional[int]
 
 
 def get_json_data(path: Path) -> list[dict]:
-    with path.open() as f:
+    with path.open(encoding="utf-8") as f:
         # Attempt by prefix
         if path.suffix == ".json":
             return json.load(f)
@@ -305,7 +305,7 @@ def get_json_data(path: Path) -> list[dict]:
 def get_data_df(path: Path) -> "DataFrame":
     import pandas as pd
 
-    with path.open() as f:
+    with path.open(encoding="utf-8") as f:
         if path.suffix == ".json":
             data = json.load(f)
             return pd.DataFrame(data=data)
