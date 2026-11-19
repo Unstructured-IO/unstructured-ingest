@@ -129,6 +129,7 @@ class CloudWeaviateConnectionConfig(WeaviateConnectionConfig):
         with connect_to_weaviate_cloud(
             cluster_url=self.cluster_url,
             auth_credentials=auth_credentials,
+            headers=self.get_headers(),
             additional_config=AdditionalConfig(timeout=self.get_timeout()),
         ) as weaviate_client:
             yield weaviate_client

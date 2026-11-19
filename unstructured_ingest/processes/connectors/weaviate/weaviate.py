@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Any, Generator, Optional
 from dateutil import parser
 from pydantic import Field, Secret
 
+from unstructured_ingest.__version__ import __version__ as unstructured_version
 from unstructured_ingest.data_types.file_data import FileData
 from unstructured_ingest.error import (
     DestinationConnectionError,
@@ -37,6 +38,12 @@ if TYPE_CHECKING:
 
 CONNECTOR_TYPE = "weaviate"
 
+# Weaviate (1.38.0+) attributes traffic to the integration that produced it through this
+# header, the same way the MongoDB connector identifies itself with DriverInfo. Older
+# servers ignore it.
+INTEGRATION_HEADER = "X-Weaviate-Client-Integration"
+INTEGRATION_NAME = "unstructured-ingest"
+
 
 class WeaviateAccessConfig(AccessConfig, ABC):
     pass
@@ -55,6 +62,10 @@ class WeaviateConnectionConfig(ConnectionConfig, ABC):
         from weaviate.classes.init import Timeout
 
         return Timeout(init=self.init_timeout, query=self.query_timeout, insert=self.insert_timeout)
+
+    def get_headers(self) -> dict[str, str]:
+        """Headers sent on every request, over both HTTP and gRPC."""
+        return {INTEGRATION_HEADER: f"{INTEGRATION_NAME}/{unstructured_version}"}
 
     @abstractmethod
     @contextmanager
