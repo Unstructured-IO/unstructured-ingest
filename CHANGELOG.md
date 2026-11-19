@@ -1,8 +1,74 @@
-## [1.11.27]
+## [1.12.11]
 
 ### Fixes
 
 - **Batching by size no longer drops or empties batches.** `generator_batching_wbytes` returned no batches at all when neither a byte limit nor a batch size was set, so an Elasticsearch or OpenSearch upload with `batch_size_bytes=0` sent nothing. It also yielded an empty first batch when the first item alone was over the byte limit. Without limits it now yields everything as one batch, and an oversized item always gets a batch of its own.
+
+## [1.12.10]
+
+### Enhancements
+
+- **feat(weaviate): identify the connector to Weaviate with the `X-Weaviate-Client-Integration` header.** Weaviate 1.38.0 and later record which integration a request came from, so traffic can be attributed to the tool that produced it. The Weaviate destination sent nothing, so its uploads could not be told apart from any other Python client. `WeaviateConnectionConfig.get_headers()` now returns `X-Weaviate-Client-Integration: unstructured-ingest/<version>`, and the local, cloud and embedded connection configs pass it to the client. The client sends it on both transports, HTTP and gRPC, and batch inserts use gRPC. This is the same kind of identification the MongoDB connector already sends with `DriverInfo`. Servers older than 1.38.0 ignore the header. No configuration change is needed.
+
+## [1.12.9]
+
+### Fixes
+
+- **fix(discord): fail the download instead of hanging when the channel cannot be read.** `DiscordDownloader` fetched messages inside `on_ready`, where discord.py only logs exceptions, and `client.close()` was never reached on that path, so `client.start()` never returned. A missing channel or a `Forbidden` error from `channel.history` therefore hung the download forever. The handler now always closes the client and the error is re-raised from `run_async`.
+
+## [1.12.8]
+
+### Fixes
+
+- **fix(sharepoint): encode special characters in path-based downloads.** The path-based download fallback now percent-encodes the server-relative path before calling `get_by_path()`, so a name containing `#` is no longer cut off as a URL fragment.
+
+## [1.12.7]
+
+### Fixes
+
+- **fix(milvus): a collection that could not be described is not a schema-only collection.** `has_dynamic_fields_enabled()` caught every exception and answered `False`, and `False` sends `_prepare_data_for_insert()` down the branch that keeps only the keys in the collection schema. When that first `describe_collection` failed and the second one, in the schema-only branch, succeeded, rows bound for a dynamic-field collection were inserted without their metadata keys, with a warning as the only trace. The check now goes through `_reclassify_milvus_errors` like the second describe, so the failure is raised as a classified `WriteError` (or `UserError`/`UserAuthError` for customer-caused gRPC codes) instead of changing what gets written.
+
+## [1.12.6]
+
+### Fixes
+
+- **fix(chunker): apply `chunk_combine_text_under_n_chars` when chunking locally.** `ChunkerConfig.to_chunking_kwargs()` emits the Unstructured API's parameter name, `combine_under_n_chars`, and local chunking passed those same kwargs to `unstructured`'s `dispatch.chunk()`, which silently drops any kwarg the chunker does not accept, and `by_title` takes `combine_text_under_n_chars`. So a local `by_title` run ignored the setting and fell back to its default (`max_characters`, capped at `new_after_n_chars`). Local chunking now renames the kwarg before dispatching; the API path is unchanged.
+
+## [1.12.5]
+
+### Fixes
+
+- **Preserve UTC instants when staging Weaviate metadata dates.** Epoch timestamps no longer depend on the host timezone, and dates with explicit offsets are converted to UTC before formatting with a `Z` suffix. Dates without a timezone continue to be treated as UTC.
+
+## [1.12.4]
+
+### Fixes
+
+- **OneDrive no longer aborts when a file time is the Windows null filetime.** Microsoft Graph uses `1601-01-01 00:00:00` for recovered or unsaved files. `datetime.timestamp()` goes through the platform C `mktime`: on Windows that raises `OSError` and stops the ingest, and on other platforms it returns a large negative epoch that is not a real file time. Outlook wrote the same Graph value through `.timestamp()` after labeling it UTC, so the null was stored as a modification time there too. `safe_timestamp()` treats that exact instant as missing, and also returns `None` when `timestamp()` raises `OSError`, `OverflowError`, or `ValueError`. OneDrive and Outlook leave `date_created` and `date_modified` unset. Ordinary timestamps are unchanged.
+
+## [1.12.3]
+
+### Fixes
+
+- Send Bedrock inference profile IDs and ARNs as `modelId` for synchronous and asynchronous embeddings, avoiding an unsupported `inferenceProfileId` request parameter. Keep the configured embedding model for provider-specific request and response formatting.
+
+## [1.12.2]
+
+### Fixes
+
+- **The OpenSearch IAM integration tests run again.** `test_opensearch_source_with_iam`, `test_opensearch_destination_with_iam` and `test_opensearch_source_iam_precheck_validates_credentials` were skipped after the domain behind `OPENSEARCH_AWS_HOST` was deleted. That secret now points at a replacement domain that maps the CI IAM identity and has the seeded source index, so the skip is removed.
+
+## [1.12.1]
+
+### Fixes
+
+- **fix(databricks-volumes): index files more than one level below the configured path.** `DatabricksVolumesIndexer` delegated recursive listing to the Databricks SDK, whose `_VolumesPath.list` enqueues a discovered subdirectory as `self.child(file.name)`, resolving the name against the path the walk started from rather than the directory it was found in. `<base>/sub/deeper` was therefore looked up as `<base>/deeper`, which does not exist, so the listing raised `NotFound` part-way through iteration and failed the run. A single level of subfolders worked; anything deeper did not. The bug is present in `databricks-sdk` 0.50.0, 0.141.0 and 0.157.0, so raising the pin does not fix it. The indexer now walks the tree itself, following each entry's own absolute `path` as returned by the Files API, with an explicit frontier rather than recursive calls so that deep hierarchies cannot exhaust the recursion limit. `recursive=False` is untouched and remains the default. `rel_path` now strips only the leading base path, so a descendant whose path repeats the base keeps its full relative path instead of colliding with another file's download path.
+
+## [1.12.0]
+
+### Enhancements
+
+- **feat(azure-openai): authenticate the Azure OpenAI embedder with Entra workload identity.** `AzureOpenAIEmbeddingConfig` takes optional `tenant_id` and `client_id`, and `api_key` becomes optional. With no `api_key`, the config exchanges the pod's projected service-account token (the file named by `AZURE_FEDERATED_TOKEN_FILE`) for an Entra token scoped to `https://cognitiveservices.azure.com/.default`, and the sync client, async client, and precheck send it as a bearer token with no `api-key` header. A static token in `AZURE_OPENAI_AD_TOKEN` is ignored on this path, and so is `AZURE_OPENAI_API_KEY`: newer `openai` releases (2.46 and 3.1 were observed) otherwise send it beside the bearer token, so the clients drop the `api-key` header. Setting both `api_key` and `tenant_id`/`client_id`, or neither, is rejected when the config is loaded, and a missing `AZURE_FEDERATED_TOKEN_FILE` raises a `UserError`. API-key configs behave as before. `EmbedderConfig` passes the identity through as `embedding_azure_tenant_id` and `embedding_azure_client_id`. The new `azure-openai` extra adds `azure-identity>=1.19.0` to the `openai` dependencies.
 
 ## [1.11.26]
 

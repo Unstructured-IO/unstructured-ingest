@@ -37,7 +37,8 @@ class LocalWeaviateConnectionConfig(WeaviateConnectionConfig):
         from weaviate.classes.init import AdditionalConfig
 
         with connect_to_local(
-            additional_config=AdditionalConfig(timeout=self.get_timeout())
+            headers=self.get_headers(),
+            additional_config=AdditionalConfig(timeout=self.get_timeout()),
         ) as weaviate_client:
             yield weaviate_client
 

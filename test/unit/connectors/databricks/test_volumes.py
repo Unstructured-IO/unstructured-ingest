@@ -200,3 +200,100 @@ def test_indexed_file_reports_modification_time_in_epoch_seconds(mocker: MockerF
     file_data = next(iter(indexer.run()))
 
     assert parse_timestamp(file_data.metadata.date_modified) == 1729186569.0
+
+
+def _fake_volume(mocker: MockerFixture, tree: dict[str, list[tuple[str, bool]]]):
+    """A client whose dbfs.list serves one directory at a time, from `tree`.
+
+    Keys are directory paths; values are (path, is_dir) entries directly inside them.
+    Listing a path the tree does not know raises NotFound, exactly as the Files API
+    does -- which is what makes a misresolved subdirectory path observable.
+    """
+    pytest.importorskip("databricks.sdk")
+    from databricks.sdk.errors.platform import NotFound
+
+    def _list(path: str, recursive: bool = False):
+        key = path.rstrip("/")
+        if key not in tree:
+            raise NotFound("The directory being accessed is not found.")
+        return [
+            mocker.MagicMock(is_dir=is_dir, path=p, modification_time=None)
+            for p, is_dir in tree[key]
+        ]
+
+    client = mocker.MagicMock()
+    client.dbfs.list.side_effect = lambda path, recursive=False: _list(path, recursive)
+    return client
+
+
+BASE = "/Volumes/catalog/default/volume/path"
+
+# top-level.txt, sub-a/one.txt, sub-a/deeper/two.txt, sub-b/three.txt
+NESTED_TREE = {
+    BASE: [
+        (f"{BASE}/top-level.txt", False),
+        (f"{BASE}/sub-a/", True),
+        (f"{BASE}/sub-b/", True),
+    ],
+    f"{BASE}/sub-a": [
+        (f"{BASE}/sub-a/one.txt", False),
+        (f"{BASE}/sub-a/deeper/", True),
+    ],
+    f"{BASE}/sub-a/deeper": [(f"{BASE}/sub-a/deeper/two.txt", False)],
+    f"{BASE}/sub-b": [(f"{BASE}/sub-b/three.txt", False)],
+}
+
+
+def _nested_indexer(mocker: MockerFixture, *, recursive: bool):
+    client = _fake_volume(mocker, NESTED_TREE)
+    mocker.patch.object(_connection_config().__class__, "get_client", return_value=client)
+    return DatabricksNativeVolumesIndexer(
+        connection_config=_connection_config(),
+        index_config=DatabricksNativeVolumesIndexerConfig(
+            catalog="catalog", volume="volume", volume_path="path", recursive=recursive
+        ),
+    )
+
+
+def test_recursive_indexes_files_below_one_level_of_nesting(mocker: MockerFixture):
+    # These doubles stand in for the Files API, not for the SDK's walk over it, so they
+    # cannot reproduce the misresolved lookup itself -- against a real volume the SDK's
+    # recursive=True raises NotFound on `<base>/deeper`. What this pins down is the
+    # behavior that matters: every depth is reached.
+    indexer = _nested_indexer(mocker, recursive=True)
+
+    rel_paths = {fd.source_identifiers.rel_path for fd in indexer.run()}
+
+    assert rel_paths == {
+        "top-level.txt",
+        "sub-a/one.txt",
+        "sub-a/deeper/two.txt",
+        "sub-b/three.txt",
+    }
+
+
+def test_non_recursive_reads_only_the_top_level(mocker: MockerFixture):
+    # Unchanged behavior, and the default: a connector configured before the option
+    # existed must keep seeing exactly the top level.
+    indexer = _nested_indexer(mocker, recursive=False)
+
+    rel_paths = {fd.source_identifiers.rel_path for fd in indexer.run()}
+
+    assert rel_paths == {"top-level.txt"}
+
+
+def test_rel_path_strips_only_the_leading_base_path(mocker: MockerFixture):
+    # A descendant whose path repeats the base must keep its full relative path; stripping
+    # every occurrence would collapse it onto `b.txt` and collide in download paths.
+    client = _fake_volume(mocker, {BASE: [(f"{BASE}/a{BASE}/b.txt", False)]})
+    mocker.patch.object(_connection_config().__class__, "get_client", return_value=client)
+    indexer = DatabricksNativeVolumesIndexer(
+        connection_config=_connection_config(),
+        index_config=DatabricksNativeVolumesIndexerConfig(
+            catalog="catalog", volume="volume", volume_path="path", recursive=True
+        ),
+    )
+
+    (file_data,) = indexer.run()
+
+    assert file_data.source_identifiers.rel_path == f"a{BASE}/b.txt"
