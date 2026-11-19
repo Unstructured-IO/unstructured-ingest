@@ -26,7 +26,8 @@ dependencies = [
     "tqdm",
     "click",
     "opentelemetry-sdk",
-    "certifi>=2026.1.4",
+    # certifi >=2026.10.19 removes emSign ECC Root CA - G3 (eMudhra intermediate CA key compromise)
+    "certifi>=2026.10.19",
     # Streaming JSON parser used to read large element files in bounded memory
     # (see UploadStager.process_whole / data_prep.json_stream).
     "ijson>=3.2.0",
@@ -94,6 +95,7 @@ wikipedia = ["wikipedia"]
 zendesk = ["httpx", "aiofiles", "beautifulsoup4"]
 
 # Embedders
+azure-openai = ["openai>=2.20,<3", "tiktoken", "azure-identity>=1.19.0"]
 bedrock = ["boto3", "aioboto3", "aiobotocore[boto3]!=2.24.2"]
 huggingface = ["sentence-transformers"]
 mixedbreadai = ["mixedbread"]
@@ -192,7 +194,7 @@ build-backend = "hatchling.build"
 override-dependencies = [
     "ruff>=0.15.0",
     "psutil>=7.0.0",
-    "uv>=0.10.0",
+    "uv>=0.13.4",
     "pykx>=2.4.0",
     "aiobotocore>=3.0.0",
 ]
