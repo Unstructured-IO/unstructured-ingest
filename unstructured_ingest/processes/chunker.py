@@ -111,7 +111,12 @@ class Chunker(BaseProcess, ABC):
                 )
             )
             return [e.to_dict() for e in elements]
-        chunked_elements = dispatch.chunk(elements=elements, **self.config.to_chunking_kwargs())
+        chunking_kwargs = self.config.to_chunking_kwargs()
+        # The API names this parameter `combine_under_n_chars`, but local `by_title` takes
+        # `combine_text_under_n_chars`, and `dispatch.chunk()` silently drops any kwarg its
+        # chunker doesn't accept.
+        chunking_kwargs["combine_text_under_n_chars"] = chunking_kwargs.pop("combine_under_n_chars")
+        chunked_elements = dispatch.chunk(elements=elements, **chunking_kwargs)
         chunked_elements_dicts = [e.to_dict() for e in chunked_elements]
         chunked_elements_dicts = assign_and_map_hash_ids(elements=chunked_elements_dicts)
         return chunked_elements_dicts
