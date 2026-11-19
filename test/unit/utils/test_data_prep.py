@@ -1,9 +1,12 @@
+import json
 from pathlib import Path
 
 import pytest
 
 from unstructured_ingest.utils.data_prep import (
     generator_batching_wbytes,
+    get_data_by_suffix,
+    get_data_df,
     get_json_data,
     write_data,
 )
@@ -33,6 +36,26 @@ def test_write_and_get_json_data_round_trip_non_ascii(
 
     assert path.read_bytes().decode("utf-8")
     assert get_json_data(path) == data
+
+
+@pytest.mark.parametrize("suffix", [".json", ".ndjson"])
+@pytest.mark.parametrize("reader", [get_json_data, get_data_by_suffix, get_data_df])
+def test_readers_decode_utf8_file_on_cp1252_platform(
+    tmp_path: Path, cp1252_default_encoding, suffix: str, reader
+):
+    path = tmp_path / f"data{suffix}"
+    data = [{"text": "Привет, мир — 你好 “quoted”"}]
+    if suffix == ".json":
+        payload = json.dumps(data, ensure_ascii=False)
+    else:
+        payload = "\n".join(json.dumps(d, ensure_ascii=False) for d in data)
+    path.write_bytes(payload.encode("utf-8"))
+
+    result = reader(path)
+
+    if reader is get_data_df:
+        result = result.to_dict(orient="records")
+    assert result == data
 
 
 def test_get_json_data_reads_ndjson_from_unrecognized_extension(tmp_path: Path):
