@@ -1,3 +1,9 @@
+## [1.12.3]
+
+### Fixes
+
+- Send Bedrock inference profile IDs and ARNs as `modelId` for synchronous and asynchronous embeddings, avoiding an unsupported `inferenceProfileId` request parameter. Keep the configured embedding model for provider-specific request and response formatting.
+
 ## [1.12.2]
 
 ### Fixes
