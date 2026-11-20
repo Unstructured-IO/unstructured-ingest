@@ -1,3 +1,9 @@
+## [1.12.12]
+
+### Fixes
+
+- **Reading and writing staged JSON files no longer depends on the platform's default encoding.** `get_json_data`, `get_data_df`, `get_data_by_suffix` and `write_data` opened files without an encoding, so on Windows (cp1252) the upload stage failed with a `UnicodeDecodeError` on any non-ASCII content, and writing with `ensure_ascii=False` could fail the same way. They now use UTF-8.
+
 ## [1.12.11]
 
 ### Fixes
