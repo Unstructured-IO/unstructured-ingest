@@ -1,4 +1,5 @@
 import logging
+import time
 from unittest.mock import MagicMock
 
 import pytest
@@ -616,3 +617,70 @@ def test_legacy_get_index_field_names_still_returns_top_level_set():
         "metadata",
         "embeddings",
     }
+
+
+def _stage_dates(**dates):
+    from unstructured_ingest.processes.connectors.azure_ai_search import (
+        AzureAISearchUploadStager,
+    )
+
+    file_data = MagicMock()
+    file_data.identifier = "rec"
+    file_data.connector_type = "local"
+    file_data.source_identifiers.fullpath = "a.txt"
+    element = {
+        "type": "NarrativeText",
+        "text": "hello",
+        "metadata": {
+            "last_modified": dates["last_modified"],
+            "data_source": {"date_created": dates["date_created"]},
+        },
+    }
+    return AzureAISearchUploadStager().conform_dict(element_dict=element, file_data=file_data)
+
+
+def test_conform_dict_converts_offset_dates_to_utc():
+    out = _stage_dates(
+        last_modified="2024-01-01T10:00:00+02:00", date_created="2024-01-01T10:00:00-05:00"
+    )
+    assert out["metadata"]["last_modified"] == "2024-01-01T08:00:00.000000Z"
+    assert out["metadata"]["data_source"]["date_created"] == "2024-01-01T15:00:00.000000Z"
+
+
+def test_conform_dict_keeps_utc_dates():
+    out = _stage_dates(
+        last_modified="2024-01-01T10:00:00Z", date_created="2024-01-01T10:00:00+00:00"
+    )
+    assert out["metadata"]["last_modified"] == "2024-01-01T10:00:00.000000Z"
+    assert out["metadata"]["data_source"]["date_created"] == "2024-01-01T10:00:00.000000Z"
+
+
+@pytest.fixture
+def non_utc_timezone(monkeypatch):
+    if not hasattr(time, "tzset"):
+        pytest.skip("time.tzset is unavailable")
+    with monkeypatch.context() as patch:
+        patch.setenv("TZ", "EST5EDT")
+        time.tzset()
+        try:
+            yield
+        finally:
+            patch.undo()
+            time.tzset()
+
+
+@pytest.mark.parametrize(
+    "value, expected",
+    [
+        ("1700000000", "2023-11-14T22:13:20.000000Z"),
+        ("1700000000.25", "2023-11-14T22:13:20.250000Z"),
+        (1700000000.0, "2023-11-14T22:13:20.000000Z"),
+        (1700000000000, "2023-11-14T22:13:20.000000Z"),
+        ("2023-11-15T03:43:20+05:30", "2023-11-14T22:13:20.000000Z"),
+        ("2023-11-14T22:13:20", "2023-11-14T22:13:20.000000Z"),
+    ],
+)
+def test_conform_dict_dates_are_utc_on_non_utc_host(non_utc_timezone, value, expected):
+    out = _stage_dates(last_modified=value, date_created=value)
+    assert out["metadata"]["last_modified"] == expected
+    assert out["metadata"]["data_source"]["date_created"] == expected

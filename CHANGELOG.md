@@ -1,3 +1,9 @@
+## [1.12.12]
+
+### Fixes
+
+- **fix(azure_ai_search): convert timezone-aware dates to UTC before adding the `Z` suffix.** The stager formatted `last_modified`, `date_created`, `date_modified` and `date_processed` with a literal `Z`, so a value such as `2024-01-01T10:00:00+02:00` was uploaded as `10:00:00Z`, two hours off. Epoch values (numeric or numeric strings) were also converted through the host's local time. Aware dates and epochs are now converted to UTC first; naive date strings are formatted as before.
+
 ## [1.12.11]
 
 ### Fixes
