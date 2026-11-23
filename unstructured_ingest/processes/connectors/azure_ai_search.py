@@ -1,6 +1,8 @@
+import builtins
 import json
 from contextlib import contextmanager
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Any, Generator, TypeAlias
 
 from pydantic import Field, Secret
@@ -102,6 +104,32 @@ class AzureAISearchUploaderConfig(UploaderConfig):
     )
 
 
+def format_datetime_utc(date_value) -> str:
+    """Format a date as the UTC ISO 8601 string Azure AI Search expects (trailing ``Z``).
+
+    A timezone-aware value is converted to UTC first so an offset such as ``+02:00`` is
+    not silently relabeled as ``Z``. Epoch values (numeric or numeric strings) are converted
+    straight to UTC rather than through the host's local time. A naive date string is
+    formatted as is, as before.
+    """
+    if isinstance(date_value, datetime):
+        parsed = date_value
+    elif isinstance(date_value, bool):
+        parsed = parse_datetime(date_value)
+    elif isinstance(date_value, int):
+        parsed = datetime.fromtimestamp(date_value / 1000, tz=timezone.utc)
+    elif isinstance(date_value, float):
+        parsed = datetime.fromtimestamp(date_value, tz=timezone.utc)
+    else:
+        try:
+            parsed = datetime.fromtimestamp(float(date_value), tz=timezone.utc)
+        except (TypeError, builtins.ValueError):  # module ValueError is the ingest one
+            parsed = parse_datetime(date_value)
+    if parsed.tzinfo is not None:
+        parsed = parsed.astimezone(timezone.utc)
+    return parsed.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+
+
 @dataclass
 class AzureAISearchUploadStager(UploadStager):
     upload_stager_config: AzureAISearchUploadStagerConfig = field(
@@ -131,23 +159,15 @@ class AzureAISearchUploadStager(UploadStager):
         if links := data.get("metadata", {}).get("links"):
             data["metadata"]["links"] = [json.dumps(link) for link in links]
         if last_modified := data.get("metadata", {}).get("last_modified"):
-            data["metadata"]["last_modified"] = parse_datetime(last_modified).strftime(
-                "%Y-%m-%dT%H:%M:%S.%fZ"
-            )
+            data["metadata"]["last_modified"] = format_datetime_utc(last_modified)
         if date_created := data.get("metadata", {}).get("data_source", {}).get("date_created"):
-            data["metadata"]["data_source"]["date_created"] = parse_datetime(date_created).strftime(
-                "%Y-%m-%dT%H:%M:%S.%fZ"
-            )
+            data["metadata"]["data_source"]["date_created"] = format_datetime_utc(date_created)
 
         if date_modified := data.get("metadata", {}).get("data_source", {}).get("date_modified"):
-            data["metadata"]["data_source"]["date_modified"] = parse_datetime(
-                date_modified
-            ).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+            data["metadata"]["data_source"]["date_modified"] = format_datetime_utc(date_modified)
 
         if date_processed := data.get("metadata", {}).get("data_source", {}).get("date_processed"):
-            data["metadata"]["data_source"]["date_processed"] = parse_datetime(
-                date_processed
-            ).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+            data["metadata"]["data_source"]["date_processed"] = format_datetime_utc(date_processed)
 
         if regex_metadata := data.get("metadata", {}).get("regex_metadata"):
             data["metadata"]["regex_metadata"] = json.dumps(regex_metadata)
