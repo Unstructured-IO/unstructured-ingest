@@ -1,3 +1,9 @@
+## [1.12.12]
+
+### Fixes
+
+- **Milvus staged metadata dates without a timezone no longer depend on the host timezone.** `MilvusUploadStager.parse_date_string` converted naive ISO strings to epoch seconds using the host's local time, so the same date was stored differently on different machines. Dates without timezone information are now treated as UTC, matching the Weaviate stager. Dates with an explicit offset are unchanged.
+
 ## [1.12.11]
 
 ### Fixes
