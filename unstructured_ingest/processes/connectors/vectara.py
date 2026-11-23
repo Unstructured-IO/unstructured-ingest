@@ -82,7 +82,7 @@ class VectaraUploadStager(UploadStager):
         return md
 
     def process_whole(self, input_file: Path, output_file: Path, file_data: FileData) -> None:
-        with input_file.open() as in_f:
+        with input_file.open(encoding="utf-8") as in_f:
             elements_contents = json.load(in_f)
 
         logger.info(
@@ -106,7 +106,7 @@ class VectaraUploadStager(UploadStager):
             }
         ]
 
-        with open(output_file, "w") as out_f:
+        with output_file.open("w", encoding="utf-8") as out_f:
             json.dump(conformed_elements, out_f, indent=2)
 
 

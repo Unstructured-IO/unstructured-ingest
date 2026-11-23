@@ -33,7 +33,7 @@ class BlobStoreUploadStager(UploadStager):
             output_filename=output_filename, output_dir=output_dir
         ).with_suffix(".json")
         if elements_filepath.suffix == ".ndjson":
-            with elements_filepath.open() as input_file:
+            with elements_filepath.open(encoding="utf-8") as input_file:
                 write_data_streaming(path=output_file, data=ndjson.reader(input_file))
         elif elements_filepath.suffix == ".json":
             self.process_whole(

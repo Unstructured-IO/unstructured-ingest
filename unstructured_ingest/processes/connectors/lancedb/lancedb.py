@@ -84,7 +84,7 @@ class LanceDBUploadStager(UploadStager):
     ) -> Path:
         import pandas as pd
 
-        with open(elements_filepath) as elements_file:
+        with elements_filepath.open(encoding="utf-8") as elements_file:
             elements_contents: list[dict] = json.load(elements_file)
 
         df = pd.DataFrame(
