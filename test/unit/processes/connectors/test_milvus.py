@@ -512,3 +512,36 @@ def test_run_data_missing_collection_delete_grpc_not_found_is_user_error(file_da
     with pytest.raises(UserError) as excinfo:
         uploader.run_data(data=[{"embeddings": [0.1]}], file_data=file_data)
     assert isinstance(excinfo.value, UnstructuredIngestError)
+
+
+@pytest.fixture
+def non_utc_timezone():
+    import os
+    import time
+
+    previous = os.environ.get("TZ")
+    os.environ["TZ"] = "America/New_York"
+    time.tzset()
+    yield
+    if previous is None:
+        os.environ.pop("TZ", None)
+    else:
+        os.environ["TZ"] = previous
+    time.tzset()
+
+
+@pytest.mark.parametrize(
+    ("date_string", "expected"),
+    [
+        ("2023-11-14T22:13:20", 1700000000.0),
+        ("2023-11-14 22:13:20", 1700000000.0),
+        ("Nov 14 2023 22:13:20", 1700000000.0),
+        ("2023-11-14T22:13:20Z", 1700000000.0),
+        ("2023-11-14T17:13:20-05:00", 1700000000.0),
+        ("1700000000", 1700000000.0),
+    ],
+)
+def test_parse_date_string_is_independent_of_host_timezone(
+    non_utc_timezone, date_string: str, expected: float
+):
+    assert MilvusUploadStager.parse_date_string(date_string) == expected

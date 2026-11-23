@@ -1,7 +1,7 @@
 import json
 from contextlib import contextmanager
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Any, Callable, Generator, Optional
 
 from dateutil import parser
@@ -198,11 +198,12 @@ class MilvusUploadStager(UploadStager):
 
         try:
             dt = datetime.fromisoformat(date_string.replace("Z", "+00:00"))
-            return dt.timestamp()
         except ValueError:
-            pass
-
-        return parser.parse(date_string).timestamp()
+            dt = parser.parse(date_string)
+        if dt.tzinfo is None:
+            # Dates without timezone information are treated as UTC, not as the host's local time
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt.timestamp()
 
     def conform_dict(self, element_dict: dict, file_data: FileData) -> dict:
         working_data = element_dict.copy()
