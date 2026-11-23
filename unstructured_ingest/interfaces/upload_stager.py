@@ -46,9 +46,9 @@ class UploadStager(BaseProcess, ABC):
         return output_path
 
     def stream_update(self, input_file: Path, output_file: Path, file_data: FileData) -> None:
-        with input_file.open() as in_f:
+        with input_file.open(encoding="utf-8") as in_f:
             reader = ndjson.reader(in_f)
-            with output_file.open("w") as out_f:
+            with output_file.open("w", encoding="utf-8") as out_f:
                 writer = ndjson.writer(out_f)
                 for element in reader:
                     # Filter hook: default returns True so existing behavior is preserved;

@@ -2,7 +2,7 @@
 
 ### Fixes
 
-- **Reading and writing staged JSON files no longer depends on the platform's default encoding.** `get_json_data`, `get_data_df`, `get_data_by_suffix` and `write_data` opened files without an encoding, so on Windows (cp1252) the upload stage failed with a `UnicodeDecodeError` on any non-ASCII content, and writing with `ensure_ascii=False` could fail the same way. They now use UTF-8.
+- **Reading and writing staged JSON files no longer depends on the platform's default encoding.** `get_json_data`, `get_data_df`, `get_data_by_suffix` and `write_data` opened files without an encoding, and so did the NDJSON path in `UploadStager.stream_update` (and Pinecone's copy of it), `BlobStoreUploadStager`, and the LanceDB and Vectara JSON readers. On Windows (cp1252) a staged file containing non-ASCII text, including a typographic quote (UTF-8 byte 0x9d), raised `UnicodeDecodeError` in the upload stage, and writing with `ensure_ascii=False` could fail the same way. Those opens now use UTF-8.
 
 ## [1.12.11]
 
