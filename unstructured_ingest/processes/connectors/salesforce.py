@@ -299,7 +299,7 @@ class SalesforceDownloader(Downloader):
             download_path = self.get_download_path(file_data=file_data)
             download_path.parent.mkdir(parents=True, exist_ok=True)
 
-            with open(download_path, "w") as page_file:
+            with open(download_path, "w", encoding="utf-8") as page_file:
                 page_file.write(document)
 
         except Exception as e:
