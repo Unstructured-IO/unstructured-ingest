@@ -447,30 +447,55 @@ class TestGoogleDriveExcludesTrashed:
 
 
 class TestGoogleDriveExtensionFiltering:
-    def test_get_paginated_results_includes_native_mimes_for_export_extensions(self):
-        files_client = MagicMock()
-        files_client.list.return_value.execute.return_value = {"files": []}
+    def test_get_paginated_results_filters_extensions_and_traverses_subfolders(self):
+        files_client = _FakeGoogleDriveFilesClient(
+            responses=[
+                {
+                    "files": [
+                        {"id": "pdf", "fileExtension": "pdf"},
+                        {"id": "binary-docx", "fileExtension": "docx"},
+                        {
+                            "id": "child",
+                            "name": "child",
+                            "mimeType": "application/vnd.google-apps.folder",
+                        },
+                    ],
+                    "nextPageToken": "next",
+                },
+                {
+                    "files": [
+                        {"id": "doc", "mimeType": "application/vnd.google-apps.document"},
+                        {"id": "sheet", "mimeType": "application/vnd.google-apps.spreadsheet"},
+                    ]
+                },
+                {"files": [{"id": "second-docx", "fileExtension": "DOCX"}]},
+            ]
+        )
         indexer = GoogleDriveIndexer(
             connection_config=MagicMock(),
             index_config=GoogleDriveIndexerConfig(),
         )
 
-        indexer.get_paginated_results(
+        results = indexer.get_paginated_results(
             files_client=files_client,
             object_id="folder-id",
-            extensions=["docx", ".xlsx", "pptx", "png"],
+            extensions=[".DOCX"],
+            recursive=True,
+            previous_path="root",
         )
 
-        query = files_client.list.call_args.kwargs["q"]
-        assert "fileExtension = 'docx'" in query
-        assert "fileExtension = 'xlsx'" in query
-        assert "fileExtension = 'pptx'" in query
-        assert "fileExtension = 'png'" in query
-        assert "mimeType = 'application/vnd.google-apps.document'" in query
-        assert "mimeType = 'application/vnd.google-apps.spreadsheet'" in query
-        assert "mimeType = 'application/vnd.google-apps.presentation'" in query
-        assert "mimeType = 'application/vnd.google-apps.drawing'" in query
-        assert "mimeType = 'application/vnd.google-apps.folder'" in query
+        assert [call["q"] for call in files_client.list_calls] == [
+            "'folder-id' in parents and trashed = false",
+            "'child' in parents and trashed = false",
+            "'folder-id' in parents and trashed = false",
+        ]
+        assert all("fileExtension" in call["fields"] for call in files_client.list_calls)
+        assert [call["pageToken"] for call in files_client.list_calls] == [None, None, "next"]
+        assert [(item["id"], item["parent_path"]) for item in results] == [
+            ("binary-docx", "root"),
+            ("doc", "root/child"),
+            ("second-docx", "root"),
+        ]
 
     def test_count_files_recursively_matches_native_mimes_for_export_extensions(self):
         files_client = _FakeGoogleDriveFilesClient(
