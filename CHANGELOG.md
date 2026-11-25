@@ -1,3 +1,9 @@
+## [1.12.12]
+
+### Fixes
+
+- **Keep missing dates as null in the SQL upload stager.** A batch where only some records had a date such as `date_modified` failed to stage with a `TypeError`. Those records now keep a null date.
+
 ## [1.12.11]
 
 ### Fixes

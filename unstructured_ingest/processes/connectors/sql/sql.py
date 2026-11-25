@@ -276,8 +276,15 @@ class SQLUploadStager(UploadStager):
         return data
 
     def conform_dataframe(self, df: "DataFrame") -> "DataFrame":
+        import pandas as pd
+
         for column in filter(lambda x: x in df.columns, _DATE_COLUMNS):
-            df[column] = df[column].apply(parse_date_string).apply(lambda date: date.timestamp())
+            # Records without a date stay null; object dtype keeps None from becoming NaN
+            df[column] = pd.Series(
+                [None if pd.isna(x) else parse_date_string(x).timestamp() for x in df[column]],
+                index=df.index,
+                dtype=object,
+            )
         for column in filter(
             lambda x: x in df.columns,
             ("permissions_data", "record_locator", "points", "links"),

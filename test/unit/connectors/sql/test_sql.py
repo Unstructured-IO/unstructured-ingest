@@ -709,3 +709,30 @@ def test_a_classifier_that_raises_on_the_schema_read_still_passes():
     uploader.classify_write_denial = explode
 
     uploader.check_write_permissions()
+
+
+@pytest.mark.parametrize("missing", [{}, {"date_modified": None}])
+def test_run_keeps_missing_dates_as_null(
+    tmp_path: Path, mock_instance: SQLUploadStager, missing: dict
+):
+    elements = [
+        {"text": "a", "metadata": {"data_source": {"date_modified": "2024-01-02T03:04:05+00:00"}}},
+        {"text": "b", "metadata": {"data_source": missing}},
+    ]
+    elements_filepath = tmp_path / "elements.json"
+    elements_filepath.write_text(json.dumps(elements))
+    file_data = FileData(
+        identifier="id",
+        connector_type="sql_test",
+        source_identifiers=SourceIdentifiers(filename="f.txt", fullpath="f.txt"),
+    )
+
+    output_path = mock_instance.run(
+        elements_filepath=elements_filepath,
+        file_data=file_data,
+        output_dir=tmp_path / "out",
+        output_filename="elements.json",
+    )
+
+    records = json.loads(output_path.read_text())
+    assert [record["date_modified"] for record in records] == [1704164645.0, None]
