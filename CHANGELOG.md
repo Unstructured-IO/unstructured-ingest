@@ -1,3 +1,9 @@
+## [1.12.12]
+
+### Fixes
+
+- **fix(google_drive): filter by extension locally so a filtered listing works.** With an extension filter configured, `GoogleDriveIndexer` put `fileExtension` in the `files.list` query, and Drive v3 does not support that term in `q`. The query no longer filters by extension; the results are matched locally, including the export formats of Google Workspace files.
+
 ## [1.12.11]
 
 ### Fixes
