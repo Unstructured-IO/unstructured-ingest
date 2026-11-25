@@ -116,19 +116,6 @@ def _should_skip_file(record: dict) -> bool:
     return mime == "inode/x-empty" or (size == 0 and not mime)
 
 
-def _build_extension_query_filter(extensions: list[str]) -> str:
-    extension_clauses = [
-        f"fileExtension = '{extension}'" for extension in sorted(_normalized_extensions(extensions))
-    ]
-    native_mime_clauses = [
-        f"mimeType = '{mime_type}'"
-        for mime_type in sorted(_native_mime_types_for_extensions(extensions))
-    ]
-    clauses = extension_clauses + native_mime_clauses
-    clauses.append(f"mimeType = '{GOOGLE_DRIVE_FOLDER_MIME_TYPE}'")
-    return " or ".join(clauses)
-
-
 class GoogleDriveAccessConfig(AccessConfig):
     service_account_key: Optional[Annotated[dict, BeforeValidator(conform_string_to_dict)]] = Field(
         default=None, description="Credentials values to use for authentication"
@@ -474,9 +461,6 @@ class GoogleDriveIndexer(Indexer):
         # `trashed = false` excludes items the user has moved to Drive's trash;
         # without it, files.list returns trashed items in shared-drive corpora.
         q = f"'{object_id}' in parents and trashed = false"
-        # Filter by extension but still include any directories
-        if extensions:
-            q = f"{q} and ({_build_extension_query_filter(extensions)})"
         logger.debug(f"query used when indexing: {q}")
         logger.debug("response fields limited to: {}".format(", ".join(self.fields)))
         done = False
@@ -493,10 +477,13 @@ class GoogleDriveIndexer(Indexer):
                 q=q,
             ).execute()
             if files := response.get("files", []):
+                # Drive exposes fileExtension in responses but does not support it in q.
                 fs = [
                     f
                     for f in files
-                    if not self.is_dir(record=f) and not _should_skip_file(f)
+                    if not self.is_dir(record=f)
+                    and not _should_skip_file(f)
+                    and _matches_extension_or_native_export(f, extensions)
                 ]
                 for r in fs:
                     r["parent_path"] = previous_path
