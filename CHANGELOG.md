@@ -1,3 +1,9 @@
+## [1.12.12]
+
+### Fixes
+
+- **Write Salesforce downloads as UTF-8.** Non-ASCII records now produce valid XML regardless of the system's default encoding.
+
 ## [1.12.11]
 
 ### Fixes
