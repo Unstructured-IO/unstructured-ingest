@@ -1,3 +1,9 @@
+## [1.12.12]
+
+### Fixes
+
+- **fix(notion): do not fail a page on audio or unmapped block types.** Parsing the children of a page raised `KeyError` for an `audio` block, or any block type without a mapping. Audio blocks are now rendered as audio elements, and other unmapped types are treated as unsupported blocks and skipped in the output.
+
 ## [1.12.11]
 
 ### Fixes

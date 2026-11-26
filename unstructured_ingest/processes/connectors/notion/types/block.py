@@ -14,6 +14,7 @@ from unstructured_ingest.processes.connectors.notion.types.parent import Parent
 from unstructured_ingest.processes.connectors.notion.types.user import PartialUser
 
 block_type_mapping = {
+    "audio": blocks.Audio,
     "bookmark": blocks.Bookmark,
     "breadcrumb": blocks.Breadcrumb,
     "bulleted_list_item": blocks.BulletedListItem,
@@ -80,7 +81,7 @@ class Block(FromJSONMixin, GetHTMLMixin):
                 created_by=PartialUser.from_dict(created_by),
                 last_edited_by=PartialUser.from_dict(last_edited_by),
                 parent=Parent.from_dict(parent),
-                block=block_type_mapping[t].from_dict(block_data),  # type: ignore
+                block=block_type_mapping.get(t, blocks.Unsupported).from_dict(block_data),  # type: ignore
                 **data,
             )
         except KeyError as ke:
