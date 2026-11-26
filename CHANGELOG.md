@@ -1,3 +1,9 @@
+## [1.12.12]
+
+### Fixes
+
+- **Notion callouts with a custom emoji or a built-in icon no longer fail.** `Icon.from_dict` raised `ValueError` for the `custom_emoji` and `icon` types, so a page containing such a callout could not be converted. Both are now rendered as `:name:`.
+
 ## [1.12.11]
 
 ### Fixes
