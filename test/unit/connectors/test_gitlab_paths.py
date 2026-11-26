@@ -1,5 +1,6 @@
 from contextlib import contextmanager
 from unittest.mock import Mock
+from uuid import NAMESPACE_DNS, uuid5
 
 import pytest
 
@@ -36,7 +37,13 @@ def test_indexer_uses_repository_relative_paths(path, branch):
     )
     assert len(records) == 1
     record = records[0]
-    assert record.identifier == "blob-id"
+    assert record.identifier == str(
+        uuid5(
+            NAMESPACE_DNS,
+            f"https://gitlab.com/team/project/-/blob/{branch or 'main'}/docs/guide.txt",
+        )
+    )
+    assert record.metadata.version == "blob-id"
     assert record.source_identifiers.fullpath == "docs/guide.txt"
     assert record.source_identifiers.rel_path == ("docs/guide.txt" if root else "guide.txt")
     assert record.source_identifiers.filename == "guide.txt"
@@ -45,3 +52,23 @@ def test_indexer_uses_repository_relative_paths(path, branch):
         "ref": branch or "main",
     }
     assert config.path == original_path
+
+
+def test_identical_files_get_distinct_identifiers():
+    project = Mock(default_branch="main")
+    project.repository_tree.return_value = [
+        {"path": name, "type": "blob", "id": "same-blob", "mode": "100644"}
+        for name in ("a/__init__.py", "b/__init__.py")
+    ]
+
+    @contextmanager
+    def get_project(self):
+        yield project
+
+    connection = GitLabConnectionConfig(url="https://gitlab.com/team/project")
+    with pytest.MonkeyPatch.context() as patch:
+        patch.setattr(GitLabConnectionConfig, "get_project", get_project)
+        indexer = GitLabIndexer(connection_config=connection, index_config=GitLabIndexerConfig())
+        records = list(indexer.run())
+
+    assert len({record.identifier for record in records}) == 2

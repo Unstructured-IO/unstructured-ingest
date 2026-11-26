@@ -1,3 +1,9 @@
+## [1.12.12]
+
+### Fixes
+
+- **fix(gitlab): give every file its own identifier.** `GitLabIndexer` used the git blob SHA as `FileData.identifier`, so files with identical content (empty `__init__.py` files, copied licenses) shared one identifier and overwrote each other's pipeline records. The identifier is now a UUID derived from the project URL, ref and file path, and the blob SHA is reported as `metadata.version`. Identifiers of GitLab files change, so records ingested earlier are not matched by identifier on the next run.
+
 ## [1.12.11]
 
 ### Fixes
