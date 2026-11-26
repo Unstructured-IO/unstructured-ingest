@@ -84,9 +84,25 @@ class FileIcon(FromJSONMixin, GetHTMLMixin):
             return None
 
 
+@dataclass
+class NamedIcon(FromJSONMixin, GetHTMLMixin):
+    """A workspace custom emoji or a built-in Notion icon, both identified by name."""
+
+    name: str
+    type: str
+
+    @classmethod
+    def from_dict(cls, data: dict):
+        t = data["type"]
+        return cls(name=data[t]["name"], type=t)
+
+    def get_html(self) -> Optional[HtmlTag]:
+        return P([], f":{self.name}:")
+
+
 class Icon(FromJSONMixin):
     @classmethod
-    def from_dict(cls, data: dict) -> Union[EmojiIcon, ExternalIcon, FileIcon]:
+    def from_dict(cls, data: dict) -> Union[EmojiIcon, ExternalIcon, FileIcon, NamedIcon]:
         t = data.get("type")
         if t == "emoji":
             return EmojiIcon.from_dict(data)
@@ -94,6 +110,8 @@ class Icon(FromJSONMixin):
             return ExternalIcon.from_dict(data)
         elif t == "file":
             return FileIcon.from_dict(data)
+        elif t in ("custom_emoji", "icon"):
+            return NamedIcon.from_dict(data)
         else:
             raise ValueError(f"Unexpected icon type: {t} ({data})")
 
@@ -101,7 +119,7 @@ class Icon(FromJSONMixin):
 @dataclass
 class Callout(BlockBase):
     color: str
-    icon: Optional[Union[EmojiIcon, ExternalIcon, FileIcon]] = None
+    icon: Optional[Union[EmojiIcon, ExternalIcon, FileIcon, NamedIcon]] = None
     rich_text: List[RichText] = field(default_factory=list)
 
     @staticmethod
