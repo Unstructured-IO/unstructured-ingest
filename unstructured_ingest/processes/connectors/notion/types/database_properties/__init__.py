@@ -31,7 +31,8 @@ from .verification import Verification, VerificationCell
 # Buttons are only functional inside Notion UI. We can simply
 # ignore them so that the we don't throw an error when trying
 # to map 'button' properties.
-unsupported_db_prop_types = ["button"]
+# 'place' properties have no mapping yet, so they are skipped the same way.
+unsupported_db_prop_types = ["button", "place"]
 
 db_prop_type_mapping = {
     "checkbox": Checkbox,

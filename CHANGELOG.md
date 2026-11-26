@@ -1,3 +1,9 @@
+## [1.12.12]
+
+### Fixes
+
+- **fix(notion): skip `place` database properties instead of failing.** Neither `map_properties` nor `map_cells` had an entry for Notion's `place` property type, so a database with such a column raised `KeyError` and could not be processed. The column is now skipped with a warning, as `button` already is.
+
 ## [1.12.11]
 
 ### Fixes

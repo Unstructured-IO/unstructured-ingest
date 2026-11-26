@@ -103,3 +103,17 @@ def test_map_cells_logs_warning_for_unsupported_type(caplog: pytest.LogCaptureFi
 
     assert result == {}
     assert "Unsupported property type 'button' for property 'property1'. Skipping." in caplog.text
+
+
+def test_place_property_is_skipped():
+    title = {"id": "title", "name": "Name", "type": "title", "title": {}}
+    place = {"id": "abc", "name": "Where", "type": "place", "place": {}}
+
+    assert list(map_properties({"Name": title, "Where": place})) == ["Name"]
+
+
+def test_place_cell_is_skipped():
+    title = {"id": "title", "type": "title", "title": []}
+    place = {"id": "abc", "type": "place", "place": None}
+
+    assert list(map_cells({"Name": title, "Where": place})) == ["Name"]
