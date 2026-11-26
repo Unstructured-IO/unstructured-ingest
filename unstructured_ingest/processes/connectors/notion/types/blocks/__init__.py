@@ -1,3 +1,4 @@
+from .audio import Audio
 from .bookmark import Bookmark
 from .breadcrumb import Breadcrumb
 from .bulleted_list_item import BulletedListItem
@@ -28,6 +29,7 @@ from .unsupported import Unsupported
 from .video import Video
 
 __all__ = [
+    "Audio",
     "Bookmark",
     "Breadcrumb",
     "BulletedListItem",
