@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from typing import TYPE_CHECKING, Any, Generator, Optional
 from urllib.parse import urlparse
+from uuid import NAMESPACE_DNS, uuid5
 
 from pydantic import Field, Secret, model_validator
 
@@ -216,12 +217,18 @@ class GitLabIndexer(Indexer):
                     filename=PurePosixPath(file["path"]).name,
                     rel_path=relative_path,
                 )
+                full_path = (
+                    f"{self.connection_config.base_url}/"
+                    f"{self.connection_config.repo_path.rstrip('/')}/-/blob/{ref}/{file['path']}"
+                )
                 yield FileData(
-                    identifier=file["id"],
+                    identifier=str(uuid5(NAMESPACE_DNS, full_path)),
                     connector_type=CONNECTOR_TYPE,
                     source_identifiers=source_identifiers,
                     metadata=FileDataSourceMetadata(
                         url=file["id"],
+                        # Blob SHA: changes only when the content does.
+                        version=file["id"],
                         record_locator=record_locator,
                         permissions_data=[{"mode": file["mode"]}],
                     ),
