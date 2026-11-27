@@ -50,10 +50,11 @@ class VoyageAIEmbeddingConfig(EmbeddingConfig):
             return UserAuthError(message)
         if isinstance(e, RateLimitError):
             return CustomRateLimitError(message)
-        if 400 <= http_code < 500:
-            return UserError(message)
-        if http_code >= 500:
-            return ProviderError(message)
+        if http_code is not None:
+            if 400 <= http_code < 500:
+                return UserError(message)
+            if http_code >= 500:
+                return ProviderError(message)
         logger.error(f"unhandled exception from openai: {e}", exc_info=True)
         return e
 

@@ -1,3 +1,9 @@
+## [1.12.12]
+
+### Fixes
+
+- **VoyageAI timeouts and connection failures are no longer replaced by a `TypeError`.** These errors carry no HTTP status, so mapping them failed on `400 <= None` and hid the original error. The VoyageAI error is now returned as is.
+
 ## [1.12.11]
 
 ### Fixes
