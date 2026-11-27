@@ -1,3 +1,4 @@
+import json
 from datetime import datetime, timezone
 from typing import Any
 from unittest.mock import Mock, patch
@@ -712,3 +713,35 @@ class TestRoleMapping:
         write_ops = set(MICROSOFT_ROLE_MAPPING["write"])
         owner_ops = set(MICROSOFT_ROLE_MAPPING["owner"])
         assert write_ops.issubset(owner_ops)
+
+
+def _graph_page(items: list[dict], next_link: str | None = None) -> requests.Response:
+    body: dict[str, Any] = {"value": items}
+    if next_link:
+        body["@odata.nextLink"] = next_link
+    response = requests.Response()
+    response.status_code = 200
+    response.headers["Content-Type"] = "application/json"
+    response._content = json.dumps(body).encode()
+    return response
+
+
+def test_list_objects_follows_next_link():
+    """Graph returns folder children in pages; every page must be indexed."""
+    from office365.graph_client import GraphClient
+
+    next_link = "https://graph.microsoft.com/v1.0/drives/d/items/f/children?$skiptoken=2"
+    pages = [
+        _graph_page([{"id": "1", "name": "a.txt", "file": {}}], next_link),
+        _graph_page([{"id": "2", "name": "b.txt", "file": {}}]),
+    ]
+    client = GraphClient(lambda: {"access_token": "token", "token_type": "Bearer"})
+    folder = client.drives["d"].items["f"]
+    indexer = OnedriveIndexer(connection_config=Mock(), index_config=OnedriveIndexerConfig())
+
+    with patch("requests.get", side_effect=pages) as mock_get:
+        files = indexer.list_objects_sync(folder, recursive=False)
+
+    assert [f.name for f in files] == ["a.txt", "b.txt"]
+    assert mock_get.call_count == 2
+    assert mock_get.call_args.kwargs["url"] == next_link
