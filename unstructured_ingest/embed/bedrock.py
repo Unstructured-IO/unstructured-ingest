@@ -112,6 +112,8 @@ class BedrockEmbeddingConfig(EmbeddingConfig):
                     return UserAuthError(http_response["Error"])
             if http_response_code == 403:
                 return UserAuthError(http_response["Error"])
+            if http_response_code == 429:
+                return RateLimitError(http_response["Error"])
             if 400 <= http_response_code < 500:
                 return UserError(http_response["Error"])
             if http_response_code >= 500:
@@ -274,32 +276,28 @@ class AsyncBedrockEmbeddingEncoder(AsyncBaseEmbeddingEncoder):
         """Call out to Bedrock embedding endpoint."""
         provider = self.config.embedder_model_name.split(".")[0]
         body = conform_query(query=query, provider=provider)
-        try:
-            async with self.config.get_async_client() as bedrock_client:
-                # invoke bedrock API
-                try:
-                    invoke_params = {
-                        "body": json.dumps(body),
-                        "modelId": self.config.inference_profile_id
-                        or self.config.embedder_model_name,
-                        "accept": "application/json",
-                        "contentType": "application/json",
-                    }
+        async with self.config.get_async_client() as bedrock_client:
+            # invoke bedrock API
+            try:
+                invoke_params = {
+                    "body": json.dumps(body),
+                    "modelId": self.config.inference_profile_id or self.config.embedder_model_name,
+                    "accept": "application/json",
+                    "contentType": "application/json",
+                }
 
-                    response = await bedrock_client.invoke_model(**invoke_params)
-                except Exception as e:
-                    raise self.wrap_error(e=e)
-                async with response.get("body") as client_response:
-                    response_body = await client_response.json()
+                response = await bedrock_client.invoke_model(**invoke_params)
+            except Exception as e:
+                raise self.wrap_error(e=e)
+            async with response.get("body") as client_response:
+                response_body = await client_response.json()
 
-            # format output based on provider
-            if provider == "cohere":
-                return response_body.get("embeddings")[0]
-            else:
-                # includes common provider == "amazon"
-                return response_body.get("embedding")
-        except Exception as e:
-            raise ValueError(f"Error raised by inference endpoint: {e}")
+        # format output based on provider
+        if provider == "cohere":
+            return response_body.get("embeddings")[0]
+        else:
+            # includes common provider == "amazon"
+            return response_body.get("embedding")
 
     async def embed_documents(self, elements: list[dict]) -> list[dict]:
         elements = elements.copy()
