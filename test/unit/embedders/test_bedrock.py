@@ -1,11 +1,19 @@
+import asyncio
 import os
 import random
+from contextlib import asynccontextmanager
 from unittest.mock import patch
 
 import faker
 import pytest
+from botocore.exceptions import ClientError
 
-from unstructured_ingest.embed.bedrock import BedrockEmbeddingConfig, BedrockEmbeddingEncoder
+from unstructured_ingest.embed.bedrock import (
+    AsyncBedrockEmbeddingEncoder,
+    BedrockEmbeddingConfig,
+    BedrockEmbeddingEncoder,
+)
+from unstructured_ingest.error import ProviderError, RateLimitError, UserAuthError
 
 fake = faker.Faker()
 
@@ -71,15 +79,11 @@ def test_inference_profile_manual():
 def test_invoke_model_with_inference_profile(
     asynchronous: bool, model_name: str, profile: str | None
 ):
-    import asyncio
     import json
-    from contextlib import asynccontextmanager
     from io import BytesIO
 
     from botocore.session import Session
     from botocore.validate import validate_parameters
-
-    from unstructured_ingest.embed.bedrock import AsyncBedrockEmbeddingEncoder
 
     config = BedrockEmbeddingConfig(model_name=model_name, inference_profile_id=profile)
     shape = (
@@ -132,3 +136,42 @@ def test_invoke_model_with_inference_profile(
             result = BedrockEmbeddingEncoder(config=config).embed_query("hello")
     assert result == [1.0]
     assert len(calls) == 1
+
+
+@pytest.mark.parametrize("asynchronous", [False, True])
+@pytest.mark.parametrize(
+    ("status", "code", "expected"),
+    [
+        (429, "ThrottlingException", RateLimitError),
+        (403, "AccessDeniedException", UserAuthError),
+        (500, "InternalServerException", ProviderError),
+    ],
+)
+def test_invoke_model_client_error(
+    asynchronous: bool, status: int, code: str, expected: type[Exception]
+):
+    error = ClientError(
+        {"Error": {"Code": code, "Message": "x"}, "ResponseMetadata": {"HTTPStatusCode": status}},
+        "InvokeModel",
+    )
+
+    class SyncClient:
+        def invoke_model(self, **params):
+            raise error
+
+    class AsyncClient:
+        async def invoke_model(self, **params):
+            raise error
+
+    @asynccontextmanager
+    async def get_async_client(self):
+        yield AsyncClient()
+
+    config = BedrockEmbeddingConfig(model_name="amazon.titan-embed-text-v2:0")
+    with pytest.raises(expected):
+        if asynchronous:
+            with patch.object(BedrockEmbeddingConfig, "get_async_client", get_async_client):
+                asyncio.run(AsyncBedrockEmbeddingEncoder(config=config).embed_query("hello"))
+        else:
+            with patch.object(BedrockEmbeddingConfig, "get_client", return_value=SyncClient()):
+                BedrockEmbeddingEncoder(config=config).embed_query("hello")

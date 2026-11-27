@@ -1,3 +1,9 @@
+## [1.12.12]
+
+### Fixes
+
+- **Bedrock embedder errors keep their type.** The async encoder turned every failure into a `ValueError`, so throttling, access and server errors could not be told apart. It now raises the same errors as the sync encoder. A `429` response such as `ThrottlingException` is now a `RateLimitError` in both encoders instead of a `UserError`.
+
 ## [1.12.11]
 
 ### Fixes
