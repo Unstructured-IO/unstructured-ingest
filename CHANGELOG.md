@@ -1,3 +1,9 @@
+## [1.12.12]
+
+### Fixes
+
+- **fix(zendesk): keep the error type when listing tickets, articles, comments or attachments fails.** `fetch_content` already turns a 401 or 429 into `UserAuthError` or `RateLimitError`, but the four listing methods wrapped that result a second time, which produced a plain `UnstructuredIngestError`. The already wrapped error is now passed through.
+
 ## [1.12.11]
 
 ### Fixes
