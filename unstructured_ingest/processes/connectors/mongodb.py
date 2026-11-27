@@ -1,10 +1,12 @@
+import re
 from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime
+from hashlib import sha256
 from time import time
 from typing import TYPE_CHECKING, Any, Generator, Optional
 
-from pydantic import BaseModel, Field, Secret
+from pydantic import BaseModel, Field, Secret, model_serializer
 
 from unstructured_ingest.__version__ import __version__ as unstructured_version
 from unstructured_ingest.data_types.file_data import (
@@ -55,6 +57,15 @@ SERVER_API_VERSION = "1"
 class MongoDBAdditionalMetadata(BaseModel):
     database: str
     collection: str
+    # Extended JSON of the _id values that are not ObjectIds, keyed by batch item identifier
+    id_values: dict[str, str] = Field(default_factory=dict)
+
+    @model_serializer(mode="wrap")
+    def omit_empty_id_values(self, handler: Any) -> dict[str, Any]:
+        data = handler(self)
+        if not data.get("id_values"):
+            data.pop("id_values", None)
+        return data
 
 
 class MongoDBBatchFileData(BatchFileData):
@@ -176,6 +187,9 @@ class MongoDBIndexer(Indexer):
 
     def run(self, **kwargs: Any) -> Generator[BatchFileData, None, None]:
         """Generates FileData objects for each document in the MongoDB collection."""
+        from bson import json_util
+        from bson.objectid import ObjectId
+
         with self.connection_config.get_client() as client:
             database = client[self.index_config.database]
             collection = database[self.index_config.collection]
@@ -205,7 +219,13 @@ class MongoDBIndexer(Indexer):
                 metadata=metadata,
                 batch_items=[BatchItem(identifier=str(doc_id)) for doc_id in id_batch],
                 additional_metadata=MongoDBAdditionalMetadata(
-                    collection=self.index_config.collection, database=self.index_config.database
+                    collection=self.index_config.collection,
+                    database=self.index_config.database,
+                    id_values={
+                        str(doc_id): json_util.dumps(doc_id)
+                        for doc_id in id_batch
+                        if not isinstance(doc_id, ObjectId)
+                    },
                 ),
                 display_name=display_name,
             )
@@ -244,13 +264,21 @@ class MongoDBDownloader(Downloader):
         concatenated_values = "\n".join(str(value) for value in flattened_dict.values())
 
         # Create a FileData object for each document with source_identifiers
-        filename = f"{doc_id}.txt"
+        name = str(doc_id)
+        # A string _id can hold anything, keep it from pointing outside the download directory
+        unsafe_chars = r"[/\\\x00]"
+        if re.search(unsafe_chars, name):
+            digest = sha256(name.encode()).hexdigest()[:12]
+            name = f"{re.sub(unsafe_chars, '_', name)}-{digest}"
+        filename = f"{name}.txt"
         file_data.source_identifiers = SourceIdentifiers(
             filename=filename,
             fullpath=filename,
         )
         cast_file_data = FileData.cast(file_data=file_data)
         cast_file_data.identifier = str(doc_id)
+        # Batch-level lookup data, not metadata of this document
+        cast_file_data.additional_metadata.pop("id_values", None)
 
         # Determine the download path
         download_path = self.get_download_path(file_data=cast_file_data)
@@ -275,10 +303,12 @@ class MongoDBDownloader(Downloader):
     @requires_dependencies(["bson"], extras="mongodb")
     def run(self, file_data: FileData, **kwargs: Any) -> download_responses:
         """Fetches the document from MongoDB and writes it to a file."""
+        from bson import json_util
         from bson.errors import InvalidId
         from bson.objectid import ObjectId
 
         mongo_file_data = MongoDBBatchFileData.cast(file_data=file_data)
+        id_values = mongo_file_data.additional_metadata.id_values
 
         with self.connection_config.get_client() as client:
             database = client[mongo_file_data.additional_metadata.database]
@@ -286,17 +316,20 @@ class MongoDBDownloader(Downloader):
 
             ids = [item.identifier for item in mongo_file_data.batch_items]
 
-            object_ids = []
+            query_ids = []
             for doc_id in ids:
+                if doc_id in id_values:
+                    query_ids.append(json_util.loads(id_values[doc_id]))
+                    continue
                 try:
-                    object_ids.append(ObjectId(doc_id))
+                    query_ids.append(ObjectId(doc_id))
                 except InvalidId as e:
                     error_message = f"Invalid ObjectId for doc_id '{doc_id}': {str(e)}"
                     logger.error(error_message)
                     raise ValueError(error_message) from e
 
             try:
-                docs = list(collection.find({"_id": {"$in": object_ids}}))
+                docs = list(collection.find({"_id": {"$in": query_ids}}))
             except Exception as e:
                 logger.error(f"Failed to fetch documents: {e}", exc_info=True)
                 raise e

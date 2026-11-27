@@ -1,3 +1,9 @@
+## [1.12.12]
+
+### Fixes
+
+- **MongoDB source: download documents whose `_id` is not an ObjectId.** The indexer turned every `_id` into a string and the downloader required it to parse as an ObjectId, so a collection keyed by strings or integers failed with `Invalid ObjectId`, and a string `_id` that looked like an ObjectId matched nothing. The indexer now records the type of non-ObjectId ids in the batch and the downloader queries with the original value. Path separators in a string `_id` are replaced in the downloaded file name.
+
 ## [1.12.11]
 
 ### Fixes
