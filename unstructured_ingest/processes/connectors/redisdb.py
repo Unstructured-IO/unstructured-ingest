@@ -217,7 +217,8 @@ class RedisUploader(Uploader):
                 await pipe.json().set(key_with_prefix, "$", element).execute()
             except redis_exceptions.ResponseError as e:
                 message = _form_redis_pipeline_error_message(str(e))
-                if "unknown command `JSON.SET`" in message:
+                # Redis 6 quotes the command name with backticks, Redis 7 with single quotes
+                if any(f"unknown command {q}JSON.SET{q}" in message for q in ("`", "'")):
                     # if this error occurs, Redis server doesn't support JSON type,
                     # so save as string type instead
                     await pipe.set(key_with_prefix, json.dumps(element)).execute()
