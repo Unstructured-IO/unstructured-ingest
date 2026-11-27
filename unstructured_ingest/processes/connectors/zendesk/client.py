@@ -277,6 +277,8 @@ class ZendeskClient:
         try:
             async for article_dict in self.fetch_content(url=article_url, content_key="articles"):
                 yield ZendeskArticle.model_validate(article_dict)
+        except UnstructuredIngestError:
+            raise
         except Exception as e:
             raise self.wrap_error(e=e)
 
@@ -286,6 +288,8 @@ class ZendeskClient:
         try:
             async for comment_dict in self.fetch_content(url=comments_url, content_key="comments"):
                 yield ZendeskComment.model_validate(comment_dict)
+        except UnstructuredIngestError:
+            raise
         except Exception as e:
             raise self.wrap_error(e=e)
 
@@ -295,6 +299,8 @@ class ZendeskClient:
         try:
             async for ticket_dict in self.fetch_content(url=tickets_url, content_key="tickets"):
                 yield ZendeskTicket.model_validate(ticket_dict)
+        except UnstructuredIngestError:
+            raise
         except Exception as e:
             raise self.wrap_error(e=e)
 
@@ -314,5 +320,7 @@ class ZendeskClient:
                 url=article_attachment_url, content_key="article_attachments"
             ):
                 yield ZendeskArticleAttachment.model_validate(attachment_dict)
+        except UnstructuredIngestError:
+            raise
         except Exception as e:
             raise self.wrap_error(e=e)

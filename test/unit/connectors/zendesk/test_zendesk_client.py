@@ -4,6 +4,7 @@ from pytest_mock import MockerFixture
 
 from unstructured_ingest.error import (
     ProviderError,
+    RateLimitError,
     UnstructuredIngestError,
     UserAuthError,
     UserError,
@@ -129,3 +130,31 @@ def test_precheck_leaves_no_open_clients(mocker: MockerFixture):
 
     assert len(sync_clients) == 1
     assert sync_clients[0].is_closed
+
+
+@pytest.mark.parametrize(
+    ("status_code", "expected_type"),
+    [(401, UserAuthError), (429, RateLimitError), (500, ProviderError)],
+)
+@pytest.mark.parametrize(
+    ("method", "args"),
+    [
+        ("get_articles", ()),
+        ("get_comments", (1,)),
+        ("get_tickets", ()),
+        ("get_article_attachments", (1,)),
+    ],
+)
+@pytest.mark.asyncio
+async def test_listing_keeps_http_error_type(
+    method, args, status_code, expected_type, mocker: MockerFixture
+):
+    client = _client(mocker)
+    client._async_client = mocker.AsyncMock()
+    client._async_client.get.return_value = _http_status_error(status_code).response
+
+    with pytest.raises(expected_type) as exc_info:
+        async for _ in getattr(client, method)(*args):
+            pass
+
+    assert SECRET not in str(exc_info.value)
