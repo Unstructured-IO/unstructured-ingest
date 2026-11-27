@@ -1,3 +1,5 @@
+import pytest
+
 from unstructured_ingest.embed.voyageai import VoyageAIEmbeddingConfig, VoyageAIEmbeddingEncoder
 
 
@@ -22,3 +24,12 @@ def test_embed_documents_does_not_break_element_to_dict(mocker):
     assert len(elements) == 2
     assert elements[0]["text"] == "This is sentence 1"
     assert elements[1]["text"] == "This is sentence 2"
+
+
+@pytest.mark.parametrize("error_name", ["Timeout", "APIConnectionError"])
+def test_wrap_error_without_http_status_returns_original_error(error_name):
+    voyage_error = pytest.importorskip("voyageai.error")
+    error = getattr(voyage_error, error_name)("request failed")
+    config = VoyageAIEmbeddingConfig(api_key="api_key")
+
+    assert config.wrap_error(error) is error
