@@ -69,13 +69,21 @@ Subject: $subject
 From: $from_email
 To: $to_email
 Content-Type: multipart/alternative; boundary="00000000000095c9b205eff92630"
+
 --00000000000095c9b205eff92630
 Content-Type: text/plain; charset="UTF-8"
+
 $textbody
---00000000000095c9b205eff92630
+$htmlpart--00000000000095c9b205eff92630--
+""",
+)
+
+# Left out when there is no HTML body: partitioning prefers the HTML part, even an empty one
+EMAIL_HTML_PART_TEMPLATE = Template(
+    """--00000000000095c9b205eff92630
 Content-Type: text/html; charset="UTF-8"
+
 $htmlbody
---00000000000095c9b205eff92630--
 """,
 )
 
@@ -258,14 +266,15 @@ class SalesforceDownloader(Downloader):
 
     def _eml_for_record(self, email_json: dict[str, Any]) -> str:
         """Recreates standard expected .eml format using template."""
+        htmlbody = email_json.get("HtmlBody")
         eml = EMAIL_TEMPLATE.substitute(
             date=formatdate(parser.parse(email_json.get("MessageDate")).timestamp()),
             message_identifier=email_json.get("MessageIdentifier"),
             subject=email_json.get("Subject"),
             from_email=email_json.get("FromAddress"),
             to_email=email_json.get("ToAddress"),
-            textbody=email_json.get("TextBody"),
-            htmlbody=email_json.get("HtmlBody"),
+            textbody=email_json.get("TextBody") or "",
+            htmlpart=EMAIL_HTML_PART_TEMPLATE.substitute(htmlbody=htmlbody) if htmlbody else "",
         )
         return dedent(eml)
 
