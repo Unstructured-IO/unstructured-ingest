@@ -266,7 +266,7 @@ class OnedriveIndexer(Indexer):
             ) from None
 
     def list_objects_sync(self, folder: DriveItem, recursive: bool) -> list["DriveItem"]:
-        drive_items = folder.children.get().execute_query()
+        drive_items = folder.children.get_all().execute_query()
         files = [d for d in drive_items if d.is_file]
         if not recursive:
             return files

@@ -1,3 +1,9 @@
+## [1.12.12]
+
+### Fixes
+
+- **fix(onedrive): index every item in folders with more than one page of children.** `OnedriveIndexer` listed a folder with a single request, so only the first page returned by Microsoft Graph (200 items by default) was indexed, and files and subfolders on later pages were silently skipped. It now follows `@odata.nextLink` until the listing is complete.
+
 ## [1.12.11]
 
 ### Fixes
