@@ -19,6 +19,9 @@ if TYPE_CHECKING:
     from voyageai import AsyncClient as AsyncVoyageAIClient
     from voyageai import Client as VoyageAIClient
 
+# Models served by the multimodal embeddings endpoint rather than the text one
+MULTIMODAL_MODELS = ("voyage-multimodal-3", "voyage-multimodal-3.5")
+
 
 class VoyageAIEmbeddingConfig(EmbeddingConfig):
     batch_size: int = Field(
@@ -99,7 +102,7 @@ class VoyageAIEmbeddingEncoder(BaseEmbeddingEncoder):
         return self.config.get_client()
 
     def embed_batch(self, client: "VoyageAIClient", batch: list[str]) -> list[list[float]]:
-        if self.config.embedder_model_name == "voyage-multimodal-3":
+        if self.config.embedder_model_name in MULTIMODAL_MODELS:
             batch = [[text] for text in batch]
             response = client.multimodal_embed(inputs=batch, model=self.config.embedder_model_name)
         else:
@@ -120,7 +123,7 @@ class AsyncVoyageAIEmbeddingEncoder(AsyncBaseEmbeddingEncoder):
     async def embed_batch(
         self, client: "AsyncVoyageAIClient", batch: list[str]
     ) -> list[list[float]]:
-        if self.config.embedder_model_name == "voyage-multimodal-3":
+        if self.config.embedder_model_name in MULTIMODAL_MODELS:
             batch = [[text] for text in batch]
             response = await client.multimodal_embed(
                 inputs=batch, model=self.config.embedder_model_name

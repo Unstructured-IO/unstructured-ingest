@@ -1,3 +1,9 @@
+## [1.12.12]
+
+### Fixes
+
+- **VoyageAI `voyage-multimodal-3.5` now uses the multimodal embeddings endpoint.** Only `voyage-multimodal-3` was routed there, so `voyage-multimodal-3.5` was sent to the text embeddings endpoint.
+
 ## [1.12.11]
 
 ### Fixes
