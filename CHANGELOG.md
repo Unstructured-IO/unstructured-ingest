@@ -1,3 +1,9 @@
+## [1.12.12]
+
+### Fixes
+
+- **The Redis destination falls back to string values on Redis 7 without RedisJSON.** The check only recognized the Redis 6 form of the `unknown command` error, which quotes `JSON.SET` with backticks. Redis 7 uses single quotes, so the upload failed instead of storing each element as a JSON string.
+
 ## [1.12.11]
 
 ### Fixes
