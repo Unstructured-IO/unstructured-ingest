@@ -1,5 +1,6 @@
 import hashlib
-from datetime import datetime, timezone
+import xml.etree.ElementTree as ET
+from datetime import datetime, timedelta, timezone
 from io import BytesIO
 from unittest.mock import Mock, call
 from urllib.error import HTTPError
@@ -1047,3 +1048,83 @@ def test_channel_history_error_msg_token_revoked():
 def test_channel_history_error_msg_unknown_error():
     msg = _channel_history_error_msg("some_weird_error", ["C1"], granted_scopes=set())
     assert "some_weird_error" in msg
+
+
+@pytest.mark.asyncio
+async def test_slack_downloader_keeps_only_the_package_day_with_thread_broadcast(tmp_path):
+    day = datetime(2024, 1, 10, tzinfo=timezone.utc)
+    root_ts = _ts(day, hours=1)
+    other_day_ts = _ts(day + timedelta(days=1))
+    broadcast_ts = _ts(day + timedelta(days=2))
+    root = {"ts": root_ts, "thread_ts": root_ts, "text": "root", "latest_reply": broadcast_ts}
+    broadcast = {
+        "ts": broadcast_ts,
+        "thread_ts": root_ts,
+        "subtype": "thread_broadcast",
+        "text": "broadcast",
+    }
+    other = {"ts": other_day_ts, "text": "other day"}
+    history = [broadcast, other, root]
+
+    # The indexer's range for the root's day stretches to the broadcast reply.
+    file_data = next(
+        fd
+        for fd in _conversations(_run_indexer(history))
+        if fd.metadata.record_locator["day"] == _day_str(day)
+    )
+
+    async def pages(items):
+        yield {"messages": items}
+
+    async def conversations_history(**kwargs):
+        return pages(history)
+
+    async def conversations_replies(**kwargs):
+        threads = {root_ts: [root, broadcast], other_day_ts: [other], broadcast_ts: [broadcast]}
+        return pages(threads[kwargs["ts"]])
+
+    client = Mock()
+    client.conversations_history = conversations_history
+    client.conversations_replies = conversations_replies
+    connection_config = Mock()
+    connection_config.get_async_client.return_value = client
+    downloader = SlackDownloader(connection_config=connection_config)
+
+    download_path = tmp_path / "day.xml"
+    await downloader._download_conversation(file_data, download_path)
+
+    texts = [m.findtext("text") for m in ET.parse(download_path).getroot()]
+    assert texts == ["root <reply> broadcast"]
+
+
+@pytest.mark.asyncio
+async def test_slack_downloader_keeps_broadcast_when_its_root_is_not_in_range(tmp_path):
+    day = datetime(2024, 1, 10, tzinfo=timezone.utc)
+    broadcast_ts = _ts(day + timedelta(days=2))
+    broadcast = {
+        "ts": broadcast_ts,
+        "thread_ts": _ts(day),
+        "subtype": "thread_broadcast",
+        "text": "broadcast",
+    }
+    file_data = _conversations(_run_indexer([broadcast]))[0]
+
+    async def pages(items):
+        yield {"messages": items}
+
+    async def conversations(**kwargs):
+        return pages([broadcast])
+
+    client = Mock()
+    client.conversations_history = conversations
+    client.conversations_replies = conversations
+    connection_config = Mock()
+    connection_config.get_async_client.return_value = client
+
+    download_path = tmp_path / "day.xml"
+    await SlackDownloader(connection_config=connection_config)._download_conversation(
+        file_data, download_path
+    )
+
+    texts = [m.findtext("text") for m in ET.parse(download_path).getroot()]
+    assert texts == ["broadcast"]

@@ -295,8 +295,9 @@ class SlackIndexer(Indexer):
     @staticmethod
     def _message_day(message: dict) -> Optional[str]:
         # NOTE: Top-level messages are grouped by their own ts-day; thread replies belong to
-        # their ROOT (thread_ts) day. conversations.history only returns parents/standalone
-        # messages, but using thread_ts when present keeps replies pinned to the root's day.
+        # their ROOT (thread_ts) day. conversations.history returns parents, standalone messages
+        # and replies also sent to the channel (thread_broadcast); using thread_ts when present
+        # keeps those replies pinned to the root's day.
         day_ts = message.get("thread_ts") or message.get("ts")
         if not day_ts:
             return None
@@ -581,6 +582,21 @@ class SlackDownloader(Downloader):
             inclusive=True,
         ):
             messages += conversation_history.get("messages", [])
+
+        # NOTE: A thread_broadcast reply is grouped under its root's day but keeps its own, later
+        # ts, so it can stretch the range across other days that belong to other packages.
+        day = file_data.metadata.record_locator.get("day")
+        if day:
+            messages = [m for m in messages if SlackIndexer._message_day(m) == day]
+
+        # NOTE: A broadcast reply is already part of its root's thread. It is only fetched on its
+        # own when the root itself is outside the range.
+        fetched_ts = {m["ts"] for m in messages}
+        messages = [
+            m
+            for m in messages
+            if not (m.get("subtype") == "thread_broadcast" and m.get("thread_ts") in fetched_ts)
+        ]
 
         conversation = []
         for message in messages:
