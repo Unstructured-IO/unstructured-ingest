@@ -320,7 +320,7 @@ class NotionDownloader(Downloader):
             if text_extraction.html:
                 download_path = self.get_download_path(file_data=file_data)
                 download_path.parent.mkdir(parents=True, exist_ok=True)
-                with download_path.open("w") as page_file:
+                with download_path.open("w", encoding="utf-8") as page_file:
                     page_file.write(text_extraction.html.render(pretty=True))
                 return self.generate_download_response(
                     file_data=file_data, download_path=download_path
@@ -344,7 +344,7 @@ class NotionDownloader(Downloader):
             if text_extraction.html:
                 download_path = self.get_download_path(file_data=file_data)
                 download_path.parent.mkdir(parents=True, exist_ok=True)
-                with download_path.open("w") as database_file:
+                with download_path.open("w", encoding="utf-8") as database_file:
                     database_file.write(text_extraction.html.render(pretty=True))
                 return self.generate_download_response(
                     file_data=file_data, download_path=download_path
