@@ -1,3 +1,9 @@
+## [1.12.12]
+
+### Fixes
+
+- **Salesforce EmailMessage bodies are no longer lost or replaced by `None`.** The generated `.eml` had no blank line after its headers, so a first body line such as `Update: ...` was read as a header and dropped. A missing `HtmlBody` also became an HTML part containing `None`, which partitioning prefers over the plain text.
+
 ## [1.12.11]
 
 ### Fixes
