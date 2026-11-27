@@ -1,3 +1,9 @@
+## [1.12.12]
+
+### Fixes
+
+- **Slack thread replies also sent to the channel no longer duplicate messages.** A `thread_broadcast` reply posted on a later day than its thread root stretched that day's package over the following days, so their messages were written twice, and the reply itself appeared both inside its thread and as a separate message. The downloader now keeps only the messages of the package's day and writes a broadcast reply once, within its thread.
+
 ## [1.12.11]
 
 ### Fixes
