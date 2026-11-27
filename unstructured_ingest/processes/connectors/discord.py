@@ -158,7 +158,7 @@ class DiscordDownloader(Downloader):
 
         content = "\n".join([message.content for message in messages])
 
-        with open(download_path, "w") as file:
+        with open(download_path, "w", encoding="utf-8") as file:
             file.write(content)
 
         return self.generate_download_response(file_data=file_data, download_path=download_path)

@@ -1,3 +1,9 @@
+## [1.12.12]
+
+### Fixes
+
+- **Jira, Discord, Kafka and Notion downloads are written as UTF-8.** The downloaded files were written with the platform default encoding, so on Windows (cp1252) or an ASCII locale, content with characters outside that encoding failed to download.
+
 ## [1.12.11]
 
 ### Fixes

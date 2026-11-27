@@ -216,7 +216,7 @@ class KafkaDownloader(Downloader, ABC):
 
         try:
             content = file_data.additional_metadata["content"]
-            with open(download_path, "w") as file:
+            with open(download_path, "w", encoding="utf-8") as file:
                 file.write(content)
         except Exception as e:
             logger.error(f"Failed to download file {file_data.identifier}: {e}")

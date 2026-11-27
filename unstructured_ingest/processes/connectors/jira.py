@@ -584,7 +584,7 @@ class JiraDownloader(Downloader):
         if download_path is None:
             raise ValueError("File data is missing source identifiers data.")
         download_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(download_path, "w") as f:
+        with open(download_path, "w", encoding="utf-8") as f:
             f.write(issue_str)
         self.update_file_data(file_data, issue)
         download_response = self.generate_download_response(
